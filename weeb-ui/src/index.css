@@ -1,0 +1,101 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Fonts */
+  --font-inter: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-outfit: "Outfit", ui-sans-serif, system-ui, sans-serif;
+
+  /* Backgrounds & Surfaces */
+  --color-bg-base: #FFFFFF;
+  --color-surface-100: #F3F4F6;
+  --color-surface-200: #E5E7EB;
+  --color-surface-300: #D1D5DB;
+
+  /* Borders */
+  --color-border-subtle: rgba(17, 24, 39, 0.08);
+  --color-border-strong: rgba(99, 102, 241, 0.28);
+
+  /* Primary */
+  --color-primary-400: #818CF8;
+  --color-primary-500: #6366F1;
+  --color-primary-600: #4F46E5;
+  
+  /* Text */
+  --color-text-title: #111827;
+  --color-text-body: #374151;
+  --color-text-muted: #6B7280;
+
+  /* Semantic Colors */
+  --color-success-base: #059669;
+  --color-danger-base: #DC2626;
+  --color-warning-base: #D97706;
+  --color-info-base: #6366F1;
+
+  /* Data Visualization */
+  --color-chart-primary: #6366F1;
+  --color-chart-gold: #FBBF24;
+  --color-chart-green: #34D399;
+  --color-chart-lavender: #A5B4FC;
+  --color-chart-mint: #6EE7B7;
+  --color-chart-amber-soft: #FDE68A;
+
+  /* Shadows */
+  --shadow-glow-primary: 0 10px 30px -14px rgba(99, 102, 241, 0.55);
+  --shadow-card: 0 18px 45px -32px rgba(15, 23, 42, 0.35), 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes select-popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@layer base {
+  html {
+    font-family: var(--font-inter);
+  }
+  
+  body {
+    background-color: var(--color-bg-base);
+    color: var(--color-text-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-outfit);
+    color: var(--color-text-title);
+  }
+
+  a,
+  button,
+  [role="button"],
+  summary,
+  input[type="submit"],
+  input[type="button"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    cursor: not-allowed;
+  }
+
+  .custom-select-popover {
+    animation: select-popover-in 140ms ease-out;
+  }
+}

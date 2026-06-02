@@ -1,0 +1,106 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Concerns\RespondsWithApi;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Finance\StoreTransactionRequest;
+use App\Http\Requests\Finance\UpdateTransactionRequest;
+use App\Http\Resources\TransactionResource;
+use App\Models\FinancialAccount;
+use App\Models\Transaction;
+use App\Services\Finance\AccountBalanceService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class TransactionController extends Controller
+{
+    use RespondsWithApi;
+
+    public function __construct(private readonly string $type = 'expense')
+    {
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+        $query = Transaction::query()
+            ->with(['category', 'account'])
+            ->where('user_id', $request->user()->id)
+            ->where('transaction_type', $this->type)
+            ->when($request->filled('account_purpose'), fn ($q) => $q->whereHas('account', fn ($account) => $account->where('purpose', $request->account_purpose)))
+            ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->category_id))
+            ->when($request->filled('need_type'), fn ($q) => $q->where('need_type', $request->need_type))
+            ->when($request->filled('date_from'), fn ($q) => $q->whereDate('transaction_date', '>=', $request->date_from))
+            ->when($request->filled('date_to'), fn ($q) => $q->whereDate('transaction_date', '<=', $request->date_to))
+            ->latest('transaction_date')
+            ->latest('id');
+
+        $paginator = $query->paginate($request->integer('per_page', 20));
+
+        return $this->paginated(TransactionResource::collection($paginator), $paginator, ucfirst($this->type).' transactions loaded.');
+    }
+
+    public function store(StoreTransactionRequest $request, AccountBalanceService $balanceService): JsonResponse
+    {
+        $transaction = $balanceService->createTransaction(
+            data: $this->withAutomaticSource($request->validated(), $request),
+            userId: $request->user()->id,
+            forcedType: $this->type,
+        );
+
+        return $this->success(new TransactionResource($transaction->load(['category', 'account'])), ucfirst($this->type).' created.', 201);
+    }
+
+    public function show(Request $request, int $transaction): JsonResponse
+    {
+        return $this->success(new TransactionResource($this->find($request, $transaction)->load(['category', 'account'])), ucfirst($this->type).' loaded.');
+    }
+
+    public function update(UpdateTransactionRequest $request, int $transaction, AccountBalanceService $balanceService): JsonResponse
+    {
+        $model = $this->find($request, $transaction);
+        $model = $balanceService->updateTransaction(
+            transaction: $model,
+            data: $this->withAutomaticSource($request->validated(), $request),
+            userId: $request->user()->id,
+            forcedType: $this->type,
+        );
+
+        return $this->success(new TransactionResource($model->load(['category', 'account'])), ucfirst($this->type).' updated.');
+    }
+
+    public function destroy(Request $request, int $transaction, AccountBalanceService $balanceService): JsonResponse
+    {
+        $balanceService->deleteTransaction($this->find($request, $transaction), $request->user()->id);
+
+        return $this->deleted(ucfirst($this->type).' deleted.');
+    }
+
+    private function find(Request $request, int $id): Transaction
+    {
+        return Transaction::query()
+            ->where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->where('transaction_type', $this->type)
+            ->firstOrFail();
+    }
+
+    private function withAutomaticSource(array $data, Request $request): array
+    {
+        if (! isset($data['account_id'])) {
+            return $data;
+        }
+
+        $isCoupleSavings = FinancialAccount::query()
+            ->where('id', $data['account_id'])
+            ->where('user_id', $request->user()->id)
+            ->where('purpose', 'couple_savings')
+            ->exists();
+
+        if ($isCoupleSavings) {
+            $data['source'] = $request->user()->email ?: $request->user()->name;
+        }
+
+        return $data;
+    }
+}

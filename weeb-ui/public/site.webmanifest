@@ -1,0 +1,17 @@
+{
+  "name": "WeeBudget",
+  "short_name": "WeeBudget",
+  "description": "Dashboard finansial modern untuk mengelola rekening, transaksi, budget planner, tabungan, dana darurat, dan wishlist.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#6366F1",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
