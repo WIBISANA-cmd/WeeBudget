@@ -47,7 +47,7 @@ class GoogleAuthController extends Controller
 
         UserProfile::query()->firstOrCreate(['user_id' => $user->id]);
 
-        $token = $user->createToken('google-auth')->plainTextToken;
+        $token = $user->createToken('google-auth', ['*'], null)->plainTextToken;
         $frontendUrl = rtrim(env('FRONTEND_URL', 'http://127.0.0.1:5173'), '/');
 
         return redirect()->away("{$frontendUrl}/auth/google/callback?token=".urlencode($token));

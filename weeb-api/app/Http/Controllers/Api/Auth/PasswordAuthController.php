@@ -36,7 +36,7 @@ class PasswordAuthController extends Controller
         }
 
         $user->forceFill(['last_login_at' => now()])->save();
-        $token = $user->createToken('password-auth')->plainTextToken;
+        $token = $user->createToken('password-auth', ['*'], null)->plainTextToken;
 
         return $this->success([
             'token' => $token,

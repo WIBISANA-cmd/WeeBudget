@@ -25,6 +25,7 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
       SANCTUM_STATEFUL_DOMAINS: ${SANCTUM_STATEFUL_DOMAINS:-}
+      SANCTUM_EXPIRATION: ${SANCTUM_EXPIRATION:-null}
     depends_on:
       db:
         condition: service_healthy

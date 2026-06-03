@@ -26,6 +26,12 @@ class PasswordLoginTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.user.email', $user->email)
             ->assertJsonStructure(['data' => ['token']]);
+
+        $this->assertDatabaseHas('personal_access_tokens', [
+            'tokenable_id' => $user->id,
+            'name' => 'password-auth',
+            'expires_at' => null,
+        ]);
     }
 
     public function test_inactive_user_cannot_login_with_password(): void
