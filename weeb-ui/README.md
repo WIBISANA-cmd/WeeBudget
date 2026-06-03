@@ -1,4 +1,49 @@
-# React + Vite
+# WeeBudget UI
+
+Frontend React + Vite untuk WeeBudget.
+
+## Deploy ke Netlify
+
+Project ini sudah punya `netlify.toml` di root repository, jadi Netlify bisa membaca konfigurasi deploy walaupun frontend berada di folder `weeb-ui`.
+
+Build settings:
+
+- Base directory: `weeb-ui`
+- Build command: `npm run build`
+- Publish directory: `weeb-ui/dist`
+- Node version: `22`
+
+Environment variable wajib di Netlify:
+
+```bash
+VITE_API_BASE_URL=https://domain-backend-kamu.com/api
+```
+
+Catatan:
+
+- Netlify hanya deploy frontend statis. Backend Laravel `weeb-api` perlu di-host terpisah, misalnya Railway, Render, VPS, Laravel Cloud, atau layanan PHP lain.
+- Setelah domain Netlify jadi, update backend `.env`:
+
+```bash
+APP_URL=https://domain-backend-kamu.com
+FRONTEND_URL=https://domain-netlify-kamu.netlify.app
+GOOGLE_REDIRECT_URI=https://domain-backend-kamu.com/api/auth/google/callback
+SANCTUM_STATEFUL_DOMAINS=domain-netlify-kamu.netlify.app
+```
+
+- Di Google Cloud Console, tambahkan Authorized redirect URI:
+
+```bash
+https://domain-backend-kamu.com/api/auth/google/callback
+```
+
+## Local build check
+
+```bash
+npm ci
+npm run lint
+npm run build
+```
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
