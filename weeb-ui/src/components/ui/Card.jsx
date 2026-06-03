@@ -6,7 +6,7 @@ const Card = forwardRef(({ className, interactive, children, ...props }, ref) =>
     <div
       ref={ref}
       className={cn(
-        "bg-surface-100 rounded-2xl border border-border-subtle shadow-card overflow-hidden",
+        "bg-surface-panel rounded-2xl border border-border-subtle shadow-card overflow-hidden transition-colors duration-200",
         interactive && "transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:border-border-strong hover:shadow-glow-primary",
         className
       )}
@@ -47,7 +47,7 @@ const CardContent = forwardRef(({ className, children, ...props }, ref) => (
 CardContent.displayName = 'CardContent';
 
 const CardFooter = forwardRef(({ className, children, ...props }, ref) => (
-  <div ref={ref} className={cn("px-6 py-4 border-t border-border-subtle bg-white/60 flex items-center", className)} {...props}>
+  <div ref={ref} className={cn("px-6 py-4 border-t border-border-subtle bg-surface-panel flex items-center", className)} {...props}>
     {children}
   </div>
 ));

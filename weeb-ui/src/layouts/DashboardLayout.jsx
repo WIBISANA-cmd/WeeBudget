@@ -8,7 +8,7 @@ export default function DashboardLayout() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-bg-base text-text-body overflow-hidden">
+    <div className="flex h-screen bg-bg-base text-text-body overflow-hidden transition-colors duration-200">
       <Sidebar isOpen={isSidebarOpen} close={() => setSidebarOpen(false)} />
       
       <div className="flex flex-1 flex-col overflow-hidden relative">

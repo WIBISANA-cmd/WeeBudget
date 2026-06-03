@@ -77,7 +77,7 @@ export default function BudgetPlannerPage() {
         </div>
       </header>
 
-      <Card className={usesActivePeriod ? 'border-primary-500/20 bg-primary-500/5' : 'border-warning-base/20 bg-warning-base/5'}>
+      <Card className={usesActivePeriod ? 'border-primary-500' : 'border-warning-base'}>
         <CardContent className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm font-semibold text-text-title">
@@ -89,24 +89,24 @@ export default function BudgetPlannerPage() {
                 : 'Budget Planner memakai fallback tanggal gajian profil. Aktifkan satu periode di menu Manajemen Periode agar hitungan mengikuti periode bulanan.'}
             </p>
           </div>
-          <div className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-primary-600 shadow-sm shadow-slate-900/5">
+          <div className="rounded-xl bg-surface-100 px-4 py-3 text-sm font-semibold text-primary-600 shadow-sm shadow-card-soft">
             {usesActivePeriod ? 'Mengikuti Manajemen Periode' : 'Fallback profil'}
           </div>
         </CardContent>
       </Card>
 
-      <Card className="border-primary-500/20 bg-gradient-to-br from-surface-100 to-primary-500/10">
+      <Card className="border-primary-500">
         <CardContent className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl bg-white p-4 shadow-sm shadow-slate-900/5">
+          <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
             <Wallet className="text-primary-600" />
             <p className="mt-3 text-sm text-text-muted">Dana dasar</p>
             <p className="text-2xl font-semibold text-text-title">{formatCurrency(planner?.base_amount)}</p>
           </div>
-          <div className="rounded-2xl bg-white p-4 shadow-sm shadow-slate-900/5">
+          <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
             <p className="text-sm text-text-muted">{usesActivePeriod ? 'Hari tersisa periode' : 'Hari sampai gajian'}</p>
             <p className="mt-3 text-3xl font-semibold text-primary-600">{planner?.days_until_payday}</p>
           </div>
-          <div className="rounded-2xl bg-white p-4 shadow-sm shadow-slate-900/5">
+          <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
             <p className="text-sm text-text-muted">Aman harian dari pos kebutuhan</p>
             <p className="mt-3 text-2xl font-semibold text-primary-600">{formatCurrency(planner?.daily_safe_from_plan)}</p>
           </div>
@@ -131,7 +131,7 @@ export default function BudgetPlannerPage() {
         ))}
       </div>
 
-      <Card className="border-info-base/20 bg-info-base/5">
+      <Card className="border-info-base">
         <CardContent>
           <p className="text-sm font-semibold text-info-base">Rekomendasi WeeB</p>
           <p className="mt-2 text-text-body">{planner?.recommendation}</p>

@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#6366F1" />
+    <meta name="theme-color" content="#08a0ff" />
     <meta name="description" content="WeeBudget membantu mengatur rekening, transaksi, budget planner, tabungan, dana darurat, dan wishlist dalam satu dashboard finansial." />
     <meta name="application-name" content="WeeBudget" />
     <meta property="og:title" content="WeeBudget - Smart Personal Finance" />
@@ -15,6 +15,20 @@
     <title>WeeBudget - Smart Personal Finance</title>
   </head>
   <body>
+    <script>
+      (function () {
+        try {
+          var storedTheme = localStorage.getItem('weeb_theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var theme = storedTheme === 'dark' || storedTheme === 'light' ? storedTheme : (prefersDark ? 'dark' : 'light');
+          document.documentElement.classList.toggle('dark', theme === 'dark');
+          document.documentElement.style.colorScheme = theme;
+          document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#0F172A' : '#08a0ff');
+        } catch {
+          document.documentElement.classList.remove('dark');
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

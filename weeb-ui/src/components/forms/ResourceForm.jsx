@@ -123,22 +123,22 @@ function CustomSelect({ field, register, error, options, value, setValue }) {
         onClick={() => (isOpen ? closeDropdown() : openDropdown())}
         onKeyDown={handleKeyDown}
         className={cn(
-          'flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border bg-white px-4 py-3 text-left text-sm shadow-sm shadow-slate-900/5 transition-all duration-200',
-          'hover:border-cyan-400 hover:shadow-md hover:shadow-cyan-950/5 focus-visible:border-cyan-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/20',
+          'flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border bg-surface-panel px-4 py-3 text-left text-sm shadow-sm shadow-card-soft transition-all duration-200',
+          'hover:border-primary-400 hover:shadow-md hover:shadow-primary-500/10 focus-visible:border-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20',
           error ? 'border-danger-base focus-visible:border-danger-base focus-visible:ring-danger-base/20' : 'border-border-subtle',
         )}
       >
-        <span className={cn('truncate', selectedOption ? 'font-medium text-[rgb(15,60,113)]' : 'text-text-muted')}>
+        <span className={cn('truncate', selectedOption ? 'font-medium text-text-title' : 'text-text-muted')}>
           {selectedOption?.label || 'Pilih...'}
         </span>
-        <ChevronDown size={18} className={cn('shrink-0 text-cyan-600 transition-transform duration-200', isOpen && 'rotate-180')} />
+        <ChevronDown size={18} className={cn('shrink-0 text-primary-600 transition-transform duration-200', isOpen && 'rotate-180')} />
       </button>
       {isOpen && (
         <div
           id={listboxId}
           role="listbox"
           style={panelStyle}
-          className="custom-select-popover fixed z-[120] overflow-y-auto rounded-xl border border-cyan-500/20 bg-white p-1.5 shadow-2xl shadow-slate-900/20 outline-none"
+          className="custom-select-popover fixed z-[120] overflow-y-auto rounded-xl border border-border-strong bg-surface-panel p-1.5 shadow-2xl shadow-slate-950/25 outline-none"
         >
           {selectOptions.length === 0 ? (
             <div className="px-3 py-2 text-sm text-text-muted">Tidak ada opsi</div>
@@ -158,8 +158,8 @@ function CustomSelect({ field, register, error, options, value, setValue }) {
                   className={cn(
                     'flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors duration-150',
                     isSelected && 'bg-[rgb(15,60,113)] text-white',
-                    !isSelected && isActive && 'bg-cyan-50 text-[rgb(15,60,113)]',
-                    !isSelected && !isActive && 'text-text-body hover:bg-cyan-50 hover:text-[rgb(15,60,113)]',
+                    !isSelected && isActive && 'bg-primary-500/10 text-primary-600',
+                    !isSelected && !isActive && 'text-text-body hover:bg-primary-500/10 hover:text-primary-600',
                   )}
                 >
                   <span className="min-w-0 truncate font-medium">{option.label}</span>
@@ -190,7 +190,7 @@ function Field({ field, register, error, options, value, setValue }) {
     return (
       <div className="flex w-full flex-col gap-1.5">
         <label className="text-sm font-medium text-text-body">{field.label}</label>
-        <textarea rows={3} className="rounded-xl border border-border-subtle bg-white px-4 py-3 text-sm text-text-title shadow-sm shadow-slate-900/5 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20" {...register(field.name)} />
+        <textarea rows={3} className="rounded-xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm text-text-title shadow-sm shadow-card-soft placeholder:text-text-muted focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20" {...register(field.name)} />
         {error?.message && <p className="text-xs font-medium text-danger-base">{error.message}</p>}
       </div>
     );

@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { KeyRound, Mail, Wallet } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import ThemeToggle from '../components/ui/ThemeToggle';
 import { apiGet, apiPost } from '../api/http';
 
 export default function LoginPage() {
@@ -43,8 +44,11 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen bg-bg-base px-4 py-8">
+      <div className="fixed right-4 top-4 z-10">
+        <ThemeToggle showLabel />
+      </div>
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl items-center justify-center">
-        <section className="grid w-full overflow-hidden rounded-3xl border border-border-subtle bg-white shadow-xl shadow-slate-900/10 md:grid-cols-[1fr_0.9fr]">
+        <section className="grid w-full overflow-hidden rounded-3xl border border-border-subtle bg-surface-panel shadow-xl shadow-card-soft md:grid-cols-[1fr_0.9fr]">
           <div className="p-8 md:p-12">
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-500/10 text-primary-600">
               <Wallet size={26} />

@@ -283,9 +283,9 @@ export default function CoupleSavingsPage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         {[['Pasangan 1', partnerOne], ['Pasangan 2', partnerTwo]].map(([label, partner]) => (
-          <Card key={label} className={partner ? 'border-primary-500/20 bg-primary-500/5' : 'border-warning-base/20 bg-warning-base/5'}>
+          <Card key={label} className={partner ? 'border-primary-500' : 'border-warning-base'}>
             <CardContent className="flex items-center gap-4">
-              <div className="rounded-xl bg-white p-3 text-primary-600 shadow-sm shadow-slate-900/5"><HeartHandshake size={24} /></div>
+              <div className="rounded-xl bg-surface-100 p-3 text-primary-600 shadow-sm shadow-card-soft"><HeartHandshake size={24} /></div>
               <div className="min-w-0">
                 <p className="text-sm text-text-muted">{label}</p>
                 <p className="mt-1 truncate text-lg font-semibold text-text-title">{partner?.name || 'Belum diset'}</p>
@@ -337,7 +337,7 @@ export default function CoupleSavingsPage() {
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-2">
             {contributors.map((item, index) => (
-              <div key={item.source} className="rounded-2xl border border-border-subtle bg-white p-4">
+              <div key={item.source} className="rounded-2xl border border-border-subtle bg-surface-100 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
                     <div className="rounded-xl bg-primary-500/10 p-2 text-primary-600">

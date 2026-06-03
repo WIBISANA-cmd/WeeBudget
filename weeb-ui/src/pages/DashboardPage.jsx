@@ -5,7 +5,7 @@ import { useDashboard } from '../hooks/useDashboard';
 import { cn } from '../lib/utils';
 import { compactCurrency, formatCurrency, formatDate } from '../lib/formatters';
 
-const colors = ['#6366F1', '#14B8A6', '#F59E0B', '#EF4444', '#8B5CF6', '#22C55E'];
+const colors = ['#08a0ff', '#14B8A6', '#F59E0B', '#EF4444', '#8B5CF6', '#22C55E'];
 
 const statusCopy = {
   safe: ['Aman', 'Ritme bulan ini masih sehat', 'border-success-base/20 bg-success-base/10 text-success-base'],
@@ -30,7 +30,7 @@ function LoadingDashboard() {
 
 function ErrorState({ message, onRetry }) {
   return (
-    <Card className="border-danger-base/20 bg-danger-base/5">
+    <Card className="border-danger-base">
       <CardContent className="flex min-h-[260px] flex-col items-center justify-center text-center">
         <AlertTriangle className="mb-3 text-danger-base" size={28} />
         <h1 className="text-xl font-semibold text-text-title">Dashboard belum bisa dimuat</h1>
@@ -54,6 +54,12 @@ function EmptyPanel({ title, description }) {
   );
 }
 
+function formatWeekLabel(value) {
+  const week = String(value || '').replace(/^M/i, '');
+
+  return week ? `Minggu ${week}` : '-';
+}
+
 function Metric({ icon: Icon, label, value, helper, tone }) {
   return (
     <Card>
@@ -71,11 +77,82 @@ function Metric({ icon: Icon, label, value, helper, tone }) {
   );
 }
 
+function CashflowMetricCard({ icon: Icon, label, value, helper, tone, chartData, dataKey, gradientId, stroke, fill, shareLabel }) {
+  const peak = chartData.reduce((highest, item) => (
+    Number(item[dataKey] || 0) > Number(highest[dataKey] || 0) ? item : highest
+  ), chartData[0] ?? {});
+
+  return (
+    <Card>
+      <CardContent className="space-y-4 p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-100', tone)}>
+              <Icon size={21} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm text-text-muted">{label}</p>
+              <p className="mt-2 break-words text-2xl font-semibold text-text-title">{value}</p>
+            </div>
+          </div>
+          <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold', fill)}>
+            {shareLabel}
+          </span>
+        </div>
+
+        <div className="h-[96px] rounded-xl bg-surface-100 p-2">
+          {chartData.length === 0 ? (
+            <div className="flex h-full items-center justify-center text-xs font-medium text-text-muted">Belum ada ritme mingguan</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
+                <defs>
+                  <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={stroke} stopOpacity={0.32} />
+                    <stop offset="95%" stopColor={stroke} stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="week" hide />
+                <YAxis hide domain={[0, 'dataMax']} />
+                <Tooltip
+                  formatter={(tooltipValue) => formatCurrency(tooltipValue)}
+                  labelFormatter={formatWeekLabel}
+                  contentStyle={{
+                    borderRadius: 14,
+                    border: '1px solid var(--color-border-subtle)',
+                    backgroundColor: 'var(--color-surface-panel)',
+                    color: 'var(--color-text-body)',
+                    boxShadow: 'var(--shadow-card)',
+                  }}
+                />
+                <Area type="monotone" dataKey={dataKey} stroke={stroke} fill={`url(#${gradientId})`} strokeWidth={3} dot={false} activeDot={{ r: 4 }} name={label} />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="rounded-xl bg-surface-100 p-3">
+            <p className="text-text-muted">Puncak minggu</p>
+            <p className="mt-1 truncate font-semibold text-text-title">{formatWeekLabel(peak.week)}</p>
+          </div>
+          <div className="rounded-xl bg-surface-100 p-3">
+            <p className="text-text-muted">Nominal puncak</p>
+            <p className="mt-1 truncate font-semibold text-text-title">{formatCurrency(peak[dataKey])}</p>
+          </div>
+        </div>
+
+        <p className="text-sm leading-5 text-text-muted">{helper}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
 function ProgressCard({ icon: Icon, title, current, target, tone }) {
   const percent = Math.min(Math.round((Number(current || 0) / Math.max(Number(target || 1), 1)) * 100), 100);
 
   return (
-    <div className="rounded-2xl border border-border-subtle bg-white p-4">
+    <div className="rounded-2xl border border-border-subtle bg-surface-100 p-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className={cn('flex h-10 w-10 items-center justify-center rounded-xl bg-surface-100', tone)}>
@@ -124,6 +201,10 @@ export default function DashboardPage() {
   const insights = dashboard.insights ?? [];
   const actions = dashboard.actions ?? [];
   const topCategories = dashboard.top_categories ?? [];
+  const totalPeriodFlow = Number(summary.income_this_month || 0) + Number(summary.expense_this_month || 0);
+  const incomeShare = totalPeriodFlow ? Math.round((Number(summary.income_this_month || 0) / totalPeriodFlow) * 100) : 0;
+  const expenseShare = totalPeriodFlow ? Math.round((Number(summary.expense_this_month || 0) / totalPeriodFlow) * 100) : 0;
+  const periodLabel = dashboard.period?.label || 'periode aktif';
 
   return (
     <div className="space-y-5 pb-8">
@@ -147,7 +228,7 @@ export default function DashboardPage() {
       </header>
 
       <section className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
-        <Card className="overflow-hidden border-primary-500/20 bg-gradient-to-br from-white via-surface-100 to-primary-500/10">
+        <Card className="border-primary-500">
           <CardContent className="grid gap-6 p-5 md:grid-cols-[1fr_0.8fr] md:p-7">
             <div>
               <div className="flex items-center gap-3 text-text-muted">
@@ -161,7 +242,7 @@ export default function DashboardPage() {
                 Sisa bersih sampai gajian: <span className="font-semibold text-primary-600">{formatCurrency(summary.net_until_payday)}</span>.
               </p>
             </div>
-            <div className="rounded-2xl border border-border-subtle bg-white p-4 shadow-sm shadow-slate-900/5">
+            <div className="rounded-2xl border border-border-subtle bg-surface-100 p-4 shadow-sm shadow-card-soft">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm text-text-muted">Aman harian</p>
@@ -183,7 +264,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {actions.map((item) => (
-              <div key={item} className="flex gap-3 rounded-xl bg-surface-200/50 p-3 text-sm leading-5 text-text-body">
+              <div key={item} className="flex gap-3 rounded-xl bg-surface-200 p-3 text-sm leading-5 text-text-body">
                 <CheckCircle2 className="mt-0.5 shrink-0 text-success-base" size={18} />
                 <span>{item}</span>
               </div>
@@ -192,9 +273,33 @@ export default function DashboardPage() {
         </Card>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <Metric icon={ArrowDownRight} label="Pemasukan bulan ini" value={formatCurrency(summary.income_this_month)} helper="Termasuk setoran tabungan." tone="text-success-base" />
-        <Metric icon={ArrowUpRight} label="Pengeluaran bulan ini" value={formatCurrency(summary.expense_this_month)} helper="Pengeluaran berdasarkan transaksi." tone="text-danger-base" />
+      <section className="grid gap-4 lg:grid-cols-3">
+        <CashflowMetricCard
+          icon={ArrowDownRight}
+          label="Pemasukan periode aktif"
+          value={formatCurrency(summary.income_this_month)}
+          helper={`Akumulasi pemasukan selama ${periodLabel}, termasuk setoran tabungan.`}
+          tone="text-success-base"
+          chartData={cashflow}
+          dataKey="income"
+          gradientId="incomeMetricTrend"
+          stroke="#059669"
+          fill="bg-success-base text-white"
+          shareLabel={`${incomeShare}% arus kas`}
+        />
+        <CashflowMetricCard
+          icon={ArrowUpRight}
+          label="Pengeluaran periode aktif"
+          value={formatCurrency(summary.expense_this_month)}
+          helper={`Akumulasi pengeluaran berdasarkan transaksi selama ${periodLabel}.`}
+          tone="text-danger-base"
+          chartData={cashflow}
+          dataKey="expense"
+          gradientId="expenseMetricTrend"
+          stroke="#DC2626"
+          fill="bg-danger-base text-white"
+          shareLabel={`${expenseShare}% arus kas`}
+        />
         <Metric icon={CircleDollarSign} label="Sisa bulan ini" value={formatCurrency(summary.remaining_this_month)} helper="Pemasukan dikurangi pengeluaran." tone="text-primary-600" />
       </section>
 
@@ -217,7 +322,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2">
             {planner.map((item) => (
-              <div key={item.key} className="rounded-2xl border border-border-subtle bg-white p-4">
+              <div key={item.key} className="rounded-2xl border border-border-subtle bg-surface-100 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-semibold text-text-title">{item.label}</p>
                   <span className="rounded-full bg-primary-500/10 px-2.5 py-1 text-xs font-semibold text-primary-600">{item.percent}%</span>
@@ -245,10 +350,10 @@ export default function DashboardPage() {
                   <linearGradient id="income" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#22C55E" stopOpacity={0.35} /><stop offset="95%" stopColor="#22C55E" stopOpacity={0} /></linearGradient>
                   <linearGradient id="expense" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#F59E0B" stopOpacity={0.35} /><stop offset="95%" stopColor="#F59E0B" stopOpacity={0} /></linearGradient>
                 </defs>
-                <CartesianGrid stroke="#E5E7EB" vertical={false} />
-                <XAxis dataKey="week" stroke="#6B7280" tickLine={false} axisLine={false} />
-                <YAxis stroke="#6B7280" tickLine={false} axisLine={false} tickFormatter={compactCurrency} width={42} />
-                <Tooltip formatter={(value) => formatCurrency(value)} contentStyle={{ borderRadius: 14, border: '1px solid #E5E7EB' }} />
+                <CartesianGrid stroke="var(--color-border-subtle)" vertical={false} />
+                <XAxis dataKey="week" stroke="var(--color-text-muted)" tickLine={false} axisLine={false} />
+                <YAxis stroke="var(--color-text-muted)" tickLine={false} axisLine={false} tickFormatter={compactCurrency} width={42} />
+                <Tooltip formatter={(value) => formatCurrency(value)} contentStyle={{ borderRadius: 14, border: '1px solid var(--color-border-subtle)', backgroundColor: 'var(--color-surface-panel)', color: 'var(--color-text-body)' }} />
                 <Area type="monotone" dataKey="income" stroke="#22C55E" fill="url(#income)" strokeWidth={2} name="Pemasukan" />
                 <Area type="monotone" dataKey="expense" stroke="#F59E0B" fill="url(#expense)" strokeWidth={2} name="Pengeluaran" />
               </AreaChart>
@@ -263,7 +368,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {accountBreakdown.length === 0 ? <EmptyPanel title="Belum ada rekening aktif" description="Tambahkan rekening untuk melihat komposisi saldo." /> : accountBreakdown.map((item, index) => (
-              <div key={item.purpose} className="rounded-xl bg-surface-200/50 p-3">
+              <div key={item.purpose} className="rounded-xl bg-surface-200 p-3">
                 <div className="mb-2 flex items-center justify-between text-sm">
                   <span className="flex items-center gap-2 font-semibold text-text-title"><span className="h-2.5 w-2.5 rounded-full" style={{ background: colors[index % colors.length] }} />{item.label}</span>
                   <span className="text-text-muted">{formatCurrency(item.total)}</span>
@@ -283,7 +388,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {recentTransactions.map((item) => (
-              <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-surface-200/50 p-3">
+              <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-surface-200 p-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl', item.transaction_type === 'income' ? 'bg-success-base/10 text-success-base' : 'bg-danger-base/10 text-danger-base')}>
                     <CreditCard size={18} />
@@ -349,7 +454,7 @@ export default function DashboardPage() {
               <XAxis dataKey="day" stroke="#6B7280" tickLine={false} axisLine={false} />
               <YAxis stroke="#6B7280" tickLine={false} axisLine={false} tickFormatter={compactCurrency} width={42} />
               <Tooltip formatter={(value) => formatCurrency(value)} contentStyle={{ borderRadius: 14, border: '1px solid #E5E7EB' }} />
-              <Bar dataKey="amount" fill="#6366F1" radius={[8, 8, 0, 0]} name="Pengeluaran" />
+              <Bar dataKey="amount" fill="#08a0ff" radius={[8, 8, 0, 0]} name="Pengeluaran" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>

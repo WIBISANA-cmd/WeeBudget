@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, Bell, LogOut, UserCircle } from 'lucide-react';
 import { apiGet, apiPost } from '../../api/http';
+import ThemeToggle from '../../components/ui/ThemeToggle';
 
 export default function Header({ toggleSidebar }) {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ export default function Header({ toggleSidebar }) {
   };
 
   return (
-    <header className="h-20 bg-white/90 backdrop-blur-md border-b border-border-subtle px-4 md:px-8 flex items-center justify-between sticky top-0 z-30">
+    <header className="h-20 bg-surface-panel/90 backdrop-blur-md border-b border-border-subtle px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 transition-colors duration-200">
       <div className="flex items-center gap-4">
         <button 
           onClick={toggleSidebar}
@@ -38,12 +39,10 @@ export default function Header({ toggleSidebar }) {
         >
           <Menu size={24} />
         </button>
-        <h2 className="text-xl font-outfit font-medium text-text-title hidden sm:block">
-          Selamat datang, Teman WeeB!
-        </h2>
       </div>
 
       <div className="flex items-center gap-4">
+        <ThemeToggle />
         <button className="relative p-2 text-text-muted hover:text-primary-600 rounded-xl hover:bg-surface-100 transition-colors">
           <Bell size={20} />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary-500 rounded-full shadow-glow-primary"></span>

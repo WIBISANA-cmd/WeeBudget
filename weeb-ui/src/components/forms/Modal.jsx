@@ -5,8 +5,8 @@ export default function Modal({ title, description, open, onClose, children, foo
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-text-title/35 p-4 backdrop-blur-sm">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-2xl border border-border-subtle bg-white shadow-card">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-2xl border border-border-subtle bg-surface-panel shadow-card">
         <div className="flex items-start justify-between gap-4 border-b border-border-subtle px-5 py-4">
           <div>
             <h2 className="text-lg font-semibold text-text-title">{title}</h2>

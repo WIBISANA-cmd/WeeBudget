@@ -2,7 +2,7 @@ import Button from '../ui/Button';
 
 export default function DataTable({ columns, rows, onEdit, onDelete }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border-subtle bg-white shadow-sm shadow-slate-900/5">
+    <div className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-panel shadow-sm shadow-card-soft">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-border-subtle">
           <thead className="bg-surface-100">
@@ -15,9 +15,9 @@ export default function DataTable({ columns, rows, onEdit, onDelete }) {
               {(onEdit || onDelete) && <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-text-muted">Aksi</th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-border-subtle bg-white">
+          <tbody className="divide-y divide-border-subtle bg-surface-panel">
             {rows.map((row) => (
-              <tr key={row.id} className="hover:bg-surface-100/80">
+              <tr key={row.id} className="transition-colors hover:bg-surface-100/80">
                 {columns.map((column) => (
                   <td key={column.key} className="whitespace-nowrap px-4 py-4 text-sm text-text-body">
                     {column.render ? column.render(row) : row[column.key] ?? '-'}

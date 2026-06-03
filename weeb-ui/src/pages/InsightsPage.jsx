@@ -54,7 +54,7 @@ export default function InsightsPage() {
       </Card>
       <div className="grid gap-4 lg:grid-cols-2">
         {(data?.insights || []).map((insight) => (
-          <Card key={insight} className="border-primary-500/15">
+          <Card key={insight} className="border-primary-500">
             <CardContent className="flex gap-3">
               <Lightbulb className="shrink-0 text-primary-600" />
               <p className="text-sm leading-6 text-text-body">{insight}</p>
@@ -62,14 +62,14 @@ export default function InsightsPage() {
           </Card>
         ))}
         {(data?.budget_warnings || []).map((warning) => (
-          <Card key={warning.category_id} className="border-warning-base/20 bg-warning-base/5">
+          <Card key={warning.category_id} className="border-warning-base">
             <CardContent className="flex gap-3">
               <AlertTriangle className="shrink-0 text-warning-base" />
               <p className="text-sm leading-6 text-text-body">{warning.category_name} sudah {warning.usage_percent}% dari budget.</p>
             </CardContent>
           </Card>
         ))}
-        <Card className="border-success-base/20 bg-success-base/5">
+        <Card className="border-success-base">
           <CardContent className="flex gap-3">
             <ShieldCheck className="shrink-0 text-success-base" />
             <p className="text-sm leading-6 text-text-body">Langkah kecil hari ini tetap dihitung. Fokus pada batas aman harian dan tagihan terdekat.</p>

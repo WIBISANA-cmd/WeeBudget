@@ -12,7 +12,7 @@ const items = [
 
 export default function MobileBottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border-subtle bg-white/95 px-2 py-2 backdrop-blur md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border-subtle bg-surface-panel/95 px-2 py-2 backdrop-blur md:hidden">
       {items.map((item) => (
         <NavLink key={item.path} to={item.path} className={({ isActive }) => cn('flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] transition-colors', isActive ? 'bg-primary-500/10 text-primary-600' : 'text-text-muted hover:text-primary-600')}>
           <item.icon size={18} />
