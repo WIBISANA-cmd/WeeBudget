@@ -40,7 +40,7 @@ class BudgetPlannerActivePeriodTest extends TestCase
         $this->assertSame($period->id, $planner['period']['id']);
         $this->assertSame('Juni 2026', $planner['period']['name']);
         $this->assertSame(21, $planner['days_until_payday']);
-        $this->assertSame(78571.0, $planner['daily_safe_from_plan']);
+        $this->assertSame(71428.0, $planner['daily_safe_from_plan']);
     }
 
     public function test_budget_planner_falls_back_to_payday_profile_when_no_active_period_exists(): void
@@ -63,6 +63,10 @@ class BudgetPlannerActivePeriodTest extends TestCase
         $allocations = collect(app(BudgetPlannerService::class)->generate($user, 1000000)['allocations'])
             ->keyBy('key');
 
+        $this->assertSame(50, $allocations['needs']['percent']);
+        $this->assertSame(500000.0, $allocations['needs']['amount']);
+        $this->assertSame(25, $allocations['savings']['percent']);
+        $this->assertSame(250000.0, $allocations['savings']['amount']);
         $this->assertSame(5, $allocations['couple_savings']['percent']);
         $this->assertSame(50000.0, $allocations['couple_savings']['amount']);
         $this->assertSame(15, $allocations['emergency_fund']['percent']);
@@ -87,6 +91,6 @@ class BudgetPlannerActivePeriodTest extends TestCase
 
         $this->assertSame('active_period', $planner['period_source']);
         $this->assertSame(31, $planner['days_until_payday']);
-        $this->assertSame(55000.0, $planner['daily_safe_from_plan']);
+        $this->assertSame(50000.0, $planner['daily_safe_from_plan']);
     }
 }

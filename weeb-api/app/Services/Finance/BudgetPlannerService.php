@@ -16,8 +16,8 @@ class BudgetPlannerService
         $baseAmount = max($baseAmount, 0);
 
         $plans = [
-            ['key' => 'needs', 'label' => 'Kebutuhan wajib', 'percent' => 55, 'description' => 'Makan, kos, kuota internet, dan kebutuhan yang tidak bisa ditunda.'],
-            ['key' => 'savings', 'label' => 'Tabungan', 'percent' => 20, 'description' => 'Uang yang dipisahkan untuk tujuan jangka pendek atau rencana penting yang sudah ditentukan.'],
+            ['key' => 'needs', 'label' => 'Kebutuhan wajib', 'percent' => 50, 'description' => 'Makan, kos, kuota internet, dan kebutuhan yang tidak bisa ditunda.'],
+            ['key' => 'savings', 'label' => 'Tabungan', 'percent' => 25, 'description' => 'Uang yang dipisahkan untuk tujuan jangka pendek atau rencana penting yang sudah ditentukan.'],
             ['key' => 'couple_savings', 'label' => 'Tabungan berdua', 'percent' => 5, 'description' => 'Setoran bersama pasangan untuk rencana berdua agar kontribusi tetap terlihat jelas.'],
             ['key' => 'emergency_fund', 'label' => 'Dana darurat', 'percent' => 15, 'description' => 'Cadangan khusus untuk kebutuhan mendadak agar tabungan dan uang harian tidak ikut terganggu.'],
             ['key' => 'wants', 'label' => 'Keinginan', 'percent' => 10, 'description' => 'Jajan, hiburan, nongkrong, dan wishlist yang masih bisa dikontrol atau ditunda.'],
@@ -46,7 +46,7 @@ class BudgetPlannerService
             'period' => $activePeriod ? $this->periodPayload($activePeriod) : null,
             'period_source' => $activePeriod ? 'active_period' : 'payday_profile',
             'days_until_payday' => $daysUntilPayday,
-            'daily_safe_from_plan' => round(floor(($baseAmount * 0.55) / max($daysUntilPayday, 1)), 2),
+            'daily_safe_from_plan' => round(floor(($baseAmount * 0.50) / max($daysUntilPayday, 1)), 2),
             'allocations' => $allocations,
             'recommendation' => $this->recommendation($baseAmount, $daysUntilPayday),
         ];
@@ -141,7 +141,7 @@ class BudgetPlannerService
 
     private function recommendation(float $baseAmount, int $daysUntilPayday): string
     {
-        $dailyNeeds = floor(($baseAmount * 0.55) / max($daysUntilPayday, 1));
+        $dailyNeeds = floor(($baseAmount * 0.50) / max($daysUntilPayday, 1));
 
         if ($dailyNeeds < 30000) {
             return 'Mode ketat: dahulukan makan, transport, dan tagihan wajib. Tunda wishlist sampai gajian.';
