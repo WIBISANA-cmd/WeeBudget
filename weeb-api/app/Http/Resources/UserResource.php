@@ -15,7 +15,14 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
-            'profile' => $this->whenLoaded('profile', fn () => new UserProfileResource($this->profile)),
+            'role' => $this->role ?? 'user',
+            'status' => $this->status ?? 'active',
+            'google_id' => $this->google_id,
+            'avatar_url' => $this->avatar_url,
+            'email_verified_at' => $this->email_verified_at?->toISOString(),
+            'last_login_at' => $this->last_login_at?->toISOString(),
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
         ];
     }
 }

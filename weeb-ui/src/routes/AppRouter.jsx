@@ -21,6 +21,7 @@ const ReportsPage = lazy(() => import('../pages/ReportsPage'));
 const InsightsPage = lazy(() => import('../pages/InsightsPage'));
 const WishlistPage = lazy(() => import('../pages/WishlistPage'));
 const ProfilePage = lazy(() => import('../pages/ProfilePage'));
+const UsersPage = lazy(() => import('../pages/UsersPage'));
 const LoginPage = lazy(() => import('../pages/LoginPage'));
 const GoogleCallbackPage = lazy(() => import('../pages/GoogleCallbackPage'));
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage'));
@@ -70,6 +71,7 @@ export default function AppRouter() {
               <Route path="/insights" element={<InsightsPage />} />
               <Route path="/wishlist" element={<WishlistPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/users" element={<UsersPage />} />
             </Route>
           </Route>
 

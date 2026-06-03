@@ -38,6 +38,9 @@ class GoogleAuthController extends Controller
                 'google_id' => $googleUser->getId(),
                 'avatar_url' => $googleUser->getAvatar(),
                 'email_verified_at' => now(),
+                'role' => 'user',
+                'status' => 'active',
+                'last_login_at' => now(),
                 'password' => Hash::make(Str::password(32)),
             ],
         );
@@ -58,6 +61,8 @@ class GoogleAuthController extends Controller
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
+            'role' => $user->role ?? 'user',
+            'status' => $user->status ?? 'active',
             'avatar_url' => $user->avatar_url,
         ], 'Authenticated user loaded.');
     }

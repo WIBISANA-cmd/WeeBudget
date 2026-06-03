@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { KeyRound, Wallet } from 'lucide-react';
+import { KeyRound, Mail, Wallet } from 'lucide-react';
 import Button from '../components/ui/Button';
-import { apiGet } from '../api/http';
+import Input from '../components/ui/Input';
+import { apiGet, apiPost } from '../api/http';
 
 export default function LoginPage() {
   const [isLoading, setLoading] = useState(false);
+  const [isPasswordLoading, setPasswordLoading] = useState(false);
   const [error, setError] = useState('');
+  const [credentials, setCredentials] = useState({ email: '', password: '' });
 
   if (localStorage.getItem('weeb_auth_token')) {
     return <Navigate to="/dashboard" replace />;
@@ -24,6 +27,20 @@ export default function LoginPage() {
     }
   };
 
+  const loginWithPassword = async (event) => {
+    event.preventDefault();
+    setPasswordLoading(true);
+    setError('');
+    try {
+      const response = await apiPost('/auth/login', credentials);
+      localStorage.setItem('weeb_auth_token', response.data.token);
+      window.location.href = '/dashboard';
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login email dan password belum berhasil.');
+      setPasswordLoading(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-bg-base px-4 py-8">
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl items-center justify-center">
@@ -36,7 +53,35 @@ export default function LoginPage() {
             <p className="mt-3 text-sm leading-6 text-text-muted md:text-base">
               Gunakan akun Google terlebih dahulu agar data keuanganmu tersimpan aman dan terpisah per pengguna.
             </p>
-            <div className="mt-8 space-y-3">
+            <form onSubmit={loginWithPassword} className="mt-8 space-y-4">
+              <Input
+                label="Email"
+                type="email"
+                autoComplete="email"
+                icon={Mail}
+                value={credentials.email}
+                onChange={(event) => setCredentials((current) => ({ ...current, email: event.target.value }))}
+                required
+              />
+              <Input
+                label="Password"
+                type="password"
+                autoComplete="current-password"
+                icon={KeyRound}
+                value={credentials.password}
+                onChange={(event) => setCredentials((current) => ({ ...current, password: event.target.value }))}
+                required
+              />
+              <Button type="submit" isLoading={isPasswordLoading} className="w-full">
+                Masuk dengan Email
+              </Button>
+            </form>
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-text-muted">
+                <span className="h-px flex-1 bg-border-subtle" />
+                atau
+                <span className="h-px flex-1 bg-border-subtle" />
+              </div>
               <Button onClick={loginWithGoogle} isLoading={isLoading} className="w-full">
                 {!isLoading && <KeyRound size={18} className="mr-2" />}
                 Masuk dengan Google

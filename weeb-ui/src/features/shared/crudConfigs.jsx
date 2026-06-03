@@ -40,6 +40,53 @@ export const accountPurposeOptions = [
 ];
 
 export const configs = {
+  users: {
+    title: 'Manajemen User',
+    singular: 'user',
+    description: 'Kelola user yang dapat masuk ke aplikasi, termasuk role, status akun, dan password login.',
+    endpoint: '/users',
+    createLabel: 'Tambah user',
+    emptyTitle: 'Belum ada user',
+    emptyDescription: 'Tambahkan user pertama untuk memberikan akses login email dan password.',
+    schema: z.object({
+      name: requiredText,
+      email: z.string().email('Format email tidak valid'),
+      password: z.string().min(8, 'Password minimal 8 karakter').optional().or(z.literal('')),
+      role: z.enum(['admin', 'user']),
+      status: z.enum(['active', 'inactive']),
+    }),
+    defaultValues: { name: '', email: '', password: '', role: 'user', status: 'active' },
+    toPayload: (values, existing) => {
+      const payload = { ...values };
+      if (existing && !payload.password) {
+        delete payload.password;
+      }
+
+      return payload;
+    },
+    toForm: (row) => ({
+      name: row.name || '',
+      email: row.email || '',
+      password: '',
+      role: row.role || 'user',
+      status: row.status || 'active',
+    }),
+    fields: [
+      { name: 'name', label: 'Nama user' },
+      { name: 'email', label: 'Email', type: 'email' },
+      { name: 'password', label: 'Password', type: 'password' },
+      { name: 'role', label: 'Role', type: 'select', options: [{ value: 'admin', label: 'Admin' }, { value: 'user', label: 'User' }] },
+      { name: 'status', label: 'Status akun', type: 'select', options: [{ value: 'active', label: 'Aktif' }, { value: 'inactive', label: 'Nonaktif' }] },
+    ],
+    columns: [
+      { key: 'name', label: 'Nama' },
+      { key: 'email', label: 'Email' },
+      { key: 'role', label: 'Role', render: (row) => <StatusBadge value={row.role === 'admin' ? 'bank' : 'cash'}>{row.role === 'admin' ? 'Admin' : 'User'}</StatusBadge> },
+      { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status === 'active' ? 'active' : 'waiting'}>{row.status === 'active' ? 'Aktif' : 'Nonaktif'}</StatusBadge> },
+      { key: 'last_login_at', label: 'Login terakhir', render: (row) => formatDate(row.last_login_at) },
+      { key: 'created_at', label: 'Dibuat', render: (row) => formatDate(row.created_at) },
+    ],
+  },
   accounts: {
     title: 'Manajemen Rekening',
     singular: 'rekening',

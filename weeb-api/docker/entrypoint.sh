@@ -12,4 +12,8 @@ fi
 
 php artisan migrate --force
 
+if [ -n "${WEEB_ADMIN_EMAIL:-}" ] && [ -n "${WEEB_ADMIN_PASSWORD:-}" ]; then
+  php artisan db:seed --class=AdminUserSeeder --force
+fi
+
 exec "$@"

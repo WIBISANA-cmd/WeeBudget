@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, ArrowRightLeft, PieChart, Target, X, BellRing, Repeat, FileText, Lightbulb, HeartHandshake, Settings, ListChecks, Calculator, CalendarRange, Landmark } from 'lucide-react';
+import { LayoutDashboard, ArrowRightLeft, PieChart, Target, X, BellRing, Repeat, FileText, Lightbulb, HeartHandshake, Settings, ListChecks, Calculator, CalendarRange, Landmark, Users } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 const menuItems = [
@@ -18,6 +18,7 @@ const menuItems = [
   { icon: FileText, label: 'Laporan', path: '/reports' },
   { icon: Lightbulb, label: 'Insight', path: '/insights' },
   { icon: Settings, label: 'Profil', path: '/profile' },
+  { icon: Users, label: 'User', path: '/users' },
 ];
 
 export default function Sidebar({ isOpen, close }) {

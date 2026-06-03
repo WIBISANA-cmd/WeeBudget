@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AllTransactionController;
 use App\Http\Controllers\Api\Auth\GoogleAuthController;
+use App\Http\Controllers\Api\Auth\PasswordAuthController;
 use App\Http\Controllers\Api\BillController;
 use App\Http\Controllers\Api\BudgetAlertController;
 use App\Http\Controllers\Api\BudgetController;
@@ -22,12 +23,14 @@ use App\Http\Controllers\Api\PaydaySimulationController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\RecurringTransactionController;
 use App\Http\Controllers\Api\SavingGoalController;
+use App\Http\Controllers\Api\UserManagementController;
 use App\Http\Controllers\Api\WishlistController;
 use App\Http\Middleware\UseDefaultUser;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+Route::post('/auth/login', [PasswordAuthController::class, 'login'])->name('auth.login');
 
 Route::middleware(UseDefaultUser::class)->group(function () {
     Route::get('/auth/me', [GoogleAuthController::class, 'me'])->name('auth.me');
@@ -56,6 +59,7 @@ Route::middleware(UseDefaultUser::class)->group(function () {
     Route::get('/budget-planner', BudgetPlannerController::class)->name('budget-planner');
 
     Route::apiResource('categories', CategoryController::class);
+    Route::apiResource('users', UserManagementController::class);
     Route::apiResource('accounts', FinancialAccountController::class);
     Route::apiResource('periods', FinancialPeriodController::class)->parameters(['periods' => 'period']);
     Route::apiResource('transactions', AllTransactionController::class);

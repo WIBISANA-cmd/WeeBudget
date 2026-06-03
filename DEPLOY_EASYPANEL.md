@@ -31,6 +31,8 @@ QUEUE_CONNECTION=database
 
 GOOGLE_REDIRECT_URI=https://domain-kamu.com/api/auth/google/callback
 SANCTUM_STATEFUL_DOMAINS=domain-kamu.com
+WEEB_ADMIN_EMAIL=admin@example.com
+WEEB_ADMIN_PASSWORD=password-admin-kuat
 ```
 
 Tambahkan volume persistent agar database SQLite tidak hilang saat redeploy:

@@ -18,6 +18,14 @@ class UseDefaultUser
         if ($request->bearerToken()) {
             $token = PersonalAccessToken::findToken($request->bearerToken());
             if ($token?->tokenable instanceof User) {
+                if (($token->tokenable->status ?? 'active') !== 'active') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Akun tidak aktif. Hubungi administrator.',
+                        'data' => null,
+                    ], 403);
+                }
+
                 $request->setUserResolver(fn () => $token->tokenable);
 
                 return $next($request);

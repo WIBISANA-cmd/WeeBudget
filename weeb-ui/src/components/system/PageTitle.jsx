@@ -22,6 +22,7 @@ const titles = {
   '/insights': 'Insight - WeeBudget',
   '/wishlist': 'Wishlist - WeeBudget',
   '/profile': 'Profil - WeeBudget',
+  '/users': 'Manajemen User - WeeBudget',
 };
 
 export default function PageTitle() {
