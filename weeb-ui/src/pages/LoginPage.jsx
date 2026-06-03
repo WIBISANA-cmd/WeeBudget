@@ -34,7 +34,7 @@ export default function LoginPage() {
             </div>
             <h1 className="mt-6 text-3xl font-bold text-text-title md:text-4xl">Masuk ke WeeB</h1>
             <p className="mt-3 text-sm leading-6 text-text-muted md:text-base">
-              Gunakan akun Google agar data keuanganmu tersimpan per pengguna. Mode tanpa login tetap tersedia lewat API fallback lokal.
+              Gunakan akun Google terlebih dahulu agar data keuanganmu tersimpan aman dan terpisah per pengguna.
             </p>
             <div className="mt-8 space-y-3">
               <Button onClick={loginWithGoogle} isLoading={isLoading} className="w-full">

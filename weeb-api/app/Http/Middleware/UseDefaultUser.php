@@ -24,6 +24,14 @@ class UseDefaultUser
             }
         }
 
+        if (! filter_var(env('WEEB_ALLOW_GUEST_USER', false), FILTER_VALIDATE_BOOL)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Login required.',
+                'data' => null,
+            ], 401);
+        }
+
         $email = config('app.default_user_email', env('WEEB_DEFAULT_USER_EMAIL', 'local@weeb.id'));
 
         $user = User::query()->firstOrCreate(

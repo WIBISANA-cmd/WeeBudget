@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Menu, Bell, LogOut, UserCircle } from 'lucide-react';
 import { apiGet, apiPost } from '../../api/http';
 
@@ -52,22 +52,16 @@ export default function Header({ toggleSidebar }) {
         <div className="flex items-center gap-3 pl-4 border-l border-border-subtle">
           <div className="hidden sm:block text-right">
             <p className="text-sm font-medium text-text-title">{user?.name || 'Mode pribadi'}</p>
-            <p className="text-xs text-text-muted">{user?.email || 'Tanpa login'}</p>
+            <p className="text-xs text-text-muted">{user?.email || 'Akun aktif'}</p>
           </div>
           {user?.avatar_url ? (
             <img src={user.avatar_url} alt={user.name} className="h-9 w-9 rounded-full border border-border-subtle" />
           ) : (
             <UserCircle className="text-primary-500" size={36} strokeWidth={1.5} />
           )}
-          {localStorage.getItem('weeb_auth_token') ? (
-            <button onClick={logout} className="rounded-xl p-2 text-text-muted transition-colors hover:bg-surface-100 hover:text-danger-base" title="Keluar">
-              <LogOut size={18} />
-            </button>
-          ) : (
-            <Link to="/login" className="rounded-xl bg-primary-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-primary-600">
-              Masuk
-            </Link>
-          )}
+          <button onClick={logout} className="rounded-xl p-2 text-text-muted transition-colors hover:bg-surface-100 hover:text-danger-base" title="Keluar">
+            <LogOut size={18} />
+          </button>
         </div>
       </div>
     </header>
