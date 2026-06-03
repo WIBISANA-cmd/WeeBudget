@@ -38,6 +38,7 @@ RUN apt-get update \
         unzip \
         libicu-dev \
         libonig-dev \
+        libpq-dev \
         libsqlite3-dev \
         libzip-dev \
     && docker-php-ext-install \
@@ -45,6 +46,7 @@ RUN apt-get update \
         intl \
         mbstring \
         pdo_mysql \
+        pdo_pgsql \
         pdo_sqlite \
         zip \
     && apt-get clean \
