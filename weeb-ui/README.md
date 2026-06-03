@@ -2,39 +2,20 @@
 
 Frontend React + Vite untuk WeeBudget.
 
-## Deploy ke Netlify
+## Deploy dengan Docker/Easypanel
 
-Project ini sudah punya `netlify.toml` di root repository, jadi Netlify bisa membaca konfigurasi deploy walaupun frontend berada di folder `weeb-ui`.
+Deploy production utama sekarang memakai Docker Compose dari root repository.
 
-Build settings:
-
-- Base directory: `weeb-ui`
-- Build command: `npm run build`
-- Publish directory: `weeb-ui/dist`
-- Node version: `22`
-
-Environment variable wajib di Netlify:
+Build image UI membutuhkan environment build:
 
 ```bash
-VITE_API_BASE_URL=https://domain-backend-kamu.com/api
+VITE_API_BASE_URL=https://api.domain-kamu.com/api
 ```
 
-Catatan:
-
-- Netlify hanya deploy frontend statis. Backend Laravel `weeb-api` perlu di-host terpisah, misalnya Railway, Render, VPS, Laravel Cloud, atau layanan PHP lain.
-- Setelah domain Netlify jadi, update backend `.env`:
+Panduan lengkap ada di:
 
 ```bash
-APP_URL=https://domain-backend-kamu.com
-FRONTEND_URL=https://domain-netlify-kamu.netlify.app
-GOOGLE_REDIRECT_URI=https://domain-backend-kamu.com/api/auth/google/callback
-SANCTUM_STATEFUL_DOMAINS=domain-netlify-kamu.netlify.app
-```
-
-- Di Google Cloud Console, tambahkan Authorized redirect URI:
-
-```bash
-https://domain-backend-kamu.com/api/auth/google/callback
+../DEPLOY_EASYPANEL.md
 ```
 
 ## Local build check
@@ -45,7 +26,12 @@ npm run lint
 npm run build
 ```
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Local preview
+
+```bash
+npm ci
+npm run dev
+```
 
 Currently, two official plugins are available:
 
