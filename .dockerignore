@@ -1,0 +1,17 @@
+.git
+.env
+.env.*
+!/.env.docker.example
+weeb-api/.env
+weeb-api/vendor
+weeb-api/node_modules
+weeb-api/bootstrap/cache/*
+!weeb-api/bootstrap/cache/.gitignore
+weeb-api/storage/logs/*
+weeb-api/storage/framework/cache/*
+weeb-api/storage/framework/sessions/*
+weeb-api/storage/framework/views/*
+weeb-api/tests
+weeb-ui/node_modules
+weeb-ui/dist
+*.local

@@ -1,5 +1,53 @@
 # Deploy WeeBudget di Easypanel dengan Docker
 
+## Opsi A: 1 Service Saja
+
+Pakai opsi ini kalau Easypanel kamu hanya menyediakan build **Dockerfile** seperti layar yang sedang kamu buka.
+
+Konfigurasi:
+
+```txt
+Berkas Dockerfile: Dockerfile
+Port: 80
+```
+
+Environment gunakan `.env.easypanel-one-service.example`.
+
+Minimal:
+
+```bash
+APP_NAME=WeeBudget
+APP_ENV=production
+APP_DEBUG=false
+APP_KEY=base64:hasil-key-kamu
+APP_URL=https://domain-kamu.com
+FRONTEND_URL=https://domain-kamu.com
+
+DB_CONNECTION=sqlite
+DB_DATABASE=/var/www/html/database/database.sqlite
+SESSION_DRIVER=database
+CACHE_STORE=database
+QUEUE_CONNECTION=database
+
+GOOGLE_REDIRECT_URI=https://domain-kamu.com/api/auth/google/callback
+SANCTUM_STATEFUL_DOMAINS=domain-kamu.com
+```
+
+Tambahkan volume persistent agar database SQLite tidak hilang saat redeploy:
+
+```txt
+/var/www/html/database
+```
+
+UI dan API akan berjalan di domain yang sama:
+
+```txt
+Frontend: https://domain-kamu.com
+API:      https://domain-kamu.com/api
+```
+
+## Opsi B: Multi Service Docker Compose
+
 Setup ini menjalankan:
 
 - `api`: Laravel API di port `8000`
