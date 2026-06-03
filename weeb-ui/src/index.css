@@ -142,6 +142,14 @@
     cursor: not-allowed;
   }
 
+  @media (max-width: 767px) {
+    input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+
   .custom-select-popover {
     animation: select-popover-in 140ms ease-out;
   }
