@@ -2,8 +2,11 @@
 
 namespace App\Http\Requests\Finance;
 
+use App\Models\FinancialAccount;
+use App\Services\Finance\CoupleSavingsAccessService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreTransactionRequest extends FormRequest
 {
@@ -17,7 +20,7 @@ class StoreTransactionRequest extends FormRequest
         $userId = $this->user()?->id;
 
         return [
-            'account_id' => ['required', Rule::exists('financial_accounts', 'id')->where('user_id', $userId)],
+            'account_id' => ['required', 'integer'],
             'category_id' => ['nullable', Rule::exists('transaction_categories', 'id')->where(fn ($query) => $query->where('user_id', $userId)->orWhereNull('user_id'))],
             'recurring_transaction_id' => ['nullable', Rule::exists('recurring_transactions', 'id')->where('user_id', $userId)],
             'bill_id' => ['nullable', Rule::exists('bills', 'id')->where('user_id', $userId)],
@@ -32,5 +35,22 @@ class StoreTransactionRequest extends FormRequest
             'source' => ['nullable', 'string', 'max:80'],
             'metadata' => ['nullable', 'array'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            if ($validator->errors()->has('account_id') || ! $this->filled('account_id') || ! $this->user()) {
+                return;
+            }
+
+            $account = FinancialAccount::query()->find($this->integer('account_id'));
+            $canAccess = $account !== null
+                && app(CoupleSavingsAccessService::class)->canAccessAccount($account, $this->user());
+
+            if (! $canAccess) {
+                $validator->errors()->add('account_id', 'The selected account is invalid.');
+            }
+        });
     }
 }

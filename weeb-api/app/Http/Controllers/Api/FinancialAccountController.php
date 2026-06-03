@@ -8,6 +8,7 @@ use App\Http\Requests\Finance\StoreFinancialAccountRequest;
 use App\Http\Requests\Finance\UpdateFinancialAccountRequest;
 use App\Http\Resources\FinancialAccountResource;
 use App\Models\FinancialAccount;
+use App\Services\Finance\CoupleSavingsAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,10 +17,20 @@ class FinancialAccountController extends Controller
 {
     use RespondsWithApi;
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, CoupleSavingsAccessService $coupleAccess): JsonResponse
     {
         $query = FinancialAccount::query()
-            ->where('user_id', $request->user()->id)
+            ->where(function ($query) use ($request, $coupleAccess) {
+                $query->where('user_id', $request->user()->id);
+
+                if ($coupleAccess->canShareCoupleSavings($request->user())) {
+                    $query->orWhere(function ($shared) use ($request, $coupleAccess) {
+                        $shared
+                            ->where('purpose', 'couple_savings')
+                            ->whereIn('user_id', $coupleAccess->accountOwnerIdsFor($request->user()));
+                    });
+                }
+            })
             ->when($request->filled('purpose'), fn ($q) => $q->where('purpose', $request->purpose))
             ->when($request->filled('type'), fn ($q) => $q->where('type', $request->type))
             ->when($request->filled('is_active'), fn ($q) => $q->where('is_active', $request->boolean('is_active')))
@@ -39,7 +50,7 @@ class FinancialAccountController extends Controller
             $data = $this->payload($request->validated(), $request->user()->id);
 
             if ($data['is_default']) {
-                $this->clearDefaultAccount($request);
+                $this->clearDefaultAccount($data['user_id']);
             }
 
             return FinancialAccount::query()->create($data);
@@ -61,7 +72,7 @@ class FinancialAccountController extends Controller
             $data = $this->payload($request->validated(), $request->user()->id, $model);
 
             if (($data['is_default'] ?? false) === true) {
-                $this->clearDefaultAccount($request, exceptId: $model->id);
+                $this->clearDefaultAccount($data['user_id'], exceptId: $model->id);
             }
 
             $model->update($data);
@@ -79,10 +90,15 @@ class FinancialAccountController extends Controller
 
     private function find(Request $request, int $id): FinancialAccount
     {
-        return FinancialAccount::query()
+        $account = FinancialAccount::query()
             ->where('id', $id)
-            ->where('user_id', $request->user()->id)
             ->firstOrFail();
+
+        if (! app(CoupleSavingsAccessService::class)->canAccessAccount($account, $request->user())) {
+            abort(404);
+        }
+
+        return $account;
     }
 
     private function payload(array $data, int $userId, ?FinancialAccount $existing = null): array
@@ -90,7 +106,7 @@ class FinancialAccountController extends Controller
         $openingBalance = $data['opening_balance'] ?? $existing?->opening_balance ?? 0;
 
         return [
-            'user_id' => $userId,
+            'user_id' => $existing?->user_id ?? $userId,
             'name' => $data['name'] ?? $existing?->name,
             'type' => $data['type'] ?? $existing?->type ?? 'cash',
             'purpose' => $data['purpose'] ?? $existing?->purpose ?? 'daily_spending',
@@ -104,10 +120,10 @@ class FinancialAccountController extends Controller
         ];
     }
 
-    private function clearDefaultAccount(Request $request, ?int $exceptId = null): void
+    private function clearDefaultAccount(int $userId, ?int $exceptId = null): void
     {
         FinancialAccount::query()
-            ->where('user_id', $request->user()->id)
+            ->where('user_id', $userId)
             ->when($exceptId, fn ($q) => $q->whereKeyNot($exceptId))
             ->update(['is_default' => false]);
     }

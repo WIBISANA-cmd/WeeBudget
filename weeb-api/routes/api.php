@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\BudgetAlertController;
 use App\Http\Controllers\Api\BudgetController;
 use App\Http\Controllers\Api\BudgetPlannerController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CoupleSavingsSettingController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EmergencyFundController;
 use App\Http\Controllers\Api\FinancialPeriodController;
@@ -57,6 +58,8 @@ Route::middleware(UseDefaultUser::class)->group(function () {
     Route::get('/statistics/expenses/categories', [ExpenseStatisticController::class, 'byCategory'])->name('statistics.expenses.categories');
     Route::get('/budget-alerts', BudgetAlertController::class)->name('budget-alerts');
     Route::get('/budget-planner', BudgetPlannerController::class)->name('budget-planner');
+    Route::get('/couple-savings/setting', [CoupleSavingsSettingController::class, 'show'])->name('couple-savings.setting.show');
+    Route::put('/couple-savings/setting', [CoupleSavingsSettingController::class, 'update'])->name('couple-savings.setting.update');
 
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('users', UserManagementController::class);

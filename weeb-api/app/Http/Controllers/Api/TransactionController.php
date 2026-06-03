@@ -10,6 +10,7 @@ use App\Http\Resources\TransactionResource;
 use App\Models\FinancialAccount;
 use App\Models\Transaction;
 use App\Services\Finance\AccountBalanceService;
+use App\Services\Finance\CoupleSavingsAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -21,11 +22,15 @@ class TransactionController extends Controller
     {
     }
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, CoupleSavingsAccessService $coupleAccess): JsonResponse
     {
+        $userIds = $request->input('account_purpose') === 'couple_savings'
+            ? $coupleAccess->accountOwnerIdsFor($request->user())
+            : [(int) $request->user()->id];
+
         $query = Transaction::query()
             ->with(['category', 'account'])
-            ->where('user_id', $request->user()->id)
+            ->whereIn('user_id', $userIds)
             ->where('transaction_type', $this->type)
             ->when($request->filled('account_purpose'), fn ($q) => $q->whereHas('account', fn ($account) => $account->where('purpose', $request->account_purpose)))
             ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->category_id))
@@ -91,11 +96,9 @@ class TransactionController extends Controller
             return $data;
         }
 
-        $isCoupleSavings = FinancialAccount::query()
-            ->where('id', $data['account_id'])
-            ->where('user_id', $request->user()->id)
-            ->where('purpose', 'couple_savings')
-            ->exists();
+        $account = FinancialAccount::query()->find($data['account_id']);
+        $isCoupleSavings = $account?->purpose === 'couple_savings'
+            && app(CoupleSavingsAccessService::class)->canAccessAccount($account, $request->user());
 
         if ($isCoupleSavings) {
             $data['source'] = $request->user()->email ?: $request->user()->name;

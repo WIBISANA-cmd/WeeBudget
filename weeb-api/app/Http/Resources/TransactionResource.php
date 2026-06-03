@@ -13,6 +13,7 @@ class TransactionResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'user_id' => $this->user_id,
             'account_id' => $this->account_id,
             'account' => $this->whenLoaded('account', fn () => new FinancialAccountResource($this->account)),
             'category_id' => $this->category_id,

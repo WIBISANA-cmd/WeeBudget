@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
-import { HeartHandshake, Plus, UserCircle, Users, Wallet } from 'lucide-react';
+import { HeartHandshake, Plus, Settings, UserCircle, Users, Wallet } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import DataTable from '../components/data/DataTable';
@@ -10,7 +10,7 @@ import LoadingSkeleton from '../components/feedback/LoadingSkeleton';
 import Modal, { ConfirmDialog } from '../components/forms/Modal';
 import ResourceForm from '../components/forms/ResourceForm';
 import StatusBadge from '../components/feedback/StatusBadge';
-import { apiGet } from '../api/http';
+import { apiGet, apiPut } from '../api/http';
 import { useCrudResource } from '../hooks/useCrudResource';
 import { formatCurrency, formatDate } from '../lib/formatters';
 
@@ -22,12 +22,25 @@ const schema = z.object({
   notes: z.string().optional(),
 });
 
+const settingSchema = z.object({
+  partner_one_user_id: z.coerce.number().min(1, 'Pasangan 1 wajib dipilih'),
+  partner_two_user_id: z.coerce.number().min(1, 'Pasangan 2 wajib dipilih'),
+}).refine((value) => value.partner_one_user_id !== value.partner_two_user_id, {
+  message: 'Pasangan 1 dan pasangan 2 harus user berbeda',
+  path: ['partner_two_user_id'],
+});
+
 export default function CoupleSavingsPage() {
   const [accounts, setAccounts] = useState([]);
   const [user, setUser] = useState(null);
+  const [setting, setSetting] = useState(null);
+  const [users, setUsers] = useState([]);
   const [accountsLoading, setAccountsLoading] = useState(true);
+  const [settingLoading, setSettingLoading] = useState(true);
+  const [isSavingSetting, setSavingSetting] = useState(false);
   const [editing, setEditing] = useState(null);
   const [isFormOpen, setFormOpen] = useState(false);
+  const [isSettingOpen, setSettingOpen] = useState(false);
   const [deleting, setDeleting] = useState(null);
 
   const resource = useCrudResource('/transactions', {
@@ -58,23 +71,72 @@ export default function CoupleSavingsPage() {
     }
   };
 
+  const loadSetting = async () => {
+    setSettingLoading(true);
+    try {
+      const response = await apiGet('/couple-savings/setting');
+      setSetting(response.data);
+    } catch {
+      setSetting(null);
+    } finally {
+      setSettingLoading(false);
+    }
+  };
+
+  const loadUsers = async () => {
+    try {
+      const response = await apiGet('/users', { status: 'active', per_page: 100 });
+      setUsers(response.data || []);
+    } catch {
+      setUsers([]);
+    }
+  };
+
   useEffect(() => {
     queueMicrotask(loadAccounts);
     queueMicrotask(loadUser);
+    queueMicrotask(loadSetting);
   }, []);
 
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      queueMicrotask(loadUsers);
+    }
+  }, [user?.role]);
+
   const totalBalance = useMemo(() => accounts.reduce((total, account) => total + Number(account.current_balance || 0), 0), [accounts]);
+  const isAdmin = user?.role === 'admin';
+  const partnerOne = setting?.partner_one;
+  const partnerTwo = setting?.partner_two;
+
+  const partnerBySource = useMemo(() => {
+    const pairs = {};
+    if (partnerOne?.email) pairs[partnerOne.email] = { label: 'Pasangan 1', user: partnerOne };
+    if (partnerTwo?.email) pairs[partnerTwo.email] = { label: 'Pasangan 2', user: partnerTwo };
+
+    return pairs;
+  }, [partnerOne, partnerTwo]);
 
   const contributorTotals = useMemo(() => {
     return resource.items.reduce((summary, item) => {
       const source = item.source || 'Tanpa penyetor';
-      summary[source] = (summary[source] || 0) + Number(item.amount || 0);
+      const partner = partnerBySource[source];
+      const key = partner?.label || source;
+      const name = partner?.user?.name || source;
+      const email = partner?.user?.email || source;
+
+      summary[key] = {
+        source: key,
+        name,
+        email,
+        total: (summary[key]?.total || 0) + Number(item.amount || 0),
+      };
+
       return summary;
     }, {});
-  }, [resource.items]);
+  }, [partnerBySource, resource.items]);
 
-  const contributors = useMemo(() => Object.entries(contributorTotals)
-    .map(([source, total]) => ({ source, total }))
+  const contributors = useMemo(() => Object.values(contributorTotals)
     .sort((a, b) => b.total - a.total)
     .slice(0, 2), [contributorTotals]);
 
@@ -86,6 +148,18 @@ export default function CoupleSavingsPage() {
       label: `${account.name} - ${formatCurrency(account.current_balance)}`,
     })),
   }), [accounts]);
+
+  const userOptions = useMemo(() => ({
+    users: users.map((item) => ({
+      value: item.id,
+      label: `${item.name} - ${item.email}`,
+    })),
+  }), [users]);
+
+  const settingDefaultValues = {
+    partner_one_user_id: setting?.partner_one_user_id || '',
+    partner_two_user_id: setting?.partner_two_user_id || '',
+  };
 
   const defaultValues = editing ? {
     account_id: editing.account_id || '',
@@ -119,6 +193,19 @@ export default function CoupleSavingsPage() {
     }
   };
 
+  const submitSetting = async (values) => {
+    setSavingSetting(true);
+    try {
+      const response = await apiPut('/couple-savings/setting', values);
+      setSetting(response.data);
+      setSettingOpen(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Pengaturan pasangan belum bisa disimpan.');
+    } finally {
+      setSavingSetting(false);
+    }
+  };
+
   const confirmDelete = async () => {
     if (!deleting) return;
     await resource.remove(deleting.id);
@@ -136,7 +223,10 @@ export default function CoupleSavingsPage() {
 
   const columns = [
     { key: 'transaction_date', label: 'Tanggal', render: (row) => formatDate(row.transaction_date) },
-    { key: 'source', label: 'Penyetor', render: (row) => <StatusBadge value="income">{row.source || '-'}</StatusBadge> },
+    { key: 'source', label: 'Penyetor', render: (row) => {
+      const partner = partnerBySource[row.source];
+      return <StatusBadge value="income">{partner ? `${partner.label} - ${partner.user.name}` : row.source || '-'}</StatusBadge>;
+    } },
     { key: 'account', label: 'Rekening sumber saldo', render: (row) => row.account?.name || '-' },
     { key: 'description', label: 'Deskripsi', render: (row) => row.description || '-' },
     { key: 'amount', label: 'Nominal', render: (row) => formatCurrency(row.amount) },
@@ -145,6 +235,27 @@ export default function CoupleSavingsPage() {
   const openCreate = () => {
     setEditing(null);
     setFormOpen(true);
+  };
+
+  const canManageSetoran = (row) => Number(row.user_id) === Number(user?.id);
+
+  const openEdit = (row) => {
+    if (!canManageSetoran(row)) {
+      alert('Setoran pasangan lain hanya bisa dilihat, bukan diedit.');
+      return;
+    }
+
+    setEditing(row);
+    setFormOpen(true);
+  };
+
+  const openDelete = (row) => {
+    if (!canManageSetoran(row)) {
+      alert('Setoran pasangan lain hanya bisa dilihat, bukan dihapus.');
+      return;
+    }
+
+    setDeleting(row);
   };
 
   return (
@@ -156,11 +267,34 @@ export default function CoupleSavingsPage() {
             Pendataan setoran dari dua pasangan. Penyetor otomatis mengikuti user yang sedang login; total saldo berasal dari rekening berklasifikasi Tabungan berdua.
           </p>
         </div>
-        <Button onClick={openCreate} disabled={accounts.length === 0}>
-          <Plus size={18} className="mr-2" />
-          Tambah setoran
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {isAdmin && (
+            <Button variant="secondary" onClick={() => setSettingOpen(true)}>
+              <Settings size={18} className="mr-2" />
+              Atur pasangan
+            </Button>
+          )}
+          <Button onClick={openCreate} disabled={accounts.length === 0}>
+            <Plus size={18} className="mr-2" />
+            Tambah setoran
+          </Button>
+        </div>
       </header>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {[['Pasangan 1', partnerOne], ['Pasangan 2', partnerTwo]].map(([label, partner]) => (
+          <Card key={label} className={partner ? 'border-primary-500/20 bg-primary-500/5' : 'border-warning-base/20 bg-warning-base/5'}>
+            <CardContent className="flex items-center gap-4">
+              <div className="rounded-xl bg-white p-3 text-primary-600 shadow-sm shadow-slate-900/5"><HeartHandshake size={24} /></div>
+              <div className="min-w-0">
+                <p className="text-sm text-text-muted">{label}</p>
+                <p className="mt-1 truncate text-lg font-semibold text-text-title">{partner?.name || 'Belum diset'}</p>
+                <p className="mt-1 truncate text-xs text-text-muted">{partner?.email || (isAdmin ? 'Klik Atur pasangan untuk memilih user.' : 'Hubungi admin untuk pengaturan pasangan.')}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -189,7 +323,7 @@ export default function CoupleSavingsPage() {
             <div>
               <p className="text-sm text-text-muted">Kontributor tercatat</p>
               <p className="mt-1 text-2xl font-semibold text-text-title">{Object.keys(contributorTotals).length}</p>
-              <p className="mt-1 text-xs text-text-muted">Sumber: field penyetor pada transaksi</p>
+              <p className="mt-1 text-xs text-text-muted">Sumber: pengaturan pasangan dan transaksi</p>
             </div>
           </CardContent>
         </Card>
@@ -209,7 +343,10 @@ export default function CoupleSavingsPage() {
                     <div className="rounded-xl bg-primary-500/10 p-2 text-primary-600">
                       {index === 0 ? <HeartHandshake size={20} /> : <Users size={20} />}
                     </div>
-                    <p className="truncate font-semibold text-text-title">{item.source}</p>
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-text-title">{item.source} - {item.name}</p>
+                      <p className="truncate text-xs text-text-muted">{item.email}</p>
+                    </div>
                   </div>
                   <StatusBadge value="active">Penyetor</StatusBadge>
                 </div>
@@ -239,7 +376,7 @@ export default function CoupleSavingsPage() {
             ) : resource.items.length === 0 ? (
               <EmptyState title="Belum ada setoran" description="Catat setoran pertama dari salah satu pasangan." action={<Button onClick={openCreate}>Tambah setoran</Button>} />
             ) : (
-              <DataTable columns={columns} rows={resource.items} onEdit={(row) => { setEditing(row); setFormOpen(true); }} onDelete={setDeleting} />
+              <DataTable columns={columns} rows={resource.items} onEdit={openEdit} onDelete={openDelete} />
             )}
           </CardContent>
         </Card>
@@ -260,6 +397,30 @@ export default function CoupleSavingsPage() {
           submitLabel={editing ? 'Simpan perubahan' : 'Simpan setoran'}
           onSubmit={submit}
         />
+      </Modal>
+
+      <Modal
+        open={isSettingOpen}
+        onClose={() => setSettingOpen(false)}
+        title="Atur pasangan"
+        description="Pilih user aktif yang menjadi Pasangan 1 dan Pasangan 2. Pengaturan ini hanya bisa diubah oleh admin."
+      >
+        {settingLoading ? (
+          <LoadingSkeleton rows={3} />
+        ) : (
+          <ResourceForm
+            schema={settingSchema}
+            fields={[
+              { name: 'partner_one_user_id', label: 'Pasangan 1', type: 'select', optionsKey: 'users' },
+              { name: 'partner_two_user_id', label: 'Pasangan 2', type: 'select', optionsKey: 'users' },
+            ]}
+            defaultValues={settingDefaultValues}
+            options={userOptions}
+            isSaving={isSavingSetting}
+            submitLabel="Simpan pasangan"
+            onSubmit={submitSetting}
+          />
+        )}
       </Modal>
 
       <ConfirmDialog

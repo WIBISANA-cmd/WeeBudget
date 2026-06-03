@@ -9,6 +9,10 @@ use RuntimeException;
 
 class AccountBalanceService
 {
+    public function __construct(private readonly CoupleSavingsAccessService $coupleAccess)
+    {
+    }
+
     public function createTransaction(array $data, int $userId, ?string $forcedType = null): Transaction
     {
         return DB::transaction(function () use ($data, $userId, $forcedType) {
@@ -107,9 +111,12 @@ class AccountBalanceService
     {
         $account = FinancialAccount::query()
             ->whereKey($accountId)
-            ->where('user_id', $userId)
             ->lockForUpdate()
             ->firstOrFail();
+
+        if (! $this->coupleAccess->canAccessAccountByUserId($account, $userId)) {
+            abort(404);
+        }
 
         $account->current_balance = (float) $account->current_balance + $amount;
         $account->save();
@@ -118,6 +125,12 @@ class AccountBalanceService
     private function resolveAccountId(int $userId, ?int $accountId = null): int
     {
         if ($accountId !== null) {
+            $account = FinancialAccount::query()->findOrFail($accountId);
+
+            if (! $this->coupleAccess->canAccessAccountByUserId($account, $userId)) {
+                abort(404);
+            }
+
             return $accountId;
         }
 
