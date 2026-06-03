@@ -18,8 +18,8 @@ class BudgetPlannerService
         $plans = [
             ['key' => 'needs', 'label' => 'Kebutuhan wajib', 'percent' => 55, 'description' => 'Makan, kos, kuota internet, dan kebutuhan yang tidak bisa ditunda.'],
             ['key' => 'savings', 'label' => 'Tabungan', 'percent' => 20, 'description' => 'Uang yang dipisahkan untuk tujuan jangka pendek atau rencana penting yang sudah ditentukan.'],
-            ['key' => 'couple_savings', 'label' => 'Tabungan berdua', 'percent' => 15, 'description' => 'Setoran bersama pasangan untuk rencana berdua agar kontribusi tetap terlihat jelas.'],
-            ['key' => 'emergency_fund', 'label' => 'Dana darurat', 'percent' => 10, 'description' => 'Cadangan khusus untuk kebutuhan mendadak agar tabungan dan uang harian tidak ikut terganggu.'],
+            ['key' => 'couple_savings', 'label' => 'Tabungan berdua', 'percent' => 5, 'description' => 'Setoran bersama pasangan untuk rencana berdua agar kontribusi tetap terlihat jelas.'],
+            ['key' => 'emergency_fund', 'label' => 'Dana darurat', 'percent' => 15, 'description' => 'Cadangan khusus untuk kebutuhan mendadak agar tabungan dan uang harian tidak ikut terganggu.'],
             ['key' => 'wants', 'label' => 'Keinginan', 'percent' => 10, 'description' => 'Jajan, hiburan, nongkrong, dan wishlist yang masih bisa dikontrol atau ditunda.'],
         ];
 

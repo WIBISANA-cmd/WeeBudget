@@ -56,6 +56,19 @@ class BudgetPlannerActivePeriodTest extends TestCase
         $this->assertSame(15, $planner['days_until_payday']);
     }
 
+    public function test_budget_planner_uses_current_savings_allocation_percentages(): void
+    {
+        $user = User::factory()->create();
+
+        $allocations = collect(app(BudgetPlannerService::class)->generate($user, 1000000)['allocations'])
+            ->keyBy('key');
+
+        $this->assertSame(5, $allocations['couple_savings']['percent']);
+        $this->assertSame(50000.0, $allocations['couple_savings']['amount']);
+        $this->assertSame(15, $allocations['emergency_fund']['percent']);
+        $this->assertSame(150000.0, $allocations['emergency_fund']['amount']);
+    }
+
     public function test_budget_planner_uses_full_active_period_days_when_today_is_outside_period(): void
     {
         CarbonImmutable::setTestNow('2026-06-10');
