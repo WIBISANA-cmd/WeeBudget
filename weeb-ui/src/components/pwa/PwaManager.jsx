@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Download, RefreshCw, Smartphone, WifiOff, X } from 'lucide-react';
+import { Download, RefreshCw, WifiOff, X } from 'lucide-react';
 import { registerSW } from 'virtual:pwa-register';
 import Button from '../ui/Button';
 import { cn } from '../../lib/utils';
@@ -118,9 +118,7 @@ export default function PwaManager() {
       {canInstall && (
         <div className="rounded-2xl border border-border-subtle bg-surface-panel p-4 shadow-card">
           <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-primary-600">
-              <Smartphone size={20} />
-            </span>
+            <img src="/logo-pwa.png" alt="" className="h-10 w-10 shrink-0 rounded-xl object-cover" />
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-3">
                 <div>

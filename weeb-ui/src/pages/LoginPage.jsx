@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { KeyRound, Mail, Wallet } from 'lucide-react';
+import { KeyRound, Mail } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import ThemeToggle from '../components/ui/ThemeToggle';
@@ -50,9 +50,7 @@ export default function LoginPage() {
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl items-center justify-center">
         <section className="grid w-full overflow-hidden rounded-3xl border border-border-subtle bg-surface-panel shadow-xl shadow-card-soft md:grid-cols-[1fr_0.9fr]">
           <div className="p-8 md:p-12">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-500/10 text-primary-600">
-              <Wallet size={26} />
-            </div>
+            <img src="/logo-app.png" alt="WeeBudget" className="h-16 w-auto object-contain" />
             <h1 className="mt-6 text-3xl font-bold text-text-title md:text-4xl">Masuk ke WeeB</h1>
             <p className="mt-3 text-sm leading-6 text-text-muted md:text-base">
               Gunakan akun Google terlebih dahulu agar data keuanganmu tersimpan aman dan terpisah per pengguna.

@@ -6,13 +6,49 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { cn } from '../../lib/utils';
 
-function CustomSelect({ field, register, error, options, value, setValue }) {
+const moneyNamePattern = /(amount|balance|income|expense|price|budget|target|estimate|estimated)/i;
+const moneyLabelPattern = /(nominal|saldo|pemasukan|pengeluaran|budget|target|terkumpul|harga|penghasilan|gaji|aman harian)/i;
+const plainNumberNamePattern = /(day|days|priority|percent)/i;
+
+function onlyDigits(value) {
+  return String(value ?? '').replace(/\D/g, '');
+}
+
+function normalizeMoneyValue(value) {
+  if (value === '' || value === null || value === undefined) return '';
+  if (typeof value === 'number') return value;
+
+  const raw = String(value).trim();
+  if (/^\d+\.\d{1,2}$/.test(raw)) return Number(raw);
+  if (/^\d+$/.test(raw)) return Number(raw);
+
+  const digits = onlyDigits(raw);
+  return digits ? Number(digits) : '';
+}
+
+function formatThousands(value) {
+  const normalized = normalizeMoneyValue(value);
+  return normalized === '' ? '' : new Intl.NumberFormat('id-ID').format(normalized);
+}
+
+function isMoneyField(field) {
+  if (field.currency) return true;
+  if (field.currency === false || field.type !== 'number' || !field.valueAsNumber) return false;
+  if (plainNumberNamePattern.test(field.name)) return false;
+
+  return moneyNamePattern.test(field.name) || moneyLabelPattern.test(field.label || '');
+}
+
+function CustomSelect({ field, register, error, options, value, values, setValue }) {
   const buttonRef = useRef(null);
   const listboxId = useId();
   const [isOpen, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [panelStyle, setPanelStyle] = useState({});
-  const selectOptions = useMemo(() => field.options || options[field.optionsKey] || [], [field.options, field.optionsKey, options]);
+  const selectOptions = useMemo(() => {
+    const baseOptions = field.options || options[field.optionsKey] || [];
+    return field.getOptions ? field.getOptions({ options: baseOptions, allOptions: options, values }) : baseOptions;
+  }, [field, options, values]);
   const selectedIndex = selectOptions.findIndex((option) => String(option.value) === String(value ?? ''));
   const selectedOption = selectedIndex >= 0 ? selectOptions[selectedIndex] : null;
 
@@ -50,6 +86,9 @@ function CustomSelect({ field, register, error, options, value, setValue }) {
 
   const chooseOption = (option) => {
     setValue(field.name, option.value, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+    field.clearFieldsOnChange?.forEach((fieldName) => {
+      setValue(fieldName, '', { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+    });
     closeDropdown();
     buttonRef.current?.focus();
   };
@@ -175,15 +214,54 @@ function CustomSelect({ field, register, error, options, value, setValue }) {
   );
 }
 
-function Field({ field, register, error, options, value, setValue }) {
+function MoneyInput({ field, register, error, value, setValue }) {
+  const displayValue = formatThousands(value);
+
+  const handleChange = (event) => {
+    const digits = onlyDigits(event.target.value);
+    setValue(field.name, digits ? Number(digits) : '', { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+  };
+
+  return (
+    <div className="flex w-full flex-col gap-1.5">
+      <label className="text-sm font-medium text-text-body">{field.label}</label>
+      <input type="hidden" {...register(field.name)} />
+      <div className="relative">
+        <input
+          type="text"
+          inputMode="numeric"
+          value={displayValue}
+          onChange={handleChange}
+          placeholder={field.placeholder}
+          className={cn(
+            'flex w-full rounded-xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm text-text-title shadow-sm shadow-card-soft transition-colors placeholder:text-text-muted',
+            'focus-visible:border-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20',
+            error && 'border-danger-base focus-visible:border-danger-base focus-visible:ring-danger-base',
+          )}
+        />
+      </div>
+      {error?.message && <p className="text-xs font-medium text-danger-base">{error.message}</p>}
+    </div>
+  );
+}
+
+function Field({ field, register, error, options, value, values, setValue }) {
   const common = {
     label: field.label,
     error: error?.message,
     ...register(field.name, field.valueAsNumber ? { valueAsNumber: true } : {}),
   };
 
+  if (field.type === 'hidden') {
+    return <input type="hidden" {...register(field.name)} />;
+  }
+
   if (field.type === 'select') {
-    return <CustomSelect field={field} register={register} error={error} options={options} value={value} setValue={setValue} />;
+    return <CustomSelect field={field} register={register} error={error} options={options} value={value} values={values} setValue={setValue} />;
+  }
+
+  if (isMoneyField(field)) {
+    return <MoneyInput field={field} register={register} error={error} value={value} setValue={setValue} />;
   }
 
   if (field.type === 'textarea') {
@@ -218,7 +296,7 @@ export default function ResourceForm({ schema, fields, defaultValues, options = 
     <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>
       {fields.map((field) => (
         <div key={field.name} className={field.full ? 'md:col-span-2' : ''}>
-          <Field field={field} register={register} error={errors[field.name]} options={options} value={watchedValues?.[field.name]} setValue={setValue} />
+          <Field field={field} register={register} error={errors[field.name]} options={options} value={watchedValues?.[field.name]} values={watchedValues} setValue={setValue} />
         </div>
       ))}
       <div className="md:col-span-2">

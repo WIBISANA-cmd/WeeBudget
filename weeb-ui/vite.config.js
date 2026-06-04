@@ -12,7 +12,7 @@ export default defineConfig({
       registerType: 'prompt',
       injectRegister: false,
       manifestFilename: 'site.webmanifest',
-      includeAssets: ['favicon.svg', 'pwa/icon.svg', 'pwa/apple-touch-icon.png'],
+      includeAssets: ['logo-pwa.png', 'pwa/icon-192.png', 'pwa/icon-512.png', 'pwa/maskable-512.png', 'pwa/apple-touch-icon.png'],
       workbox: {
         clientsClaim: true,
         cleanupOutdatedCaches: true,
@@ -87,6 +87,12 @@ export default defineConfig({
         categories: ['finance', 'productivity'],
         lang: 'id',
         icons: [
+          {
+            src: '/logo-pwa.png',
+            sizes: '1000x1000',
+            type: 'image/png',
+            purpose: 'any',
+          },
           {
             src: '/pwa/icon-192.png',
             sizes: '192x192',

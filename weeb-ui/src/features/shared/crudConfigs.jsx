@@ -183,7 +183,6 @@ export const configs = {
   transactions: {
     title: 'Transaksi',
     singular: 'transaksi',
-    description: 'Catat pemasukan dan pengeluaran dengan cepat agar simulasi sampai gajian tetap akurat.',
     endpoint: '/transactions',
     createLabel: 'Tambah transaksi',
     emptyTitle: 'Belum ada transaksi',

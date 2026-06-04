@@ -102,9 +102,7 @@ export default function Sidebar({ isOpen, close }) {
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex items-center justify-between h-20 px-6 border-b border-border-subtle">
-          <div className="text-2xl font-outfit font-bold text-primary-500 tracking-wide">
-            WeeBudget
-          </div>
+          <img src="/logo-app.png" alt="WeeBudget" className="h-12 w-auto object-contain" />
           <button onClick={close} className="p-2 text-text-muted hover:text-primary-600 md:hidden">
             <X size={24} />
           </button>
@@ -114,6 +112,33 @@ export default function Sidebar({ isOpen, close }) {
           {menuGroups.map((group) => {
             const isOpenGroup = openGroups[group.key] || activeGroupKeys.includes(group.key);
             const isActiveGroup = activeGroupKeys.includes(group.key);
+            const singleItem = group.items.length === 1 ? group.items[0] : null;
+
+            if (singleItem) {
+              return (
+                <NavLink
+                  key={group.key}
+                  to={singleItem.path}
+                  onClick={close}
+                  className={({ isActive }) => cn(
+                    "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200",
+                    isActive
+                      ? "bg-primary-500/10 text-primary-600 border border-primary-500/20 shadow-sm shadow-primary-500/10"
+                      : "text-text-muted hover:bg-surface-100 hover:text-text-title"
+                  )}
+                >
+                  {({ isActive }) => (
+                    <>
+                      <singleItem.icon size={19} className={cn(
+                        "shrink-0 transition-colors",
+                        isActive ? "text-primary-600" : "text-text-muted group-hover:text-primary-600"
+                      )} />
+                      <span className="min-w-0 truncate">{singleItem.label}</span>
+                    </>
+                  )}
+                </NavLink>
+              );
+            }
 
             return (
               <div key={group.key} className="space-y-1">

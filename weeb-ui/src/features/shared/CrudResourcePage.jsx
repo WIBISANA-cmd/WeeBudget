@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import DataTable from '../../components/data/DataTable';
@@ -9,18 +9,100 @@ import LoadingSkeleton from '../../components/feedback/LoadingSkeleton';
 import Modal, { ConfirmDialog } from '../../components/forms/Modal';
 import ResourceForm from '../../components/forms/ResourceForm';
 import { useCrudResource } from '../../hooks/useCrudResource';
+import { formatCurrency, formatDate } from '../../lib/formatters';
+
+function MobileResourceList({ rows, columns, onAction }) {
+  const [pressTimer, setPressTimer] = useState(null);
+  const groupedRows = useMemo(() => {
+    return rows.reduce((groups, row) => {
+      const key = columns.dateKey ? columns.dateKey(row) : row.transaction_date || row.date || 'Tanpa tanggal';
+      const existing = groups.find((group) => group.key === key);
+      if (existing) {
+        existing.rows.push(row);
+      } else {
+        groups.push({ key, label: key === 'Tanpa tanggal' ? key : formatDate(key), rows: [row] });
+      }
+      return groups;
+    }, []);
+  }, [columns, rows]);
+
+  const cancelPress = () => {
+    if (pressTimer) {
+      clearTimeout(pressTimer);
+      setPressTimer(null);
+    }
+  };
+
+  const startPress = (row) => {
+    cancelPress();
+    const timer = window.setTimeout(() => {
+      onAction(row);
+      setPressTimer(null);
+    }, 550);
+    setPressTimer(timer);
+  };
+
+  return (
+    <div className="space-y-3 md:hidden">
+      <div className="grid grid-cols-[44px_1fr_auto] gap-3 rounded-xl bg-surface-100 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
+        <span>{columns.numberLabel || 'No'}</span>
+        <span>{columns.titleLabel || 'Kebutuhan'}</span>
+        <span className="text-right">{columns.amountLabel || 'Nominal'}</span>
+      </div>
+      {groupedRows.map((group) => (
+        <div key={group.key} className="space-y-2">
+          <p className="px-1 text-xs font-semibold uppercase tracking-wide text-text-muted">{group.label}</p>
+          {group.rows.map((row, index) => (
+            <button
+              key={row.id}
+              type="button"
+              onPointerDown={() => startPress(row)}
+              onPointerUp={cancelPress}
+              onPointerCancel={cancelPress}
+              onPointerLeave={cancelPress}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                onAction(row);
+              }}
+              className="grid min-h-[58px] w-full grid-cols-[44px_1fr_auto] items-center gap-3 rounded-xl border border-border-subtle bg-surface-panel px-3 py-3 text-left shadow-sm shadow-card-soft active:border-primary-500 active:bg-primary-500/5"
+            >
+              <span className="text-sm font-semibold text-text-muted">{index + 1}</span>
+              <span className="min-w-0 text-sm font-medium text-text-title">
+                <span className="block truncate">{columns.title(row)}</span>
+                {columns.subtitle && <span className="mt-0.5 block text-xs font-normal text-text-muted">{columns.subtitle(row)}</span>}
+              </span>
+              <span className={`text-right text-sm font-semibold ${columns.amountClass ? columns.amountClass(row) : 'text-primary-600'}`}>{columns.amount(row)}</span>
+            </button>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function CrudResourcePage({ config, options = {} }) {
   const [editing, setEditing] = useState(null);
   const [isFormOpen, setFormOpen] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [detailTarget, setDetailTarget] = useState(null);
+  const [actionTarget, setActionTarget] = useState(null);
+  const [selectedAccountId, setSelectedAccountId] = useState('');
   const resource = useCrudResource(config.endpoint, config.initialParams || {});
+  const accountOptions = useMemo(() => options.accounts || [], [options.accounts]);
+  const selectedAccount = useMemo(() => {
+    return accountOptions.find((account) => String(account.value) === String(selectedAccountId)) || accountOptions[0] || null;
+  }, [accountOptions, selectedAccountId]);
+  const visibleItems = useMemo(() => {
+    if (!config.accountScoped || !selectedAccount) return resource.items;
+    return resource.items.filter((item) => String(item.account_id) === String(selectedAccount.value));
+  }, [config.accountScoped, resource.items, selectedAccount]);
 
   const defaultValues = useMemo(() => {
     const base = config.defaultValues || {};
-    if (!editing) return base;
+    const scopedBase = config.accountScoped && selectedAccount ? { ...base, account_id: selectedAccount.value } : base;
+    if (!editing) return scopedBase;
     return config.toForm ? config.toForm(editing) : { ...base, ...editing };
-  }, [config, editing]);
+  }, [config, editing, selectedAccount]);
 
   const openCreate = () => {
     setEditing(null);
@@ -29,11 +111,24 @@ export default function CrudResourcePage({ config, options = {} }) {
 
   const openEdit = (row) => {
     setEditing(row);
+    if (config.accountScoped && row.account_id) setSelectedAccountId(row.account_id);
+    setActionTarget(null);
     setFormOpen(true);
   };
 
+  const openDetail = (row) => {
+    setDetailTarget(row);
+    setActionTarget(null);
+  };
+
+  const openDelete = (row) => {
+    setDeleting(row);
+    setActionTarget(null);
+  };
+
   const submit = async (values) => {
-    const payload = config.toPayload ? config.toPayload(values, editing) : values;
+    const scopedValues = config.accountScoped && selectedAccount && !editing ? { ...values, account_id: selectedAccount.value } : values;
+    const payload = config.toPayload ? config.toPayload(scopedValues, editing, options) : scopedValues;
     const result = await resource.save(payload, editing?.id);
     if (result.ok) {
       setFormOpen(false);
@@ -64,6 +159,30 @@ export default function CrudResourcePage({ config, options = {} }) {
 
       {config.summary && <div className="grid gap-4 md:grid-cols-3">{config.summary(resource.items)}</div>}
 
+      {config.accountScoped && selectedAccount && (
+        <div className="rounded-2xl border border-border-subtle bg-surface-panel p-4 shadow-sm shadow-card-soft">
+          <p className="text-sm text-text-muted">Total saldo {selectedAccount.label.split(' - ')[0]}</p>
+          <p className="mt-1 text-2xl font-semibold text-text-title">{formatCurrency(selectedAccount.balance)}</p>
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+            {accountOptions.map((account) => (
+              <button
+                key={account.value}
+                type="button"
+                onClick={() => setSelectedAccountId(account.value)}
+                className={`shrink-0 rounded-xl border px-4 py-2 text-left text-sm transition-colors ${
+                  String(selectedAccount.value) === String(account.value)
+                    ? 'border-primary-500 bg-primary-500 text-white shadow-sm shadow-primary-500/20'
+                    : 'border-border-subtle bg-surface-panel text-text-body hover:border-primary-500 hover:text-primary-600'
+                }`}
+              >
+                <span className="block font-semibold">{account.label.split(' - ')[0]}</span>
+                <span className="block text-xs opacity-80">{formatCurrency(account.balance)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>{config.tableTitle || config.title}</CardTitle>
@@ -74,10 +193,17 @@ export default function CrudResourcePage({ config, options = {} }) {
             <LoadingSkeleton rows={5} />
           ) : resource.error ? (
             <ErrorState message={resource.error} onRetry={resource.load} />
-          ) : resource.items.length === 0 ? (
+          ) : visibleItems.length === 0 ? (
             <EmptyState title={config.emptyTitle} description={config.emptyDescription} action={<Button onClick={openCreate}>{config.createLabel || 'Tambah data'}</Button>} />
+          ) : config.mobileColumns ? (
+            <>
+              <MobileResourceList columns={config.mobileColumns} rows={visibleItems} onAction={setActionTarget} />
+              <div className="hidden md:block">
+                <DataTable columns={config.columns} rows={visibleItems} onEdit={openEdit} onDelete={setDeleting} />
+              </div>
+            </>
           ) : (
-            <DataTable columns={config.columns} rows={resource.items} onEdit={openEdit} onDelete={setDeleting} />
+            <DataTable columns={config.columns} rows={visibleItems} onEdit={openEdit} onDelete={setDeleting} />
           )}
         </CardContent>
       </Card>
@@ -97,6 +223,37 @@ export default function CrudResourcePage({ config, options = {} }) {
           submitLabel={editing ? 'Simpan perubahan' : 'Simpan'}
           onSubmit={submit}
         />
+      </Modal>
+
+      <Modal
+        open={Boolean(detailTarget)}
+        onClose={() => setDetailTarget(null)}
+        title={`Detail ${config.singular}`}
+        description={detailTarget && config.mobileColumns ? config.mobileColumns.title(detailTarget) : undefined}
+      >
+        {detailTarget && (
+          <div className="space-y-3 text-sm">
+            {config.detailRows?.map((row) => (
+              <div key={row.label} className="flex justify-between gap-4">
+                <span className="text-text-muted">{row.label}</span>
+                <span className="text-right font-semibold text-text-title">{row.render(detailTarget)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={Boolean(actionTarget)}
+        onClose={() => setActionTarget(null)}
+        title={`Aksi ${config.singular}`}
+        description={actionTarget && config.mobileColumns ? config.mobileColumns.title(actionTarget) : undefined}
+      >
+        <div className="grid gap-3">
+          <Button variant="secondary" onClick={() => openDetail(actionTarget)}><Eye size={18} className="mr-2" />Detail</Button>
+          <Button variant="secondary" onClick={() => openEdit(actionTarget)}><Pencil size={18} className="mr-2" />Edit</Button>
+          <Button variant="danger" onClick={() => openDelete(actionTarget)}><Trash2 size={18} className="mr-2" />Hapus</Button>
+        </div>
       </Modal>
 
       <ConfirmDialog

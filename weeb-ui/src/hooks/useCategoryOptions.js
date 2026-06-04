@@ -12,6 +12,7 @@ export function useCategoryOptions() {
           value: category.id,
           label: category.name,
           type: category.transaction_type,
+          needType: category.need_type,
         }));
         setOptions({
           categories,

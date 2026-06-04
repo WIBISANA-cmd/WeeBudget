@@ -13,6 +13,7 @@ const formatAmountInput = (value) => {
   const amount = parseAmount(value);
   return amount ? new Intl.NumberFormat('id-ID').format(amount) : '';
 };
+const formatBudgetCurrency = (value) => formatCurrency(value).replace(/^Rp/, 'Rp ');
 
 export default function BudgetPlannerPage() {
   const [baseAmount, setBaseAmount] = useState('');
@@ -52,9 +53,6 @@ export default function BudgetPlannerPage() {
       <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-text-title">Budget Planner</h1>
-          <p className="mt-2 max-w-2xl text-text-muted">
-            Bagi saldo atau gaji ke pos utama: kebutuhan wajib, tabungan, tabungan berdua, dana darurat, dan keinginan.
-          </p>
         </div>
         <div className="flex gap-3">
           <Input
@@ -100,7 +98,7 @@ export default function BudgetPlannerPage() {
           <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
             <Wallet className="text-primary-600" />
             <p className="mt-3 text-sm text-text-muted">Dana dasar</p>
-            <p className="text-2xl font-semibold text-text-title">{formatCurrency(planner?.base_amount)}</p>
+            <p className="text-2xl font-semibold text-text-title">{formatBudgetCurrency(planner?.base_amount)}</p>
           </div>
           <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
             <p className="text-sm text-text-muted">{usesActivePeriod ? 'Hari tersisa periode' : 'Hari sampai gajian'}</p>
@@ -108,7 +106,7 @@ export default function BudgetPlannerPage() {
           </div>
           <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
             <p className="text-sm text-text-muted">Aman harian dari pos kebutuhan</p>
-            <p className="mt-3 text-2xl font-semibold text-primary-600">{formatCurrency(planner?.daily_safe_from_plan)}</p>
+            <p className="mt-3 text-2xl font-semibold text-primary-600">{formatBudgetCurrency(planner?.daily_safe_from_plan)}</p>
           </div>
         </CardContent>
       </Card>
@@ -121,7 +119,7 @@ export default function BudgetPlannerPage() {
               <CardDescription>{item.percent}% dari dana dasar</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-semibold text-text-title">{formatCurrency(item.amount)}</p>
+              <p className="text-2xl font-semibold text-text-title">{formatBudgetCurrency(item.amount)}</p>
               <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-300">
                 <div className="h-full rounded-full bg-primary-500" style={{ width: `${item.percent}%` }} />
               </div>

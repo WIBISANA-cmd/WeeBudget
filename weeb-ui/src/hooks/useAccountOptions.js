@@ -14,6 +14,7 @@ export function useAccountOptions() {
           label: `${account.name} - ${formatCurrency(account.current_balance)}`,
           purpose: account.purpose,
           type: account.type,
+          balance: account.current_balance,
         }));
 
         setOptions({ accounts });
