@@ -1,21 +1,3 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="WeeBudget app icon">
-  <defs>
-    <linearGradient id="bg" x1="72" y1="64" x2="432" y2="456" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#08A0FF"/>
-      <stop offset="0.52" stop-color="#6366F1"/>
-      <stop offset="1" stop-color="#7C3AED"/>
-    </linearGradient>
-    <linearGradient id="bolt" x1="172" y1="88" x2="344" y2="432" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFFFFF"/>
-      <stop offset="1" stop-color="#DDEBFF"/>
-    </linearGradient>
-    <filter id="shadow" x="88" y="64" width="336" height="384" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="28" stdDeviation="28" flood-color="#172554" flood-opacity="0.35"/>
-    </filter>
-  </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <circle cx="382" cy="112" r="82" fill="#FFFFFF" opacity="0.14"/>
-  <circle cx="96" cy="392" r="118" fill="#FFFFFF" opacity="0.1"/>
-  <path filter="url(#shadow)" fill="url(#bolt)" d="M287.4 83.8c11.5-13.8 33.8-3.9 31.8 14l-18.1 132.1h93.7c17.2 0 26.7 20 15.8 33.3L223.9 490.7c-11.5 14-34 4-31.5-14.1l19.4-143.5h-94.6c-17.4 0-26.9-20.5-15.5-33.7L287.4 83.8Z"/>
-  <path fill="#08A0FF" fill-opacity="0.34" d="M287.4 83.8c11.5-13.8 33.8-3.9 31.8 14l-18.1 132.1h93.7c17.2 0 26.7 20 15.8 33.3L223.9 490.7c-11.5 14-34 4-31.5-14.1l19.4-143.5h-94.6c-17.4 0-26.9-20.5-15.5-33.7L287.4 83.8Z" transform="translate(12 -8) scale(.93)" opacity=".32"/>
+  <image href="../logo-pwa.png" width="512" height="512" preserveAspectRatio="xMidYMid slice" />
 </svg>
