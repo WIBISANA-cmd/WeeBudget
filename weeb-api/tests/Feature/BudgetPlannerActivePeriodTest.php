@@ -60,17 +60,22 @@ class BudgetPlannerActivePeriodTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $allocations = collect(app(BudgetPlannerService::class)->generate($user, 1000000)['allocations'])
+        $planner = app(BudgetPlannerService::class)->generate($user, 1000000);
+        $allocations = collect($planner['allocations'])
             ->keyBy('key');
 
         $this->assertSame(50, $allocations['needs']['percent']);
         $this->assertSame(500000.0, $allocations['needs']['amount']);
-        $this->assertSame(25, $allocations['savings']['percent']);
-        $this->assertSame(250000.0, $allocations['savings']['amount']);
+        $this->assertSame(20, $allocations['savings']['percent']);
+        $this->assertSame(200000.0, $allocations['savings']['amount']);
         $this->assertSame(5, $allocations['couple_savings']['percent']);
         $this->assertSame(50000.0, $allocations['couple_savings']['amount']);
         $this->assertSame(15, $allocations['emergency_fund']['percent']);
         $this->assertSame(150000.0, $allocations['emergency_fund']['amount']);
+        $this->assertSame(10, $allocations['wants']['percent']);
+        $this->assertSame(100000.0, $allocations['wants']['amount']);
+        $this->assertSame(1000000.0, $planner['allocated_amount']);
+        $this->assertSame(0.0, $planner['unallocated_amount']);
     }
 
     public function test_budget_planner_uses_full_active_period_days_when_today_is_outside_period(): void
