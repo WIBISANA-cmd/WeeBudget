@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\ExpenseStatisticController;
 use App\Http\Controllers\Api\FinancialAccountController;
 use App\Http\Controllers\Api\HealthScoreController;
+use App\Http\Controllers\Api\GoldSavingsMarketController;
 use App\Http\Controllers\Api\IncomeController;
 use App\Http\Controllers\Api\InsightController;
 use App\Http\Controllers\Api\MonthlyReportController;
@@ -60,6 +61,7 @@ Route::middleware(UseDefaultUser::class)->group(function () {
     Route::get('/budget-planner', BudgetPlannerController::class)->name('budget-planner');
     Route::get('/couple-savings/setting', [CoupleSavingsSettingController::class, 'show'])->name('couple-savings.setting.show');
     Route::put('/couple-savings/setting', [CoupleSavingsSettingController::class, 'update'])->name('couple-savings.setting.update');
+    Route::get('/gold-savings/market', GoldSavingsMarketController::class)->name('gold-savings.market');
 
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('users', UserManagementController::class);

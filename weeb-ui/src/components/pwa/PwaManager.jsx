@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Download, RefreshCw, WifiOff, X } from 'lucide-react';
+import { Download, RefreshCw, X } from 'lucide-react';
 import { registerSW } from 'virtual:pwa-register';
 import Button from '../ui/Button';
-import { cn } from '../../lib/utils';
 
 function isStandaloneMode() {
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -12,7 +11,6 @@ export default function PwaManager() {
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isInstalled, setInstalled] = useState(() => isStandaloneMode());
   const [showInstallCard, setShowInstallCard] = useState(false);
-  const [offlineReady, setOfflineReady] = useState(false);
   const [needRefresh, setNeedRefresh] = useState(false);
   const updateServiceWorkerRef = useRef(null);
 
@@ -23,9 +21,6 @@ export default function PwaManager() {
       immediate: true,
       onNeedRefresh() {
         setNeedRefresh(true);
-      },
-      onOfflineReady() {
-        setOfflineReady(true);
       },
       onRegisteredSW(_swUrl, registration) {
         if (!registration) return;
@@ -87,7 +82,7 @@ export default function PwaManager() {
     updateServiceWorkerRef.current?.(true);
   };
 
-  if (!canInstall && !needRefresh && !offlineReady) {
+  if (!canInstall && !needRefresh) {
     return null;
   }
 
@@ -139,28 +134,6 @@ export default function PwaManager() {
                 Install aplikasi
               </Button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {offlineReady && !needRefresh && (
-        <div className={cn('rounded-2xl border border-success-base/20 bg-surface-panel p-4 shadow-card')}>
-          <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-success-base/10 text-success-base">
-              <WifiOff size={20} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold text-text-title">Siap dipakai offline</p>
-              <p className="mt-1 text-sm leading-5 text-text-muted">App shell dan aset penting sudah tersimpan lokal.</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setOfflineReady(false)}
-              className="rounded-lg p-1 text-text-muted transition-colors hover:bg-surface-100 hover:text-text-title"
-              aria-label="Tutup notifikasi offline"
-            >
-              <X size={18} />
-            </button>
           </div>
         </div>
       )}

@@ -41,4 +41,9 @@ return [
         ],
     ],
 
+    'emas' => [
+        'base_url' => env('EMAS_BASE_URL', 'https://emas.maulanar.my.id'),
+        'api_key' => env('EMAS_API_KEY'),
+    ],
+
 ];
