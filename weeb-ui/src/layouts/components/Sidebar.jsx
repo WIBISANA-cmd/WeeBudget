@@ -98,17 +98,20 @@ export default function Sidebar({ isOpen, close }) {
       )}
       
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-surface-panel border-r border-border-subtle flex flex-col transition-transform duration-300 md:relative md:translate-x-0",
+        "fixed inset-y-0 left-0 z-50 flex w-[86vw] max-w-[320px] flex-col border-r border-border-subtle bg-surface-panel/98 shadow-2xl shadow-slate-950/20 transition-transform duration-300 md:relative md:w-72 md:max-w-none md:translate-x-0 md:bg-surface-panel md:shadow-none",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex items-center justify-between h-20 px-6 border-b border-border-subtle">
-          <img src="/logo-app.png" alt="WeeBudget" className="h-12 w-auto object-contain" />
-          <button onClick={close} className="p-2 text-text-muted hover:text-primary-600 md:hidden">
+        <div className="flex items-center justify-between border-b border-border-subtle px-5 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)] md:h-20 md:px-6 md:py-0">
+          <div>
+            <img src="/logo-app.png" alt="WeeBudget" className="h-11 w-auto object-contain md:h-12" />
+            <p className="mt-2 text-xs font-medium text-text-muted md:hidden">Navigasi utama, dibuat ringkas untuk penggunaan satu tangan.</p>
+          </div>
+          <button onClick={close} className="rounded-2xl p-2.5 text-text-muted transition-colors hover:bg-surface-100 hover:text-primary-600 md:hidden">
             <X size={24} />
           </button>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-3 overflow-y-auto">
+        <nav className="flex-1 space-y-3 overflow-y-auto px-4 py-5 md:px-4 md:py-6">
           {menuGroups.map((group) => {
             const isOpenGroup = openGroups[group.key] || activeGroupKeys.includes(group.key);
             const isActiveGroup = activeGroupKeys.includes(group.key);
@@ -121,7 +124,7 @@ export default function Sidebar({ isOpen, close }) {
                   to={singleItem.path}
                   onClick={close}
                   className={({ isActive }) => cn(
-                    "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200",
+                    "group flex min-h-12 items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-200",
                     isActive
                       ? "bg-primary-500/10 text-primary-600 border border-primary-500/20 shadow-sm shadow-primary-500/10"
                       : "text-text-muted hover:bg-surface-100 hover:text-text-title"
@@ -147,7 +150,7 @@ export default function Sidebar({ isOpen, close }) {
                   onClick={() => toggleGroup(group.key)}
                   aria-expanded={isOpenGroup}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold transition-all duration-200",
+                    "flex min-h-12 w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold transition-all duration-200",
                     isActiveGroup
                       ? "bg-surface-100 text-text-title"
                       : "text-text-muted hover:bg-surface-100 hover:text-text-title"
@@ -166,7 +169,7 @@ export default function Sidebar({ isOpen, close }) {
                         to={item.path}
                         onClick={close}
                         className={({ isActive }) => cn(
-                          "group flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200",
+                          "group flex min-h-11 items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium transition-all duration-200",
                           isActive
                             ? "bg-primary-500/10 text-primary-600 border border-primary-500/20 shadow-sm shadow-primary-500/10"
                             : "text-text-muted hover:bg-surface-100 hover:text-text-title"

@@ -7,7 +7,7 @@ import EmptyState from '../components/feedback/EmptyState';
 import { apiGet } from '../api/http';
 import { formatCurrency } from '../lib/formatters';
 
-const colors = ['#08a0ff', '#FBBF24', '#34D399', '#07A0FF', '#FDE68A', '#6EE7B7'];
+const colors = ['rgb(15,60,113)', '#FBBF24', '#34D399', '#1D4ED8', '#FDE68A', '#6EE7B7'];
 
 export default function ReportsPage() {
   const [report, setReport] = useState(null);

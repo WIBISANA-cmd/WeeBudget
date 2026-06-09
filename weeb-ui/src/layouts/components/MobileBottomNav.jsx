@@ -12,13 +12,24 @@ const items = [
 
 export default function MobileBottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border-subtle bg-surface-panel/95 px-2 py-2 backdrop-blur md:hidden">
-      {items.map((item) => (
-        <NavLink key={item.path} to={item.path} className={({ isActive }) => cn('flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] transition-colors', isActive ? 'bg-primary-500/10 text-primary-600' : 'text-text-muted hover:text-primary-600')}>
-          <item.icon size={18} />
-          {item.label}
-        </NavLink>
-      ))}
+    <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.8rem)] pt-2 md:hidden">
+      <div className="mx-auto grid max-w-md grid-cols-5 gap-1 rounded-[28px] border border-border-subtle bg-surface-panel/96 p-2 shadow-[0_18px_48px_-24px_rgba(15,23,42,0.35)] backdrop-blur-xl">
+        {items.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) => cn(
+              'flex min-h-[60px] flex-col items-center justify-center gap-1.5 rounded-2xl px-1.5 py-2 text-[11px] font-medium transition-all duration-200',
+              isActive
+                ? 'bg-primary-500 text-white shadow-glow-primary'
+                : 'text-text-muted hover:bg-surface-100 hover:text-primary-600'
+            )}
+          >
+            <item.icon size={19} />
+            <span className="truncate">{item.label}</span>
+          </NavLink>
+        ))}
+      </div>
     </nav>
   );
 }

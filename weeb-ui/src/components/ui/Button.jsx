@@ -10,10 +10,10 @@ const Button = forwardRef(({
   children, 
   ...props 
 }, ref) => {
-  const baseStyle = "inline-flex cursor-pointer items-center justify-center rounded-xl font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 disabled:saturate-0 active:scale-95";
+  const baseStyle = "inline-flex cursor-pointer items-center justify-center rounded-2xl font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 disabled:saturate-0 active:scale-[0.985]";
   
   const variants = {
-    primary: "bg-primary-500 text-white shadow-glow-primary hover:bg-primary-600 hover:shadow-lg dark:text-slate-950",
+    primary: "bg-primary-500 text-white shadow-glow-primary hover:bg-primary-600 hover:shadow-lg",
     secondary: "bg-surface-panel text-text-body border border-border-subtle shadow-sm shadow-card-soft hover:border-primary-500 hover:bg-primary-500/5 hover:text-primary-600",
     outline: "border border-border-strong bg-surface-panel text-primary-600 hover:bg-primary-500/5",
     ghost: "bg-transparent text-primary-600 hover:bg-primary-500/10",
@@ -21,8 +21,8 @@ const Button = forwardRef(({
   };
 
   const sizes = {
-    sm: "h-9 px-3 text-sm",
-    md: "h-11 px-5 text-base",
+    sm: "h-10 px-3.5 text-sm",
+    md: "h-12 px-5 text-[15px]",
     lg: "h-14 px-8 text-lg"
   };
 

@@ -165,7 +165,7 @@ export const configs = {
       icon: z.string().optional(),
       color: z.string().optional(),
     }),
-    defaultValues: { name: '', transaction_type: 'expense', need_type: '', icon: '', color: '#08a0ff' },
+    defaultValues: { name: '', transaction_type: 'expense', need_type: '', icon: '', color: 'rgb(15,60,113)' },
     fields: [
       { name: 'name', label: 'Nama kategori' },
       { name: 'transaction_type', label: 'Tipe', type: 'select', options: categoryOptions },

@@ -5,7 +5,7 @@ import { useDashboard } from '../hooks/useDashboard';
 import { cn } from '../lib/utils';
 import { compactCurrency, formatCurrency, formatDate } from '../lib/formatters';
 
-const colors = ['#08a0ff', '#14B8A6', '#F59E0B', '#EF4444', '#8B5CF6', '#22C55E'];
+const colors = ['rgb(15,60,113)', '#14B8A6', '#F59E0B', '#EF4444', '#8B5CF6', '#22C55E'];
 
 const statusCopy = {
   safe: ['Aman', 'Ritme bulan ini masih sehat', 'border-success-base/20 bg-success-base/10 text-success-base'],
@@ -63,13 +63,13 @@ function formatWeekLabel(value) {
 function Metric({ icon: Icon, label, value, helper, tone }) {
   return (
     <Card>
-      <CardContent className="flex items-start gap-4">
-        <span className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-100', tone)}>
+      <CardContent className="flex items-start gap-3 p-4 md:gap-4 md:p-6">
+        <span className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-surface-100', tone)}>
           <Icon size={21} />
         </span>
         <div className="min-w-0">
           <p className="text-sm text-text-muted">{label}</p>
-          <p className="mt-2 break-words text-2xl font-semibold text-text-title">{value}</p>
+          <p className="mt-1.5 break-words text-xl font-semibold text-text-title md:mt-2 md:text-2xl">{value}</p>
           <p className="mt-1 text-sm leading-5 text-text-muted">{helper}</p>
         </div>
       </CardContent>
@@ -84,7 +84,7 @@ function CashflowMetricCard({ icon: Icon, label, value, helper, tone, chartData,
 
   return (
     <Card>
-      <CardContent className="space-y-4 p-5">
+      <CardContent className="space-y-4 p-4 md:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
             <span className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-100', tone)}>
@@ -92,7 +92,7 @@ function CashflowMetricCard({ icon: Icon, label, value, helper, tone, chartData,
             </span>
             <div className="min-w-0">
               <p className="text-sm text-text-muted">{label}</p>
-              <p className="mt-2 break-words text-2xl font-semibold text-text-title">{value}</p>
+              <p className="mt-1.5 break-words text-xl font-semibold text-text-title md:mt-2 md:text-2xl">{value}</p>
             </div>
           </div>
           <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold', fill)}>
@@ -100,7 +100,7 @@ function CashflowMetricCard({ icon: Icon, label, value, helper, tone, chartData,
           </span>
         </div>
 
-        <div className="h-[96px] rounded-xl bg-surface-100 p-2">
+        <div className="h-[96px] rounded-2xl bg-surface-100 p-2">
           {chartData.length === 0 ? (
             <div className="flex h-full items-center justify-center text-xs font-medium text-text-muted">Belum ada ritme mingguan</div>
           ) : (
@@ -132,11 +132,11 @@ function CashflowMetricCard({ icon: Icon, label, value, helper, tone, chartData,
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-xs">
-          <div className="rounded-xl bg-surface-100 p-3">
+          <div className="rounded-2xl bg-surface-100 p-3">
             <p className="text-text-muted">Puncak minggu</p>
             <p className="mt-1 truncate font-semibold text-text-title">{formatWeekLabel(peak.week)}</p>
           </div>
-          <div className="rounded-xl bg-surface-100 p-3">
+          <div className="rounded-2xl bg-surface-100 p-3">
             <p className="text-text-muted">Nominal puncak</p>
             <p className="mt-1 truncate font-semibold text-text-title">{formatCurrency(peak[dataKey])}</p>
           </div>
@@ -152,10 +152,10 @@ function ProgressCard({ icon: Icon, title, current, target, tone }) {
   const percent = Math.min(Math.round((Number(current || 0) / Math.max(Number(target || 1), 1)) * 100), 100);
 
   return (
-    <div className="rounded-2xl border border-border-subtle bg-surface-100 p-4">
+    <div className="rounded-[24px] border border-border-subtle bg-surface-100 p-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className={cn('flex h-10 w-10 items-center justify-center rounded-xl bg-surface-100', tone)}>
+            <span className={cn('flex h-10 w-10 items-center justify-center rounded-2xl bg-surface-100', tone)}>
             <Icon size={20} />
           </span>
           <div>
@@ -183,7 +183,7 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6">
         <header>
-          <h1 className="text-3xl font-bold text-text-title">Dashboard WeeB</h1>
+          <h1 className="text-2xl font-bold text-text-title md:text-3xl">Dashboard WeeB</h1>
           <p className="mt-2 text-text-muted">Buat rekening atau catat transaksi pertama agar dashboard mulai membaca pola uangmu.</p>
         </header>
         <EmptyPanel title="Belum ada data keuangan" description="Mulai dari menu Rekening, lalu catat pemasukan atau setoran tabungan pertama." />
@@ -207,50 +207,50 @@ export default function DashboardPage() {
   const periodLabel = dashboard.period?.label || 'periode aktif';
 
   return (
-    <div className="space-y-5 pb-8">
+    <div className="space-y-5 pb-4 md:pb-8">
       <header className="grid gap-4 xl:grid-cols-[1fr_auto] xl:items-end">
         <div>
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary-500/20 bg-primary-500/10 px-3 py-1 text-xs font-semibold text-primary-600">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary-500/20 bg-primary-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-600">
             <Sparkles size={14} />
             {dashboard.period?.label}
           </div>
-          <h1 className="max-w-3xl text-2xl font-bold text-text-title md:text-4xl">
+          <h1 className="max-w-3xl text-[1.9rem] font-bold leading-tight text-text-title md:text-4xl">
             Hai {dashboard.user?.name || 'Teman WeeB'}, ini pusat kendali uangmu.
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-text-muted md:text-base">
             Dashboard ini menarik data dari rekening, transaksi, tabungan, dana darurat, tagihan, dan budget planner.
           </p>
         </div>
-        <div className={cn('rounded-2xl border px-5 py-4', status[2])}>
+        <div className={cn('rounded-[24px] border px-5 py-4', status[2])}>
           <p className="text-xs font-semibold uppercase tracking-wide">{status[0]}</p>
           <p className="mt-1 font-semibold">{status[1]}</p>
         </div>
       </header>
 
       <section className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
-        <Card className="border-primary-500">
-          <CardContent className="grid gap-6 p-5 md:grid-cols-[1fr_0.8fr] md:p-7">
+        <Card className="border-primary-500 bg-[linear-gradient(180deg,rgba(15,60,113,0.08),rgba(255,255,255,0.9))]">
+          <CardContent className="grid gap-5 p-4 md:grid-cols-[1fr_0.8fr] md:gap-6 md:p-7">
             <div>
               <div className="flex items-center gap-3 text-text-muted">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-500/10 text-primary-600">
+                <span className="flex h-12 w-12 items-center justify-center rounded-[20px] bg-primary-500/10 text-primary-600">
                   <Wallet size={24} />
                 </span>
                 <span className="font-semibold">Total saldo rekening aktif</span>
               </div>
-              <p className="mt-5 text-4xl font-semibold text-text-title md:text-5xl">{formatCurrency(summary.balance)}</p>
+              <p className="mt-4 text-3xl font-semibold tracking-tight text-text-title md:mt-5 md:text-5xl">{formatCurrency(summary.balance)}</p>
               <p className="mt-4 text-sm leading-6 text-text-muted">
                 Sisa bersih sampai gajian: <span className="font-semibold text-primary-600">{formatCurrency(summary.net_until_payday)}</span>.
               </p>
             </div>
-            <div className="rounded-2xl border border-border-subtle bg-surface-100 p-4 shadow-sm shadow-card-soft">
+            <div className="rounded-[24px] border border-border-subtle bg-surface-panel/85 p-4 shadow-sm shadow-card-soft">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm text-text-muted">Aman harian</p>
-                  <p className="mt-2 text-3xl font-semibold text-primary-600">{formatCurrency(summary.daily_safe_amount)}</p>
+                  <p className="mt-2 text-2xl font-semibold text-primary-600 md:text-3xl">{formatCurrency(summary.daily_safe_amount)}</p>
                 </div>
                 <CalendarClock className="text-primary-600" size={32} />
               </div>
-              <p className="mt-5 rounded-xl bg-surface-100 p-3 text-sm leading-6 text-text-muted">
+              <p className="mt-5 rounded-2xl bg-surface-100 p-3 text-sm leading-6 text-text-muted">
                 {summary.days_to_payday} hari menuju gajian berikutnya, estimasi {formatDate(summary.next_payday)}.
               </p>
             </div>
@@ -264,7 +264,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {actions.map((item) => (
-              <div key={item} className="flex gap-3 rounded-xl bg-surface-200 p-3 text-sm leading-5 text-text-body">
+              <div key={item} className="flex gap-3 rounded-2xl bg-surface-200 p-3 text-sm leading-5 text-text-body">
                 <CheckCircle2 className="mt-0.5 shrink-0 text-success-base" size={18} />
                 <span>{item}</span>
               </div>
@@ -273,7 +273,7 @@ export default function DashboardPage() {
         </Card>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <CashflowMetricCard
           icon={ArrowDownRight}
           label="Pemasukan periode aktif"
@@ -322,7 +322,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2">
             {planner.map((item) => (
-              <div key={item.key} className="rounded-2xl border border-border-subtle bg-surface-100 p-4">
+              <div key={item.key} className="rounded-[24px] border border-border-subtle bg-surface-100 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-semibold text-text-title">{item.label}</p>
                   <span className="rounded-full bg-primary-500/10 px-2.5 py-1 text-xs font-semibold text-primary-600">{item.percent}%</span>
@@ -368,7 +368,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {accountBreakdown.length === 0 ? <EmptyPanel title="Belum ada rekening aktif" description="Tambahkan rekening untuk melihat komposisi saldo." /> : accountBreakdown.map((item, index) => (
-              <div key={item.purpose} className="rounded-xl bg-surface-200 p-3">
+              <div key={item.purpose} className="rounded-2xl bg-surface-200 p-3">
                 <div className="mb-2 flex items-center justify-between text-sm">
                   <span className="flex items-center gap-2 font-semibold text-text-title"><span className="h-2.5 w-2.5 rounded-full" style={{ background: colors[index % colors.length] }} />{item.label}</span>
                   <span className="text-text-muted">{formatCurrency(item.total)}</span>
@@ -388,7 +388,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {recentTransactions.map((item) => (
-              <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-surface-200 p-3">
+              <div key={item.id} className="flex items-center justify-between gap-3 rounded-2xl bg-surface-200 p-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl', item.transaction_type === 'income' ? 'bg-success-base/10 text-success-base' : 'bg-danger-base/10 text-danger-base')}>
                     <CreditCard size={18} />
@@ -433,7 +433,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {insights.map((insight) => (
-              <div key={insight} className="flex gap-3 rounded-xl bg-primary-500/10 p-4 text-sm leading-6 text-text-body">
+              <div key={insight} className="flex gap-3 rounded-2xl bg-primary-500/10 p-4 text-sm leading-6 text-text-body">
                 <Lightbulb className="mt-0.5 shrink-0 text-primary-600" size={18} />
                 <span>{insight}</span>
               </div>
@@ -454,7 +454,7 @@ export default function DashboardPage() {
               <XAxis dataKey="day" stroke="#6B7280" tickLine={false} axisLine={false} />
               <YAxis stroke="#6B7280" tickLine={false} axisLine={false} tickFormatter={compactCurrency} width={42} />
               <Tooltip formatter={(value) => formatCurrency(value)} contentStyle={{ borderRadius: 14, border: '1px solid #E5E7EB' }} />
-              <Bar dataKey="amount" fill="#08a0ff" radius={[8, 8, 0, 0]} name="Pengeluaran" />
+              <Bar dataKey="amount" fill="rgb(15,60,113)" radius={[8, 8, 0, 0]} name="Pengeluaran" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>

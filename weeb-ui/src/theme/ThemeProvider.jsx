@@ -28,7 +28,7 @@ function applyTheme(theme) {
 
   root.classList.toggle('dark', isDark);
   root.style.colorScheme = theme;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', isDark ? '#0F172A' : '#08a0ff');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', isDark ? '#0F172A' : 'rgb(15,60,113)');
 }
 
 export function ThemeProvider({ children }) {
