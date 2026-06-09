@@ -5,7 +5,7 @@ import { useDashboard } from '../hooks/useDashboard';
 import { cn } from '../lib/utils';
 import { compactCurrency, formatCurrency, formatDate } from '../lib/formatters';
 
-const colors = ['rgb(15,60,113)', '#14B8A6', '#F59E0B', '#EF4444', '#8B5CF6', '#22C55E'];
+const colors = ['#3C83F6', '#14B8A6', '#F59E0B', '#EF4444', '#8B5CF6', '#22C55E'];
 
 const statusCopy = {
   safe: ['Aman', 'Ritme bulan ini masih sehat', 'border-success-base/20 bg-success-base/10 text-success-base'],
