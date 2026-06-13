@@ -9,6 +9,13 @@ import { apiGet } from '../api/http';
 import { formatCurrency, formatDate } from '../lib/formatters';
 
 const parseAmount = (value) => Number(String(value || '').replace(/\D/g, ''));
+const parsePercentage = (value) => {
+  const normalized = String(value ?? '').replace(/[^\d.]/g, '');
+  if (!normalized) return 0;
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
 const formatAmountInput = (value, { allowZero = false } = {}) => {
   const rawValue = String(value ?? '').replace(/\D/g, '');
 
@@ -62,23 +69,26 @@ export default function BudgetPlannerPage() {
   const activePeriod = planner?.period;
   const usesActivePeriod = planner?.period_source === 'active_period';
   const customAllocationItems = (planner?.allocations || []).map((item) => {
-    const amountInput = customAllocations[item.key] ?? '';
-    const customAmount = parseAmount(amountInput);
-    const actualPercent = planner?.base_amount ? Math.round((customAmount / planner.base_amount) * 100) : 0;
-    const hasCustomAmount = amountInput !== '';
+    const percentInput = customAllocations[item.key] ?? '';
+    const customPercent = parsePercentage(percentInput);
+    const customAmount = Math.round(((planner?.base_amount || 0) * customPercent)) / 100;
+    const hasCustomPercent = percentInput !== '';
 
     return {
       ...item,
-      amountInput,
+      percentInput,
+      customPercent,
       customAmount,
-      actualPercent,
-      hasCustomAmount,
+      appliedPercent: hasCustomPercent ? customPercent : item.percent,
+      appliedAmount: hasCustomPercent ? customAmount : item.amount,
+      hasCustomPercent,
     };
   });
-  const totalCustomAllocation = customAllocationItems.reduce((sum, item) => sum + item.customAmount, 0);
-  const remainingCustomAmount = Math.max((planner?.base_amount || 0) - totalCustomAllocation, 0);
-  const exceededCustomAmount = Math.max(totalCustomAllocation - (planner?.base_amount || 0), 0);
-  const customNeedsAmount = customAllocationItems.find((item) => item.key === 'needs')?.customAmount || 0;
+  const totalCustomPercentage = customAllocationItems.reduce((sum, item) => sum + item.appliedPercent, 0);
+  const totalCustomAllocation = customAllocationItems.reduce((sum, item) => sum + item.appliedAmount, 0);
+  const percentageDifference = Math.round((100 - totalCustomPercentage) * 100) / 100;
+  const isPercentageBalanced = Math.abs(percentageDifference) < 0.001;
+  const customNeedsAmount = customAllocationItems.find((item) => item.key === 'needs')?.appliedAmount || 0;
   const customDailySafe = Math.floor(customNeedsAmount / Math.max(planner?.days_until_payday || 1, 1));
 
   return (
@@ -146,11 +156,11 @@ export default function BudgetPlannerPage() {
         </CardContent>
       </Card>
 
-      <Card className={exceededCustomAmount > 0 ? 'border-danger-base' : 'border-success-base'}>
+      <Card className={isPercentageBalanced ? 'border-success-base' : 'border-danger-base'}>
         <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <CardTitle>Custom alokasi dana</CardTitle>
-            <CardDescription>Ubah tiap pos dalam nominal. Rekomendasi persen tetap dipakai sebagai titik awal.</CardDescription>
+            <CardDescription>Ubah tiap pos dalam persentase. Nominal card akan otomatis menyesuaikan dana dasar.</CardDescription>
           </div>
           <Button variant="secondary" onClick={() => setCustomAllocations({})}>
             Kosongkan input
@@ -158,22 +168,23 @@ export default function BudgetPlannerPage() {
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
-            <p className="text-sm text-text-muted">Total alokasi custom</p>
-            <p className="mt-3 text-2xl font-semibold text-text-title">{formatBudgetCurrency(totalCustomAllocation)}</p>
+            <p className="text-sm text-text-muted">Total persentase custom</p>
+            <p className={`mt-3 text-2xl font-semibold ${isPercentageBalanced ? 'text-text-title' : 'text-danger-base'}`}>{totalCustomPercentage}%</p>
           </div>
           <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
-            <p className="text-sm text-text-muted">{exceededCustomAmount > 0 ? 'Melebihi dana dasar' : 'Sisa belum dialokasikan'}</p>
-            <p className={`mt-3 text-2xl font-semibold ${exceededCustomAmount > 0 ? 'text-danger-base' : 'text-success-base'}`}>
-              {formatBudgetCurrency(exceededCustomAmount > 0 ? exceededCustomAmount : remainingCustomAmount)}
+            <p className="text-sm text-text-muted">Total nominal hasil custom</p>
+            <p className="mt-3 text-2xl font-semibold text-text-title">
+              {formatBudgetCurrency(totalCustomAllocation)}
             </p>
           </div>
           <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
-            <p className="text-sm text-text-muted">Status alokasi</p>
-            <p className={`mt-3 text-lg font-semibold ${exceededCustomAmount > 0 ? 'text-danger-base' : 'text-primary-600'}`}>
-              {exceededCustomAmount > 0 ? 'Perlu dikurangi' : remainingCustomAmount > 0 ? 'Masih ada sisa dana' : 'Sudah pas'}
+            <p className="text-sm text-text-muted">Status persentase</p>
+            <p className={`mt-3 text-lg font-semibold ${isPercentageBalanced ? 'text-primary-600' : 'text-danger-base'}`}>
+              {isPercentageBalanced ? 'Sudah pas 100%' : percentageDifference > 0 ? `Kurang ${percentageDifference}%` : `Lebih ${Math.abs(percentageDifference)}%`}
             </p>
           </div>
         </CardContent>
+
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
@@ -185,27 +196,31 @@ export default function BudgetPlannerPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="text-2xl font-semibold text-text-title">{formatBudgetCurrency(item.amount)}</p>
-                <p className="mt-1 text-sm text-text-muted">Nominal rekomendasi hasil perhitungan</p>
+                <p className="text-2xl font-semibold text-text-title">{formatBudgetCurrency(item.appliedAmount)}</p>
+                <p className="mt-1 text-sm text-text-muted">Nominal mengikuti persentase yang sedang dipakai</p>
                 <p className="mt-2 text-sm font-medium text-primary-600">
-                  {item.hasCustomAmount ? `Custom saat ini ${formatBudgetCurrency(item.customAmount)} (${item.actualPercent}%)` : 'Custom belum diisi'}
+                  {item.hasCustomPercent ? `Custom saat ini ${item.customPercent}%` : `Masih memakai rekomendasi ${item.percent}%`}
                 </p>
               </div>
               <Input
-                inputMode="numeric"
-                label="Nominal custom"
-                value={item.amountInput}
-                placeholder={formatBudgetCurrency(item.amount)}
+                type="number"
+                inputMode="decimal"
+                min="0"
+                max="100"
+                step="0.01"
+                label="Persentase custom"
+                value={item.percentInput}
+                placeholder={String(item.percent)}
                 onChange={(event) =>
                   setCustomAllocations((current) => ({
                     ...current,
-                    [item.key]: formatAmountInput(event.target.value, { allowZero: true }),
+                    [item.key]: event.target.value,
                   }))
                 }
-                helperText="Isi jika ingin override nominal rekomendasi."
+                helperText="Isi persen jika ingin override rekomendasi."
               />
               <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-300">
-                <div className="h-full rounded-full bg-primary-500" style={{ width: `${Math.min(item.hasCustomAmount ? item.actualPercent : item.percent, 100)}%` }} />
+                <div className="h-full rounded-full bg-primary-500" style={{ width: `${Math.min(item.appliedPercent, 100)}%` }} />
               </div>
               <p className="text-sm leading-6 text-text-muted">{item.description}</p>
             </CardContent>

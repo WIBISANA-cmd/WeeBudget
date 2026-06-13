@@ -140,8 +140,14 @@ export default function CrudResourcePage({ config, options = {} }) {
 
   const confirmDelete = async () => {
     if (!deleting) return;
-    await resource.remove(deleting.id);
-    setDeleting(null);
+    const result = await resource.remove(deleting.id);
+    if (result?.ok) {
+      await options.reloadAccounts?.();
+      setDeleting(null);
+      return;
+    }
+
+    alert(result?.message || 'Data belum bisa dihapus.');
   };
 
   return (
@@ -218,7 +224,7 @@ export default function CrudResourcePage({ config, options = {} }) {
           schema={config.schema}
           fields={config.fields}
           defaultValues={defaultValues}
-          options={options}
+          options={{ ...options, __editing: editing }}
           isSaving={resource.isSaving}
           submitLabel={editing ? 'Simpan perubahan' : 'Simpan'}
           onSubmit={submit}

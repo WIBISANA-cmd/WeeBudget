@@ -5,6 +5,7 @@ namespace App\Services\Finance;
 use App\Models\FinancialAccount;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
 class AccountBalanceService
@@ -69,8 +70,87 @@ class AccountBalanceService
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            $counterpart = $this->findAllocationCounterpart($model, $userId);
+
             $this->reverseEffect($model);
             $model->delete();
+
+            if ($counterpart !== null) {
+                $this->reverseEffect($counterpart);
+                $counterpart->delete();
+            }
+        });
+    }
+
+    public function allocateBetweenAccounts(array $data, int $userId): array
+    {
+        return DB::transaction(function () use ($data, $userId) {
+            $sourceAccount = $this->lockedAccessibleAccount((int) $data['source_account_id'], $userId);
+            $destinationAccount = $this->lockedAccessibleAccount((int) $data['destination_account_id'], $userId);
+            $amount = (float) $data['amount'];
+
+            if ((float) $sourceAccount->current_balance < $amount) {
+                throw ValidationException::withMessages([
+                    'amount' => 'Saldo rekening sumber tidak mencukupi untuk alokasi ini.',
+                ]);
+            }
+
+            $date = $data['transaction_date'];
+            $notes = $data['notes'] ?? null;
+
+            $outgoing = Transaction::query()->create([
+                'user_id' => $userId,
+                'account_id' => $sourceAccount->id,
+                'transaction_type' => 'expense',
+                'amount' => $amount,
+                'need_type' => null,
+                'transaction_date' => $date,
+                'description' => sprintf('Alokasi ke %s', $destinationAccount->name),
+                'notes' => $notes,
+                'source' => 'account_allocation',
+                'metadata' => [
+                    'direction' => 'out',
+                    'counterpart_account_id' => $destinationAccount->id,
+                    'counterpart_account_name' => $destinationAccount->name,
+                ],
+            ]);
+
+            $incoming = Transaction::query()->create([
+                'user_id' => $userId,
+                'account_id' => $destinationAccount->id,
+                'transaction_type' => 'income',
+                'amount' => $amount,
+                'need_type' => null,
+                'transaction_date' => $date,
+                'description' => sprintf('Alokasi dari %s', $sourceAccount->name),
+                'notes' => $notes,
+                'source' => 'account_allocation',
+                'metadata' => [
+                    'direction' => 'in',
+                    'counterpart_account_id' => $sourceAccount->id,
+                    'counterpart_account_name' => $sourceAccount->name,
+                ],
+            ]);
+
+            $outgoing->metadata = [
+                ...($outgoing->metadata ?? []),
+                'counterpart_transaction_id' => $incoming->id,
+            ];
+            $incoming->metadata = [
+                ...($incoming->metadata ?? []),
+                'counterpart_transaction_id' => $outgoing->id,
+            ];
+            $outgoing->save();
+            $incoming->save();
+
+            $this->applyEffect($outgoing);
+            $this->applyEffect($incoming);
+
+            return [
+                'source_account' => $sourceAccount->fresh(),
+                'destination_account' => $destinationAccount->fresh(),
+                'transactions' => [$outgoing, $incoming],
+            ];
         });
     }
 
@@ -120,6 +200,47 @@ class AccountBalanceService
 
         $account->current_balance = (float) $account->current_balance + $amount;
         $account->save();
+    }
+
+    private function lockedAccessibleAccount(int $accountId, int $userId): FinancialAccount
+    {
+        $account = FinancialAccount::query()
+            ->whereKey($accountId)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if (! $this->coupleAccess->canAccessAccountByUserId($account, $userId)) {
+            abort(404);
+        }
+
+        return $account;
+    }
+
+    private function findAllocationCounterpart(Transaction $transaction, int $userId): ?Transaction
+    {
+        if ($transaction->source !== 'account_allocation') {
+            return null;
+        }
+
+        $counterpartId = data_get($transaction->metadata, 'counterpart_transaction_id');
+        $direction = data_get($transaction->metadata, 'direction');
+        $counterpartDirection = $direction === 'out' ? 'in' : 'out';
+
+        return Transaction::query()
+            ->where('user_id', $userId)
+            ->where('source', 'account_allocation')
+            ->whereKeyNot($transaction->id)
+            ->when(
+                $counterpartId,
+                fn ($query, $id) => $query->whereKey($id),
+                fn ($query) => $query
+                    ->where('account_id', data_get($transaction->metadata, 'counterpart_account_id'))
+                    ->where('amount', $transaction->amount)
+                    ->whereDate('transaction_date', $transaction->transaction_date)
+                    ->where('metadata->direction', $counterpartDirection)
+            )
+            ->lockForUpdate()
+            ->first();
     }
 
     private function resolveAccountId(int $userId, ?int $accountId = null): int

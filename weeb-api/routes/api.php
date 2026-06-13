@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AllTransactionController;
+use App\Http\Controllers\Api\AccountAllocationController;
 use App\Http\Controllers\Api\Auth\GoogleAuthController;
 use App\Http\Controllers\Api\Auth\PasswordAuthController;
 use App\Http\Controllers\Api\BillController;
@@ -66,6 +67,7 @@ Route::middleware(UseDefaultUser::class)->group(function () {
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('users', UserManagementController::class);
     Route::apiResource('accounts', FinancialAccountController::class);
+    Route::post('/account-allocations', [AccountAllocationController::class, 'store'])->name('account-allocations.store');
     Route::apiResource('periods', FinancialPeriodController::class)->parameters(['periods' => 'period']);
     Route::apiResource('transactions', AllTransactionController::class);
     Route::apiResource('incomes', IncomeController::class)->parameters(['incomes' => 'transaction']);

@@ -2,8 +2,11 @@
 
 namespace App\Http\Requests\Finance;
 
+use App\Models\TransactionCategory;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class StoreCategoryRequest extends FormRequest
 {
@@ -15,7 +18,35 @@ class StoreCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:80'],
+            'account_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('financial_accounts', 'id')->where(fn (Builder $query) => $query->where('user_id', $this->user()?->id)),
+            ],
+            'name' => [
+                'required',
+                'string',
+                'max:80',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    $userId = $this->user()?->id;
+                    $transactionType = $this->input('transaction_type');
+
+                    if (! $userId || ! $transactionType || ! is_string($value)) {
+                        return;
+                    }
+
+                    $exists = TransactionCategory::query()
+                        ->where('user_id', $userId)
+                        ->where('transaction_type', $transactionType)
+                        ->where('slug', Str::slug($value))
+                        ->when($this->route('category'), fn ($query, $categoryId) => $query->whereKeyNot($categoryId))
+                        ->exists();
+
+                    if ($exists) {
+                        $fail('Nama kategori sudah ada untuk tipe transaksi ini.');
+                    }
+                },
+            ],
             'slug' => ['nullable', 'string', 'max:100'],
             'transaction_type' => ['required', Rule::in(['income', 'expense', 'both'])],
             'need_type' => ['nullable', Rule::in(['need', 'want', 'saving', 'debt'])],

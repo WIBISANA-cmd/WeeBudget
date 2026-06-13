@@ -1,6 +1,9 @@
 import CrudResourcePage from '../features/shared/CrudResourcePage';
 import { configs } from '../features/shared/crudConfigs';
+import { useAccountOptions } from '../hooks/useAccountOptions';
 
 export default function CategoriesPage() {
-  return <CrudResourcePage config={configs.categories} />;
+  const accountOptions = useAccountOptions();
+
+  return <CrudResourcePage config={configs.categories} options={accountOptions} />;
 }

@@ -11,6 +11,7 @@ class TransactionCategory extends Model
 
     protected $fillable = [
         'user_id',
+        'account_id',
         'name',
         'slug',
         'transaction_type',
@@ -27,5 +28,10 @@ class TransactionCategory extends Model
             'is_default' => 'boolean',
             'sort_order' => 'integer',
         ];
+    }
+
+    public function account()
+    {
+        return $this->belongsTo(FinancialAccount::class, 'account_id');
     }
 }

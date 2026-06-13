@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, Plus, X } from 'lucide-react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { cn } from '../../lib/utils';
@@ -37,6 +37,26 @@ function isMoneyField(field) {
   if (plainNumberNamePattern.test(field.name)) return false;
 
   return moneyNamePattern.test(field.name) || moneyLabelPattern.test(field.label || '');
+}
+
+function shouldRenderField(field, values) {
+  if (!field.showWhen) return true;
+  if (typeof field.showWhen === 'function') return field.showWhen(values);
+
+  return Object.entries(field.showWhen).every(([name, expected]) => {
+    const currentValue = values?.[name];
+    return Array.isArray(expected)
+      ? expected.includes(currentValue)
+      : currentValue === expected;
+  });
+}
+
+function resolveFieldLabel(field, values, options) {
+  if (typeof field.getLabel === 'function') {
+    return field.getLabel(values, options);
+  }
+
+  return field.label;
 }
 
 function CustomSelect({ field, register, error, options, value, values, setValue }) {
@@ -151,7 +171,7 @@ function CustomSelect({ field, register, error, options, value, values, setValue
 
   return (
     <div className="flex w-full flex-col gap-1.5">
-      <label className="text-sm font-medium text-text-body">{field.label}</label>
+      <label className="text-sm font-medium text-text-body">{resolveFieldLabel(field, values, options)}</label>
       <input type="hidden" {...register(field.name)} />
       <button
         ref={buttonRef}
@@ -245,9 +265,100 @@ function MoneyInput({ field, register, error, value, setValue }) {
   );
 }
 
+function ListInput({ field, error, value, values, options, setValue }) {
+  const [draft, setDraft] = useState('');
+  const items = Array.isArray(value) ? value : [];
+  const placeholder = typeof field.getPlaceholder === 'function' ? field.getPlaceholder(values) : field.placeholder;
+  const maxItems = typeof field.getMaxItems === 'function' ? field.getMaxItems(values, options) : field.maxItems;
+  const canAddMore = !maxItems || items.length < maxItems;
+
+  const updateItems = (nextItems) => {
+    setValue(field.name, nextItems, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+  };
+
+  const addItem = () => {
+    const normalized = draft.trim();
+    if (!normalized || !canAddMore) return;
+    if (items.includes(normalized)) {
+      setDraft('');
+      return;
+    }
+
+    updateItems([...items, normalized]);
+    setDraft('');
+  };
+
+  const removeItem = (index) => {
+    updateItems(items.filter((_, itemIndex) => itemIndex !== index));
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ',') {
+      event.preventDefault();
+      addItem();
+      return;
+    }
+
+    if (event.key === 'Backspace' && !draft && items.length > 0) {
+      event.preventDefault();
+      removeItem(items.length - 1);
+    }
+  };
+
+  return (
+    <div className="flex w-full flex-col gap-1.5">
+      <label className="text-sm font-medium text-text-body">{resolveFieldLabel(field, values, options)}</label>
+      <div className="rounded-xl border border-border-subtle bg-surface-panel p-3 shadow-sm shadow-card-soft">
+        {items.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {items.map((item, index) => (
+              <span key={`${item}-${index}`} className="inline-flex items-center gap-2 rounded-full bg-primary-500/10 px-3 py-1 text-sm font-medium text-primary-700">
+                {item}
+                <button
+                  type="button"
+                  onClick={() => removeItem(index)}
+                  className="rounded-full text-primary-700 transition-colors hover:text-danger-base"
+                  aria-label={`Hapus ${item}`}
+                >
+                  <X size={14} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input
+            type="text"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            disabled={!canAddMore}
+            className={cn(
+              'flex w-full rounded-xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm text-text-title shadow-sm shadow-card-soft transition-colors placeholder:text-text-muted',
+              'focus-visible:border-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20',
+              error && 'border-danger-base focus-visible:border-danger-base focus-visible:ring-danger-base',
+            )}
+          />
+          <Button type="button" variant="secondary" onClick={addItem} className="sm:w-auto" disabled={!canAddMore}>
+            <Plus size={16} className="mr-2" />
+            Tambah
+          </Button>
+        </div>
+        <p className="mt-2 text-xs text-text-muted">
+          {maxItems === 1
+            ? 'Mode edit hanya mengubah satu nama kategori.'
+            : 'Tekan `Enter` atau klik tambah untuk memasukkan pilihan baru.'}
+        </p>
+      </div>
+      {error?.message && <p className="text-xs font-medium text-danger-base">{error.message}</p>}
+    </div>
+  );
+}
+
 function Field({ field, register, error, options, value, values, setValue }) {
   const common = {
-    label: field.label,
+    label: resolveFieldLabel(field, values, options),
     error: error?.message,
     ...register(field.name, field.valueAsNumber ? { valueAsNumber: true } : {}),
   };
@@ -264,10 +375,14 @@ function Field({ field, register, error, options, value, values, setValue }) {
     return <MoneyInput field={field} register={register} error={error} value={value} setValue={setValue} />;
   }
 
+  if (field.type === 'list') {
+    return <ListInput field={field} error={error} value={value} values={values} options={options} setValue={setValue} />;
+  }
+
   if (field.type === 'textarea') {
     return (
       <div className="flex w-full flex-col gap-1.5">
-        <label className="text-sm font-medium text-text-body">{field.label}</label>
+        <label className="text-sm font-medium text-text-body">{resolveFieldLabel(field, values, options)}</label>
         <textarea rows={3} className="rounded-xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm text-text-title shadow-sm shadow-card-soft placeholder:text-text-muted focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20" {...register(field.name)} />
         {error?.message && <p className="text-xs font-medium text-danger-base">{error.message}</p>}
       </div>
@@ -285,8 +400,12 @@ export default function ResourceForm({ schema, fields, defaultValues, options = 
     setValue,
     control,
     formState: { errors },
-  } = useForm({ resolver: zodResolver(schema), defaultValues });
+  } = useForm({ resolver: zodResolver(schema), defaultValues, shouldUnregister: true });
   const watchedValues = useWatch({ control });
+  const visibleFields = useMemo(
+    () => fields.filter((field) => shouldRenderField(field, watchedValues)),
+    [fields, watchedValues]
+  );
 
   useEffect(() => {
     reset(defaultValues);
@@ -294,7 +413,7 @@ export default function ResourceForm({ schema, fields, defaultValues, options = 
 
   return (
     <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>
-      {fields.map((field) => (
+      {visibleFields.map((field) => (
         <div key={field.name} className={field.full ? 'md:col-span-2' : ''}>
           <Field field={field} register={register} error={errors[field.name]} options={options} value={watchedValues?.[field.name]} values={watchedValues} setValue={setValue} />
         </div>

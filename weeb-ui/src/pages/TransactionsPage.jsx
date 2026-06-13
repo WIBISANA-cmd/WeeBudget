@@ -4,28 +4,6 @@ import { useAccountOptions } from '../hooks/useAccountOptions';
 import { useCategoryOptions } from '../hooks/useCategoryOptions';
 import { formatCurrency, formatDate } from '../lib/formatters';
 
-const needsByCategory = {
-  Gaji: ['Gaji bulanan', 'Rapel gaji', 'THR'],
-  Lembur: ['Lembur weekday', 'Lembur weekend', 'Tambahan shift'],
-  Bonus: ['Bonus kerja', 'Bonus target', 'Reward'],
-  Freelance: ['Project freelance', 'Jasa sampingan', 'Retainer'],
-  Jualan: ['Penjualan barang', 'Penjualan jasa', 'Komisi'],
-  Makan: ['Makan harian', 'Belanja lauk', 'Bekal'],
-  Transport: ['Bensin', 'Ojek/taksi', 'Parkir', 'Transport umum'],
-  'Kos/Kontrakan': ['Sewa bulanan', 'Iuran kos', 'Deposit'],
-  'Pulsa & Internet': ['Paket data', 'WiFi rumah', 'Pulsa'],
-  'Listrik & Air': ['Token listrik', 'Tagihan air', 'Iuran utilitas'],
-  Cicilan: ['Cicilan wajib', 'Paylater', 'Utang pribadi'],
-  Keluarga: ['Kirim keluarga', 'Kebutuhan orang tua', 'Bantuan rumah'],
-  Kesehatan: ['Obat', 'Dokter', 'Asuransi'],
-  'Belanja Rumah': ['Sembako', 'Peralatan rumah', 'Kebersihan'],
-  Jajan: ['Kopi/snack', 'Makan luar', 'Self reward'],
-  Hiburan: ['Streaming', 'Nonton', 'Game/hobi'],
-  Tabungan: ['Tabungan rutin', 'Target tabungan', 'Sisa uang aman'],
-  'Dana Darurat': ['Dana darurat bulanan', 'Cadangan kesehatan', 'Cadangan tak terduga'],
-  Lainnya: ['Kebutuhan lain', 'Alokasi khusus'],
-};
-
 const getNeedLabel = (row) => row.description || row.category?.name || '-';
 const isIncome = (row) => row.transaction_type === 'income';
 const signedAmount = (row) => `${isIncome(row) ? '+' : '-'}${formatCurrency(row.amount)}`;
@@ -49,29 +27,17 @@ export default function TransactionsPage({ type }) {
         : column
     )),
     fields: [
-      ...(type ? [] : [{ name: 'transaction_type', label: 'Tipe', type: 'select', options: [{ value: 'income', label: 'Pemasukan' }, { value: 'expense', label: 'Pengeluaran' }], clearFieldsOnChange: ['category_id', 'description'] }]),
+      ...(type ? [] : [{ name: 'transaction_type', label: 'Tipe', type: 'select', options: [{ value: 'income', label: 'Pemasukan' }, { value: 'expense', label: 'Pengeluaran' }], clearFieldsOnChange: ['category_id'] }]),
       { name: 'account_id', type: 'hidden' },
       {
         name: 'category_id',
         label: 'Kategori',
         type: 'select',
         optionsKey: 'categories',
-        clearFieldsOnChange: ['description'],
+        clearFieldsOnChange: [],
         getOptions: ({ options: categories, values }) => {
           const activeType = type || values?.transaction_type || 'expense';
           return categories.filter((category) => category.type === activeType || category.type === 'both');
-        },
-      },
-      {
-        name: 'description',
-        label: 'Kebutuhan',
-        type: 'select',
-        optionsKey: 'categories',
-        getOptions: ({ options: categories, values }) => {
-          const category = categories.find((item) => String(item.value) === String(values?.category_id || ''));
-          if (!category) return [];
-
-          return (needsByCategory[category.label] || [category.label]).map((need) => ({ value: need, label: need }));
         },
       },
       { name: 'amount', label: 'Nominal', type: 'number', valueAsNumber: true },

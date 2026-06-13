@@ -19,6 +19,7 @@ class CategoryController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = TransactionCategory::query()
+            ->with('account:id,name')
             ->where(fn ($q) => $q->where('user_id', $request->user()->id)->orWhereNull('user_id'))
             ->when($request->filled('transaction_type'), fn ($q) => $q->whereIn('transaction_type', [$request->transaction_type, 'both']))
             ->when($request->filled('need_type'), fn ($q) => $q->where('need_type', $request->need_type))
@@ -40,12 +41,12 @@ class CategoryController extends Controller
 
         $category = TransactionCategory::query()->create($data);
 
-        return $this->success(new CategoryResource($category), 'Category created.', 201);
+        return $this->success(new CategoryResource($category->load('account:id,name')), 'Category created.', 201);
     }
 
     public function show(Request $request, int $category): JsonResponse
     {
-        return $this->success(new CategoryResource($this->findCategory($request, $category)), 'Category loaded.');
+        return $this->success(new CategoryResource($this->findCategory($request, $category)->load('account:id,name')), 'Category loaded.');
     }
 
     public function update(UpdateCategoryRequest $request, int $category): JsonResponse
@@ -55,7 +56,7 @@ class CategoryController extends Controller
         $data['slug'] = $data['slug'] ?? (isset($data['name']) ? Str::slug($data['name']) : $model->slug);
         $model->update($data);
 
-        return $this->success(new CategoryResource($model->fresh()), 'Category updated.');
+        return $this->success(new CategoryResource($model->fresh()->load('account:id,name')), 'Category updated.');
     }
 
     public function destroy(Request $request, int $category): JsonResponse

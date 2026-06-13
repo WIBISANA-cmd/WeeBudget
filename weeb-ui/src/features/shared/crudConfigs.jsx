@@ -19,6 +19,13 @@ export const needTypeOptions = [
   { value: 'debt', label: 'Utang/Cicilan' },
 ];
 
+const categoryExamplesByNeedType = {
+  need: 'Contoh: Makan, Kos, Perabotan',
+  want: 'Contoh: Nongkrong, Hobi, Game',
+  saving: 'Contoh: Dana cadangan, Liburan, DP rumah',
+  debt: 'Contoh: Cicilan motor, Kredit HP, Pinjaman',
+};
+
 export const accountTypeOptions = [
   { value: 'cash', label: 'Tunai' },
   { value: 'bank', label: 'Bank' },
@@ -159,24 +166,71 @@ export const configs = {
     emptyTitle: 'Belum ada kategori custom',
     emptyDescription: 'Kategori bawaan sudah tersedia. Tambahkan kategori custom kalau ada kebutuhan khusus.',
     schema: z.object({
-      name: requiredText,
+      account_id: z.coerce.number().optional().or(z.literal('')),
+      names: z.array(requiredText).min(1, 'Tambahkan minimal satu pilihan kategori'),
       transaction_type: z.enum(['income', 'expense', 'both']),
       need_type: z.enum(['need', 'want', 'saving', 'debt']).optional().or(z.literal('')),
-      icon: z.string().optional(),
-      color: z.string().optional(),
     }),
-    defaultValues: { name: '', transaction_type: 'expense', need_type: '', icon: '', color: 'rgb(15,60,113)' },
+    defaultValues: { account_id: '', names: [], transaction_type: 'expense', need_type: '' },
+    toPayload: (values, existing) => {
+      const cleanedNames = (values.names || []).map((name) => name.trim()).filter(Boolean);
+      const payloadBase = {
+        account_id: values.account_id || null,
+        transaction_type: values.transaction_type,
+        need_type: values.transaction_type === 'income' ? null : values.need_type || null,
+      };
+
+      if (existing) {
+        return {
+          ...payloadBase,
+          name: cleanedNames[0] || existing.name,
+        };
+      }
+
+      return cleanedNames.map((name) => ({
+        ...payloadBase,
+        name,
+      }));
+    },
+    toForm: (row) => ({
+      account_id: row.account_id || '',
+      names: row.name ? [row.name] : [],
+      transaction_type: row.transaction_type || 'expense',
+      need_type: row.need_type || '',
+    }),
     fields: [
-      { name: 'name', label: 'Nama kategori' },
-      { name: 'transaction_type', label: 'Tipe', type: 'select', options: categoryOptions },
-      { name: 'need_type', label: 'Jenis', type: 'select', options: needTypeOptions },
-      { name: 'icon', label: 'Icon opsional' },
-      { name: 'color', label: 'Warna', type: 'color' },
+      { name: 'transaction_type', label: 'Tipe', type: 'select', options: categoryOptions, placeholder: 'Pilih tipe kategori' },
+      {
+        name: 'account_id',
+        label: 'Sumber Rekening',
+        type: 'select',
+        optionsKey: 'accounts',
+        placeholder: 'Pilih rekening dari menu rekening',
+        clearFieldsOnChange: [],
+        getLabel: (values) => values?.transaction_type === 'income' ? 'Rekening Tujuan' : 'Sumber Rekening',
+      },
+      {
+        name: 'need_type',
+        label: 'Jenis',
+        type: 'select',
+        options: needTypeOptions,
+        placeholder: 'Pilih jenis kategori',
+        showWhen: (values) => values?.transaction_type !== 'income',
+      },
+      {
+        name: 'names',
+        label: 'Pilihan kategori custom',
+        type: 'list',
+        full: true,
+        getPlaceholder: (values) => categoryExamplesByNeedType[values?.need_type] || 'Ketik nama kategori lalu tekan Enter',
+        getMaxItems: (_values, options) => options?.__editing ? 1 : undefined,
+      },
     ],
     columns: [
       { key: 'name', label: 'Nama' },
       { key: 'transaction_type', label: 'Tipe', render: (row) => <StatusBadge value={row.transaction_type} /> },
       { key: 'need_type', label: 'Jenis', render: (row) => <StatusBadge value={row.need_type}>{row.need_type || '-'}</StatusBadge> },
+      { key: 'account', label: 'Rekening', render: (row) => row.account?.name || '-' },
       { key: 'is_default', label: 'Default', render: (row) => row.is_default ? 'Ya' : 'Tidak' },
     ],
   },
