@@ -60,6 +60,7 @@ Route::middleware(UseDefaultUser::class)->group(function () {
     Route::get('/statistics/expenses/categories', [ExpenseStatisticController::class, 'byCategory'])->name('statistics.expenses.categories');
     Route::get('/budget-alerts', BudgetAlertController::class)->name('budget-alerts');
     Route::get('/budget-planner', BudgetPlannerController::class)->name('budget-planner');
+    Route::put('/budget-planner/allocations', [BudgetPlannerController::class, 'updateAllocations'])->name('budget-planner.allocations.update');
     Route::get('/couple-savings/setting', [CoupleSavingsSettingController::class, 'show'])->name('couple-savings.setting.show');
     Route::put('/couple-savings/setting', [CoupleSavingsSettingController::class, 'update'])->name('couple-savings.setting.update');
     Route::get('/gold-savings/market', GoldSavingsMarketController::class)->name('gold-savings.market');

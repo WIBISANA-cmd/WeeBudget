@@ -17,6 +17,7 @@ class UserProfile extends Model
         'payday_frequency',
         'monthly_income_estimate',
         'daily_safe_amount_target',
+        'budget_planner_allocations',
         'onboarding_completed_at',
     ];
 
@@ -25,6 +26,7 @@ class UserProfile extends Model
         return [
             'monthly_income_estimate' => 'decimal:2',
             'daily_safe_amount_target' => 'decimal:2',
+            'budget_planner_allocations' => 'array',
             'onboarding_completed_at' => 'date',
         ];
     }

@@ -10,18 +10,20 @@ use Carbon\CarbonImmutable;
 
 class BudgetPlannerService
 {
+    private const DEFAULT_PLANS = [
+        ['key' => 'needs', 'label' => 'Kebutuhan wajib', 'percent' => 50, 'description' => 'Makan, kos, kuota internet, dan kebutuhan yang tidak bisa ditunda.'],
+        ['key' => 'savings', 'label' => 'Tabungan', 'percent' => 20, 'description' => 'Uang yang dipisahkan untuk tujuan jangka pendek atau rencana penting yang sudah ditentukan.'],
+        ['key' => 'couple_savings', 'label' => 'Tabungan berdua', 'percent' => 5, 'description' => 'Setoran bersama pasangan untuk rencana berdua agar kontribusi tetap terlihat jelas.'],
+        ['key' => 'emergency_fund', 'label' => 'Dana darurat', 'percent' => 15, 'description' => 'Cadangan khusus untuk kebutuhan mendadak agar tabungan dan uang harian tidak ikut terganggu.'],
+        ['key' => 'wants', 'label' => 'Keinginan', 'percent' => 10, 'description' => 'Jajan, hiburan, nongkrong, dan wishlist yang masih bisa dikontrol atau ditunda.'],
+    ];
+
     public function generate(User $user, ?float $baseAmount = null): array
     {
         $baseAmount ??= $this->availableBalance($user);
         $baseAmount = max($baseAmount, 0);
 
-        $plans = [
-            ['key' => 'needs', 'label' => 'Kebutuhan wajib', 'percent' => 50, 'description' => 'Makan, kos, kuota internet, dan kebutuhan yang tidak bisa ditunda.'],
-            ['key' => 'savings', 'label' => 'Tabungan', 'percent' => 20, 'description' => 'Uang yang dipisahkan untuk tujuan jangka pendek atau rencana penting yang sudah ditentukan.'],
-            ['key' => 'couple_savings', 'label' => 'Tabungan berdua', 'percent' => 5, 'description' => 'Setoran bersama pasangan untuk rencana berdua agar kontribusi tetap terlihat jelas.'],
-            ['key' => 'emergency_fund', 'label' => 'Dana darurat', 'percent' => 15, 'description' => 'Cadangan khusus untuk kebutuhan mendadak agar tabungan dan uang harian tidak ikut terganggu.'],
-            ['key' => 'wants', 'label' => 'Keinginan', 'percent' => 10, 'description' => 'Jajan, hiburan, nongkrong, dan wishlist yang masih bisa dikontrol atau ditunda.'],
-        ];
+        $plans = $this->plansWithOverrides($user);
 
         $allocated = 0;
         $allocations = collect($plans)->map(function (array $plan) use ($baseAmount, &$allocated) {
@@ -48,8 +50,38 @@ class BudgetPlannerService
             'days_until_payday' => $daysUntilPayday,
             'daily_safe_from_plan' => round(floor(($baseAmount * 0.50) / max($daysUntilPayday, 1)), 2),
             'allocations' => $allocations,
+            'has_custom_allocations' => ! empty($user->profile?->budget_planner_allocations),
             'recommendation' => $this->recommendation($baseAmount, $daysUntilPayday),
         ];
+    }
+
+    public function saveAllocations(User $user, array $allocations): array
+    {
+        $profile = $user->profile()->firstOrCreate([], [
+            'currency' => 'IDR',
+            'timezone' => 'Asia/Jakarta',
+            'payday_frequency' => 'monthly',
+        ]);
+
+        $totalPercent = round(collect($allocations)->sum(fn (array $allocation) => (float) $allocation['percent']), 2);
+        if (abs($totalPercent - 100) >= 0.001) {
+            abort(422, 'Total persentase custom alokasi harus tepat 100%.');
+        }
+
+        $allowedKeys = collect(self::DEFAULT_PLANS)->pluck('key')->all();
+        $normalized = collect($allocations)
+            ->filter(fn (array $allocation) => in_array($allocation['key'], $allowedKeys, true))
+            ->map(fn (array $allocation) => [
+                'key' => $allocation['key'],
+                'percent' => round((float) $allocation['percent'], 2),
+            ])
+            ->values()
+            ->all();
+
+        $profile->budget_planner_allocations = $normalized;
+        $profile->save();
+
+        return $this->generate($user->fresh('profile'));
     }
 
     private function availableBalance(User $user): float
@@ -152,5 +184,20 @@ class BudgetPlannerService
         }
 
         return 'Ritme cukup sehat. Sisihkan dulu dana darurat sebelum menaikkan budget keinginan.';
+    }
+
+    private function plansWithOverrides(User $user): array
+    {
+        $overrides = collect($user->profile?->budget_planner_allocations ?? [])
+            ->keyBy('key');
+
+        return collect(self::DEFAULT_PLANS)->map(function (array $plan) use ($overrides) {
+            $overridePercent = $overrides->get($plan['key'])['percent'] ?? null;
+
+            return [
+                ...$plan,
+                'percent' => $overridePercent !== null ? (float) $overridePercent : $plan['percent'],
+            ];
+        })->all();
     }
 }

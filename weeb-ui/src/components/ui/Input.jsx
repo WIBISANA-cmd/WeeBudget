@@ -11,6 +11,10 @@ const Input = forwardRef(({
   icon: Icon,
   ...props 
 }, ref) => {
+  const normalizedValue = typeof props.value === 'number' && !Number.isFinite(props.value)
+    ? ''
+    : props.value;
+
   return (
     <div className="flex flex-col gap-1.5 w-full">
       {label && (
@@ -37,6 +41,7 @@ const Input = forwardRef(({
             className
           )}
           {...props}
+          value={normalizedValue}
         />
         {error && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2 text-danger-base">

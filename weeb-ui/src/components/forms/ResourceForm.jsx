@@ -16,9 +16,10 @@ function onlyDigits(value) {
 
 function normalizeMoneyValue(value) {
   if (value === '' || value === null || value === undefined) return '';
-  if (typeof value === 'number') return value;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : '';
 
   const raw = String(value).trim();
+  if (!raw || raw.toLowerCase() === 'nan') return '';
   if (/^\d+\.\d{1,2}$/.test(raw)) return Number(raw);
   if (/^\d+$/.test(raw)) return Number(raw);
 

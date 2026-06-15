@@ -5,7 +5,7 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import ErrorState from '../components/feedback/ErrorState';
 import LoadingSkeleton from '../components/feedback/LoadingSkeleton';
-import { apiGet } from '../api/http';
+import { apiGet, apiPut } from '../api/http';
 import { formatCurrency, formatDate } from '../lib/formatters';
 
 const parseAmount = (value) => Number(String(value || '').replace(/\D/g, ''));
@@ -38,11 +38,14 @@ export default function BudgetPlannerPage() {
   const [planner, setPlanner] = useState(null);
   const [customAllocations, setCustomAllocations] = useState({});
   const [isLoading, setLoading] = useState(true);
+  const [isSavingCustomAllocations, setSavingCustomAllocations] = useState(false);
+  const [saveMessage, setSaveMessage] = useState(null);
   const [error, setError] = useState(null);
 
   const loadPlanner = async (amount = '') => {
     setLoading(true);
     setError(null);
+    setSaveMessage(null);
     try {
       const numericAmount = parseAmount(amount);
       const hasManualAmount = String(amount).trim() !== '';
@@ -90,6 +93,35 @@ export default function BudgetPlannerPage() {
   const isPercentageBalanced = Math.abs(percentageDifference) < 0.001;
   const customNeedsAmount = customAllocationItems.find((item) => item.key === 'needs')?.appliedAmount || 0;
   const customDailySafe = Math.floor(customNeedsAmount / Math.max(planner?.days_until_payday || 1, 1));
+
+  const saveCustomAllocations = async () => {
+    if (!isPercentageBalanced) {
+      setSaveMessage({ type: 'error', text: 'Custom alokasi belum bisa disimpan karena total persentase harus tepat 100%.' });
+      return;
+    }
+
+    setSavingCustomAllocations(true);
+    setSaveMessage(null);
+    try {
+      const response = await apiPut('/budget-planner/allocations', {
+        allocations: customAllocationItems.map((item) => ({
+          key: item.key,
+          percent: item.appliedPercent,
+        })),
+      });
+
+      setPlanner(response.data);
+      setCustomAllocations({});
+      setSaveMessage({ type: 'success', text: 'Custom alokasi berhasil disimpan dan sekarang menjadi rekomendasi aktif.' });
+    } catch (err) {
+      setSaveMessage({
+        type: 'error',
+        text: err.response?.data?.message || 'Custom alokasi belum bisa disimpan.',
+      });
+    } finally {
+      setSavingCustomAllocations(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -145,7 +177,7 @@ export default function BudgetPlannerPage() {
             <p className="text-2xl font-semibold text-text-title">{formatBudgetCurrency(planner?.base_amount)}</p>
           </div>
           <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
-            <p className="text-sm text-text-muted">{usesActivePeriod ? 'Hari tersisa periode' : 'Hari sampai gajian'}</p>
+            <p className="text-sm text-text-muted">Hari tersisa hingga gajian (terhitung mulai dari hari ini)</p>
             <p className="mt-3 text-3xl font-semibold text-primary-600">{planner?.days_until_payday}</p>
           </div>
           <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
@@ -160,11 +192,15 @@ export default function BudgetPlannerPage() {
         <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <CardTitle>Custom alokasi dana</CardTitle>
-            <CardDescription>Ubah tiap pos dalam persentase. Nominal card akan otomatis menyesuaikan dana dasar.</CardDescription>
           </div>
-          <Button variant="secondary" onClick={() => setCustomAllocations({})}>
-            Kosongkan input
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" onClick={() => setCustomAllocations({})}>
+              Kosongkan input
+            </Button>
+            <Button onClick={saveCustomAllocations} isLoading={isSavingCustomAllocations} disabled={!isPercentageBalanced}>
+              Simpan custom alokasi
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
@@ -184,7 +220,14 @@ export default function BudgetPlannerPage() {
             </p>
           </div>
         </CardContent>
-
+        
+        {saveMessage && (
+          <CardContent className="pt-0">
+            <div className={`rounded-2xl px-4 py-3 text-sm font-medium ${saveMessage.type === 'success' ? 'bg-success-base/10 text-success-base' : 'bg-danger-base/10 text-danger-base'}`}>
+              {saveMessage.text}
+            </div>
+          </CardContent>
+        )}
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">

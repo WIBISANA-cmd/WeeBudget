@@ -1,13 +1,16 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowRightLeft } from 'lucide-react';
 import { z } from 'zod';
 import CrudResourcePage from '../features/shared/CrudResourcePage';
 import { configs } from '../features/shared/crudConfigs';
 import { useAccountOptions } from '../hooks/useAccountOptions';
 import { resourcesApi } from '../api/resources';
+import { apiGet } from '../api/http';
 import Button from '../components/ui/Button';
 import Modal from '../components/forms/Modal';
 import ResourceForm from '../components/forms/ResourceForm';
+import { Card, CardContent } from '../components/ui/Card';
+import { formatCurrency } from '../lib/formatters';
 
 const allocationSchema = z.object({
   source_account_id: z.coerce.number().min(1, 'Rekening sumber wajib dipilih'),
@@ -62,19 +65,36 @@ export default function AccountsPage() {
   const [isAllocationOpen, setAllocationOpen] = useState(false);
   const [isSavingAllocation, setSavingAllocation] = useState(false);
   const [pageVersion, setPageVersion] = useState(0);
-  const accountOptions = useAccountOptions();
-  const activeAccounts = useMemo(() => accountOptions.accounts || [], [accountOptions.accounts]);
+  const [plannerPreview, setPlannerPreview] = useState(null);
+  const [plannerPreviewError, setPlannerPreviewError] = useState(null);
+  const accountOptions = useAccountOptions({ includeInactive: true });
+  const allAccounts = useMemo(() => accountOptions.accounts || [], [accountOptions.accounts]);
   const allocationOptions = useMemo(() => ({
-    accounts: activeAccounts,
-  }), [activeAccounts]);
+    accounts: allAccounts,
+  }), [allAccounts]);
 
   const defaultAllocationValues = useMemo(() => ({
-    source_account_id: activeAccounts[0]?.value || '',
-    destination_account_id: activeAccounts[1]?.value || '',
+    source_account_id: allAccounts[0]?.value || '',
+    destination_account_id: allAccounts[1]?.value || '',
     amount: '',
     transaction_date: new Date().toISOString().slice(0, 10),
     notes: '',
-  }), [activeAccounts]);
+  }), [allAccounts]);
+
+  useEffect(() => {
+    if (!isAllocationOpen) return;
+
+    queueMicrotask(async () => {
+      try {
+        const response = await apiGet('/budget-planner');
+        setPlannerPreview(response.data || null);
+        setPlannerPreviewError(null);
+      } catch (error) {
+        setPlannerPreview(null);
+        setPlannerPreviewError(error.response?.data?.message || 'Preview budget planner belum bisa dimuat.');
+      }
+    });
+  }, [isAllocationOpen]);
 
   const submitAllocation = async (values) => {
     setSavingAllocation(true);
@@ -102,7 +122,7 @@ export default function AccountsPage() {
         <Button
           variant="secondary"
           onClick={() => setAllocationOpen(true)}
-          disabled={activeAccounts.length < 2}
+          disabled={allAccounts.length < 2}
         >
           <ArrowRightLeft size={18} className="mr-2" />
           Alokasi Dana
@@ -117,6 +137,37 @@ export default function AccountsPage() {
         title="Alokasi Dana"
         description="Pindahkan nominal dari satu rekening ke rekening lain tanpa mengubah saldo secara manual."
       >
+        {plannerPreview && (
+          <Card className="mb-4 border-primary-500 bg-primary-500/5">
+            <CardContent className="space-y-3">
+              <div>
+                <p className="text-sm text-text-muted">Acuan nominal dari Budget Planner</p>
+                <p className="mt-1 text-lg font-semibold text-text-title">
+                  Dana dasar {formatCurrency(plannerPreview.base_amount || 0)}
+                </p>
+                <p className="mt-1 text-xs text-text-muted">
+                  Gunakan nominal ini sebagai referensi sebelum submit alokasi dana antar rekening.
+                </p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {(plannerPreview.allocations || []).map((item) => (
+                  <div key={item.key} className="rounded-2xl bg-surface-panel p-4 shadow-sm shadow-card-soft">
+                    <p className="text-sm text-text-muted">{item.label}</p>
+                    <p className="mt-1 text-lg font-semibold text-primary-600">{formatCurrency(item.amount)}</p>
+                    <p className="mt-1 text-xs text-text-muted">{item.percent}% dari dana dasar</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        {plannerPreviewError && (
+          <Card className="mb-4 border-warning-base bg-warning-base/5">
+            <CardContent>
+              <p className="text-sm font-medium text-warning-base">{plannerPreviewError}</p>
+            </CardContent>
+          </Card>
+        )}
         <ResourceForm
           schema={allocationSchema}
           fields={allocationFields}
@@ -126,7 +177,7 @@ export default function AccountsPage() {
           submitLabel="Simpan alokasi"
           onSubmit={submitAllocation}
         />
-        {activeAccounts.length < 2 && (
+        {allAccounts.length < 2 && (
           <p className="mt-3 text-sm text-danger-base">
             Tambahkan minimal dua rekening aktif agar alokasi dana bisa dilakukan.
           </p>
