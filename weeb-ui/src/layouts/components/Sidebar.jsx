@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, ArrowRightLeft, PieChart, Target, X, BellRing, Repeat, FileText, Lightbulb, HeartHandshake, Settings, ListChecks, Calculator, CalendarRange, Landmark, Users, ChevronDown, WalletCards, ShieldCheck, ChartNoAxesCombined, SlidersHorizontal } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
 
 const menuGroups = [
   {
@@ -70,14 +71,22 @@ function isPathActive(pathname, path) {
 
 export default function Sidebar({ isOpen, close }) {
   const { pathname } = useLocation();
+  const { user } = useCurrentUser();
+  const isPersonalMode = (user?.profile?.account_mode || 'couple') === 'personal';
+  const visibleMenuGroups = useMemo(() => menuGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !(isPersonalMode && item.path === '/couple-savings')),
+    }))
+    .filter((group) => group.items.length > 0), [isPersonalMode]);
   const activeGroupKeys = useMemo(
-    () => menuGroups
+    () => visibleMenuGroups
       .filter((group) => group.items.some((item) => isPathActive(pathname, item.path)))
       .map((group) => group.key),
-    [pathname]
+    [pathname, visibleMenuGroups]
   );
   const [openGroups, setOpenGroups] = useState(() => (
-    menuGroups.reduce((groups, group) => ({
+    visibleMenuGroups.reduce((groups, group) => ({
       ...groups,
       [group.key]: group.items.some((item) => isPathActive(pathname, item.path)),
     }), {})
@@ -112,7 +121,7 @@ export default function Sidebar({ isOpen, close }) {
         </div>
 
         <nav className="flex-1 space-y-3 overflow-y-auto px-4 py-5 md:px-4 md:py-6">
-          {menuGroups.map((group) => {
+          {visibleMenuGroups.map((group) => {
             const isOpenGroup = openGroups[group.key] || activeGroupKeys.includes(group.key);
             const isActiveGroup = activeGroupKeys.includes(group.key);
             const singleItem = group.items.length === 1 ? group.items[0] : null;

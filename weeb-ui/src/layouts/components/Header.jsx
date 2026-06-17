@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, ChevronDown, LogOut, Menu, UserCircle } from 'lucide-react';
-import { apiGet, apiPost } from '../../api/http';
+import { apiPost } from '../../api/http';
 import { cn } from '../../lib/utils';
 import ThemeToggle from '../../components/ui/ThemeToggle';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
 
 export default function Header({ toggleSidebar }) {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const { user } = useCurrentUser();
   const [isProfileOpen, setProfileOpen] = useState(false);
   const profileMenuRef = useRef(null);
   const greeting = useMemo(() => {
@@ -16,17 +17,6 @@ export default function Header({ toggleSidebar }) {
     if (hour < 15) return 'Selamat siang';
     if (hour < 19) return 'Selamat sore';
     return 'Selamat malam';
-  }, []);
-
-  useEffect(() => {
-    queueMicrotask(async () => {
-      try {
-        const response = await apiGet('/auth/me');
-        setUser(response.data);
-      } catch {
-        setUser(null);
-      }
-    });
   }, []);
 
   useEffect(() => {
@@ -60,7 +50,6 @@ export default function Header({ toggleSidebar }) {
       // Local token cleanup is enough for the UI even if the server request fails.
     }
     localStorage.removeItem('weeb_auth_token');
-    setUser(null);
     setProfileOpen(false);
     navigate('/login');
   };

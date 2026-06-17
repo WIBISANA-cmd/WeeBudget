@@ -21,6 +21,7 @@ class UserResource extends JsonResource
             'avatar_url' => $this->avatar_url,
             'email_verified_at' => $this->email_verified_at?->toISOString(),
             'last_login_at' => $this->last_login_at?->toISOString(),
+            'profile' => $this->whenLoaded('profile', fn () => new UserProfileResource($this->profile)),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

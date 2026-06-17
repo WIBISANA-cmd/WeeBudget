@@ -18,6 +18,7 @@ class UserProfileResource extends JsonResource
             'payday_frequency' => $this->payday_frequency,
             'monthly_income_estimate' => $this->monthly_income_estimate,
             'daily_safe_amount_target' => $this->daily_safe_amount_target,
+            'account_mode' => $this->account_mode ?? 'couple',
             'onboarding_completed_at' => $this->onboarding_completed_at?->toDateString(),
         ];
     }

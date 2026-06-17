@@ -11,6 +11,7 @@ const schema = z.object({
   monthly_income_estimate: z.coerce.number().min(0),
   payday_day: z.coerce.number().min(1).max(31),
   daily_safe_amount_target: z.coerce.number().min(0).optional().or(z.literal('')),
+  account_mode: z.enum(['personal', 'couple']),
   financial_priority: z.enum(['survive_until_payday', 'reduce_spending', 'build_emergency_fund', 'pay_debt', 'save_for_goal']),
   saving_goal_name: z.string().optional(),
   saving_goal_target: z.coerce.number().positive().optional().or(z.literal('')),
@@ -44,8 +45,8 @@ export default function OnboardingPage() {
       {error && <ErrorState message={error} />}
       <Card>
         <CardHeader>
-          <CardTitle>Profil finansial awal</CardTitle>
-          <CardDescription>Data ini bisa diubah lagi kapan saja di pengaturan.</CardDescription>
+              <CardTitle>Profil finansial awal</CardTitle>
+          <CardDescription>Data ini bisa diubah lagi kapan saja di pengaturan. Kamu juga bisa memilih apakah WeeB dipakai sendiri atau berpasangan.</CardDescription>
         </CardHeader>
         <CardContent>
           <ResourceForm
@@ -57,12 +58,17 @@ export default function OnboardingPage() {
               monthly_income_estimate: 3200000,
               payday_day: 25,
               daily_safe_amount_target: 65000,
+              account_mode: 'couple',
               financial_priority: 'survive_until_payday',
               saving_goal_name: 'Service motor',
               saving_goal_target: 750000,
               emergency_fund_target: 1000000,
             }}
             fields={[
+              { name: 'account_mode', label: 'Mode penggunaan', type: 'select', options: [
+                { value: 'couple', label: 'Berdua / Berpasangan' },
+                { value: 'personal', label: 'Pribadi' },
+              ] },
               { name: 'name', label: 'Nama panggilan' },
               { name: 'monthly_income_estimate', label: 'Penghasilan bulanan', type: 'number', valueAsNumber: true },
               { name: 'payday_day', label: 'Tanggal gajian', type: 'number', valueAsNumber: true },

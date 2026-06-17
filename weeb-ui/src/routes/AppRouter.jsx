@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Outlet, Routes, Route, useLocation } from 'react-router-dom';
 import { PageLoader } from '../components/feedback/LoadingSkeleton';
 import PageTitle from '../components/system/PageTitle';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 
 const DashboardLayout = lazy(() => import('../layouts/DashboardLayout'));
 const DashboardPage = lazy(() => import('../pages/DashboardPage'));
@@ -37,6 +38,35 @@ function RequireAuth() {
   return <Outlet />;
 }
 
+function RequireOnboarding() {
+  const { user, isLoading } = useCurrentUser();
+  const location = useLocation();
+
+  if (isLoading) {
+    return <div className="min-h-screen bg-bg-base p-4 md:p-8"><PageLoader /></div>;
+  }
+
+  if (user && !user.profile?.onboarding_completed_at && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  return <Outlet />;
+}
+
+function RequireCoupleMode() {
+  const { user, isLoading } = useCurrentUser();
+
+  if (isLoading) {
+    return <div className="min-h-screen bg-bg-base p-4 md:p-8"><PageLoader /></div>;
+  }
+
+  if ((user?.profile?.account_mode || 'couple') === 'personal') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Outlet />;
+}
+
 function HomeRedirect() {
   return <Navigate to={localStorage.getItem('weeb_auth_token') ? '/dashboard' : '/login'} replace />;
 }
@@ -51,27 +81,31 @@ export default function AppRouter() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
           <Route element={<RequireAuth />}>
-            <Route element={<DashboardLayout />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/onboarding" element={<OnboardingPage />} />
-              <Route path="/transactions" element={<TransactionsPage />} />
-              <Route path="/transactions/income" element={<TransactionsPage type="income" />} />
-              <Route path="/transactions/expense" element={<TransactionsPage type="expense" />} />
-              <Route path="/accounts" element={<AccountsPage />} />
-              <Route path="/categories" element={<CategoriesPage />} />
-              <Route path="/budgets" element={<BudgetsPage />} />
-              <Route path="/budget-planner" element={<BudgetPlannerPage />} />
-              <Route path="/periods" element={<PeriodsPage />} />
-              <Route path="/savings" element={<SavingsPage />} />
-              <Route path="/couple-savings" element={<CoupleSavingsPage />} />
-              <Route path="/emergency-fund" element={<EmergencyFundPage />} />
-              <Route path="/bills" element={<BillsPage />} />
-              <Route path="/recurring-transactions" element={<RecurringTransactionsPage />} />
-              <Route path="/reports" element={<ReportsPage />} />
-              <Route path="/insights" element={<InsightsPage />} />
-              <Route path="/wishlist" element={<WishlistPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/users" element={<UsersPage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route element={<RequireOnboarding />}>
+              <Route element={<DashboardLayout />}>
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/transactions" element={<TransactionsPage />} />
+                <Route path="/transactions/income" element={<TransactionsPage type="income" />} />
+                <Route path="/transactions/expense" element={<TransactionsPage type="expense" />} />
+                <Route path="/accounts" element={<AccountsPage />} />
+                <Route path="/categories" element={<CategoriesPage />} />
+                <Route path="/budgets" element={<BudgetsPage />} />
+                <Route path="/budget-planner" element={<BudgetPlannerPage />} />
+                <Route path="/periods" element={<PeriodsPage />} />
+                <Route path="/savings" element={<SavingsPage />} />
+                <Route element={<RequireCoupleMode />}>
+                  <Route path="/couple-savings" element={<CoupleSavingsPage />} />
+                </Route>
+                <Route path="/emergency-fund" element={<EmergencyFundPage />} />
+                <Route path="/bills" element={<BillsPage />} />
+                <Route path="/recurring-transactions" element={<RecurringTransactionsPage />} />
+                <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/insights" element={<InsightsPage />} />
+                <Route path="/wishlist" element={<WishlistPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/users" element={<UsersPage />} />
+              </Route>
             </Route>
           </Route>
 

@@ -35,6 +35,7 @@ class OnboardingController extends Controller
                 'monthly_income_estimate' => $data['monthly_income_estimate'],
                 'payday_day' => $data['payday_day'],
                 'daily_safe_amount_target' => $data['daily_safe_amount_target'] ?? null,
+                'account_mode' => $data['account_mode'],
                 'onboarding_completed_at' => now()->toDateString(),
             ],
         );

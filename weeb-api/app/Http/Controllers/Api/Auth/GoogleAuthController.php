@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Concerns\RespondsWithApi;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Models\UserProfile;
 use Illuminate\Http\JsonResponse;
@@ -55,16 +56,7 @@ class GoogleAuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        $user = $request->user();
-
-        return $this->success([
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => $user->role ?? 'user',
-            'status' => $user->status ?? 'active',
-            'avatar_url' => $user->avatar_url,
-        ], 'Authenticated user loaded.');
+        return $this->success(new UserResource($request->user()->load('profile')), 'Authenticated user loaded.');
     }
 
     public function logout(Request $request): JsonResponse

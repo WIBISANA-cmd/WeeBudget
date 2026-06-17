@@ -40,7 +40,7 @@ class PasswordAuthController extends Controller
 
         return $this->success([
             'token' => $token,
-            'user' => new UserResource($user->fresh()),
+            'user' => new UserResource($user->fresh()->load('profile')),
         ], 'Login successful.');
     }
 }

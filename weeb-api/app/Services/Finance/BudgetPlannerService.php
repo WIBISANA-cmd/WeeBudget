@@ -10,12 +10,19 @@ use Carbon\CarbonImmutable;
 
 class BudgetPlannerService
 {
-    private const DEFAULT_PLANS = [
+    private const DEFAULT_COUPLE_PLANS = [
         ['key' => 'needs', 'label' => 'Kebutuhan wajib', 'percent' => 50, 'description' => 'Makan, kos, kuota internet, dan kebutuhan yang tidak bisa ditunda.'],
         ['key' => 'savings', 'label' => 'Tabungan', 'percent' => 20, 'description' => 'Uang yang dipisahkan untuk tujuan jangka pendek atau rencana penting yang sudah ditentukan.'],
         ['key' => 'couple_savings', 'label' => 'Tabungan berdua', 'percent' => 5, 'description' => 'Setoran bersama pasangan untuk rencana berdua agar kontribusi tetap terlihat jelas.'],
         ['key' => 'emergency_fund', 'label' => 'Dana darurat', 'percent' => 15, 'description' => 'Cadangan khusus untuk kebutuhan mendadak agar tabungan dan uang harian tidak ikut terganggu.'],
         ['key' => 'wants', 'label' => 'Keinginan', 'percent' => 10, 'description' => 'Jajan, hiburan, nongkrong, dan wishlist yang masih bisa dikontrol atau ditunda.'],
+    ];
+
+    private const DEFAULT_PERSONAL_PLANS = [
+        ['key' => 'needs', 'label' => 'Kebutuhan wajib', 'percent' => 50, 'description' => 'Makan, kos, kuota internet, dan kebutuhan yang tidak bisa ditunda.'],
+        ['key' => 'savings', 'label' => 'Tabungan', 'percent' => 20, 'description' => 'Uang yang dipisahkan untuk tujuan jangka pendek atau rencana penting yang sudah ditentukan.'],
+        ['key' => 'emergency_fund', 'label' => 'Dana darurat', 'percent' => 15, 'description' => 'Cadangan khusus untuk kebutuhan mendadak agar tabungan dan uang harian tidak ikut terganggu.'],
+        ['key' => 'wants', 'label' => 'Keinginan', 'percent' => 15, 'description' => 'Jajan, hiburan, nongkrong, dan wishlist yang masih bisa dikontrol atau ditunda.'],
     ];
 
     public function generate(User $user, ?float $baseAmount = null): array
@@ -63,22 +70,21 @@ class BudgetPlannerService
             'payday_frequency' => 'monthly',
         ]);
 
-        $totalPercent = round(collect($allocations)->sum(fn (array $allocation) => (float) $allocation['percent']), 2);
-        if (abs($totalPercent - 100) >= 0.001) {
-            abort(422, 'Total persentase custom alokasi harus tepat 100%.');
-        }
-
-        $allowedKeys = collect(self::DEFAULT_PLANS)->pluck('key')->all();
+        $allowedKeys = collect($this->plansForUser($user))->pluck('key')->all();
         $normalized = collect($allocations)
             ->filter(fn (array $allocation) => in_array($allocation['key'], $allowedKeys, true))
             ->map(fn (array $allocation) => [
                 'key' => $allocation['key'],
                 'percent' => round((float) $allocation['percent'], 2),
             ])
-            ->values()
-            ->all();
+            ->values();
 
-        $profile->budget_planner_allocations = $normalized;
+        $totalPercent = round($normalized->sum(fn (array $allocation) => (float) $allocation['percent']), 2);
+        if (abs($totalPercent - 100) >= 0.001) {
+            abort(422, 'Total persentase custom alokasi harus tepat 100%.');
+        }
+
+        $profile->budget_planner_allocations = $normalized->all();
         $profile->save();
 
         return $this->generate($user->fresh('profile'));
@@ -191,7 +197,7 @@ class BudgetPlannerService
         $overrides = collect($user->profile?->budget_planner_allocations ?? [])
             ->keyBy('key');
 
-        return collect(self::DEFAULT_PLANS)->map(function (array $plan) use ($overrides) {
+        return collect($this->plansForUser($user))->map(function (array $plan) use ($overrides) {
             $overridePercent = $overrides->get($plan['key'])['percent'] ?? null;
 
             return [
@@ -199,5 +205,12 @@ class BudgetPlannerService
                 'percent' => $overridePercent !== null ? (float) $overridePercent : $plan['percent'],
             ];
         })->all();
+    }
+
+    private function plansForUser(User $user): array
+    {
+        $mode = $user->profile?->account_mode ?? 'couple';
+
+        return $mode === 'personal' ? self::DEFAULT_PERSONAL_PLANS : self::DEFAULT_COUPLE_PLANS;
     }
 }

@@ -17,6 +17,7 @@ class UserProfile extends Model
         'payday_frequency',
         'monthly_income_estimate',
         'daily_safe_amount_target',
+        'account_mode',
         'budget_planner_allocations',
         'onboarding_completed_at',
     ];

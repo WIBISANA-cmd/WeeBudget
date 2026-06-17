@@ -10,6 +10,10 @@ class CoupleSavingsAccessService
 {
     public function accountOwnerIdsFor(User $user): array
     {
+        if ($this->isPersonalMode($user)) {
+            return [(int) $user->id];
+        }
+
         $partnerIds = $this->partnerIds();
 
         if ($partnerIds === []) {
@@ -25,6 +29,10 @@ class CoupleSavingsAccessService
 
     public function canAccessAccount(FinancialAccount $account, User $user): bool
     {
+        if ($this->isPersonalMode($user) && ! $this->isAdmin($user)) {
+            return false;
+        }
+
         if ((int) $account->user_id === (int) $user->id) {
             return true;
         }
@@ -46,6 +54,10 @@ class CoupleSavingsAccessService
 
     public function canShareCoupleSavings(User $user): bool
     {
+        if ($this->isPersonalMode($user) && ! $this->isAdmin($user)) {
+            return false;
+        }
+
         $partnerIds = $this->partnerIds();
 
         return $partnerIds !== []
@@ -70,5 +82,10 @@ class CoupleSavingsAccessService
     private function isAdmin(User $user): bool
     {
         return ($user->role ?? 'user') === 'admin';
+    }
+
+    private function isPersonalMode(User $user): bool
+    {
+        return ($user->profile?->account_mode ?? 'couple') === 'personal';
     }
 }
