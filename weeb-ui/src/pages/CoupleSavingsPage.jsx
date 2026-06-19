@@ -45,7 +45,6 @@ export default function CoupleSavingsPage() {
 
   const resource = useCrudResource('/transactions', {
     transaction_type: 'income',
-    need_type: 'saving',
     account_purpose: 'couple_savings',
     per_page: 100,
   });
