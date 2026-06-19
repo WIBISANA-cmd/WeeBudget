@@ -223,12 +223,24 @@ export default function CoupleSavingsPage() {
 
   const columns = [
     { key: 'transaction_date', label: 'Tanggal', render: (row) => formatDate(row.transaction_date) },
+    { key: 'entry_type', label: 'Jenis', render: (row) => (
+      <StatusBadge value={row.entry_type}>
+        {row.entry_type === 'account_allocation' ? 'Alokasi Dana' : 'Setoran Manual'}
+      </StatusBadge>
+    ) },
     { key: 'source', label: 'Penyetor', render: (row) => {
       const partner = partnerBySource[row.source];
       return <StatusBadge value="income">{partner ? `${partner.label} - ${partner.user.name}` : row.source || '-'}</StatusBadge>;
     } },
     { key: 'account', label: 'Rekening sumber saldo', render: (row) => row.account?.name || '-' },
-    { key: 'description', label: 'Deskripsi', render: (row) => row.description || '-' },
+    { key: 'description', label: 'Deskripsi', render: (row) => (
+      <div className="space-y-1">
+        <p>{row.description || '-'}</p>
+        {row.entry_type === 'account_allocation' && (
+          <p className="text-xs text-text-muted">Transaksi ini berasal dari fitur alokasi dana antar rekening.</p>
+        )}
+      </div>
+    ) },
     { key: 'amount', label: 'Nominal', render: (row) => formatCurrency(row.amount) },
   ];
 

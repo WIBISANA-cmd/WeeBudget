@@ -11,6 +11,8 @@ class TransactionResource extends JsonResource
 
     public function toArray(Request $request): array
     {
+        $isAccountAllocation = ! empty(data_get($this->metadata, 'actor_user_id'));
+
         return [
             'id' => $this->id,
             'user_id' => $this->user_id,
@@ -26,6 +28,7 @@ class TransactionResource extends JsonResource
             'description' => $this->description,
             'notes' => $this->notes,
             'source' => $this->source,
+            'entry_type' => $isAccountAllocation ? 'account_allocation' : 'manual',
             'links' => [
                 'bill_id' => $this->bill_id,
                 'saving_goal_id' => $this->saving_goal_id,

@@ -25,6 +25,8 @@ const tones = {
   bills: 'bg-warning-base text-white border-warning-base dark:text-slate-950',
   wishlist: 'bg-primary-500 text-white border-primary-500 dark:text-slate-950',
   investment: 'bg-success-base text-white border-success-base dark:text-slate-950',
+  account_allocation: 'bg-primary-500 text-white border-primary-500 dark:text-slate-950',
+  manual: 'bg-success-base text-white border-success-base dark:text-slate-950',
 };
 
 export default function StatusBadge({ value, children }) {
