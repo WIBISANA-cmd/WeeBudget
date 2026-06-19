@@ -88,6 +88,7 @@ class AccountBalanceService
             $sourceAccount = $this->lockedAccessibleAccount((int) $data['source_account_id'], $userId);
             $destinationAccount = $this->lockedAccessibleAccount((int) $data['destination_account_id'], $userId);
             $amount = (float) $data['amount'];
+            $actorLabel = $this->allocationActorLabel($userId);
 
             if ((float) $sourceAccount->current_balance < $amount) {
                 throw ValidationException::withMessages([
@@ -110,6 +111,8 @@ class AccountBalanceService
                 'source' => 'account_allocation',
                 'metadata' => [
                     'direction' => 'out',
+                    'actor_label' => $actorLabel,
+                    'actor_user_id' => $userId,
                     'counterpart_account_id' => $destinationAccount->id,
                     'counterpart_account_name' => $destinationAccount->name,
                 ],
@@ -124,9 +127,11 @@ class AccountBalanceService
                 'transaction_date' => $date,
                 'description' => sprintf('Alokasi dari %s', $sourceAccount->name),
                 'notes' => $notes,
-                'source' => 'account_allocation',
+                'source' => $actorLabel,
                 'metadata' => [
                     'direction' => 'in',
+                    'actor_label' => $actorLabel,
+                    'actor_user_id' => $userId,
                     'counterpart_account_id' => $sourceAccount->id,
                     'counterpart_account_name' => $sourceAccount->name,
                 ],
@@ -241,6 +246,13 @@ class AccountBalanceService
             )
             ->lockForUpdate()
             ->first();
+    }
+
+    private function allocationActorLabel(int $userId): string
+    {
+        $user = \App\Models\User::query()->find($userId);
+
+        return $user?->email ?: $user?->name ?: 'Pengguna WeeB';
     }
 
     private function resolveAccountId(int $userId, ?int $accountId = null): int
