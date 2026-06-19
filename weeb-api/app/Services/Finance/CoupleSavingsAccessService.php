@@ -29,12 +29,12 @@ class CoupleSavingsAccessService
 
     public function canAccessAccount(FinancialAccount $account, User $user): bool
     {
-        if ($this->isPersonalMode($user) && ! $this->isAdmin($user)) {
-            return false;
-        }
-
         if ((int) $account->user_id === (int) $user->id) {
             return true;
+        }
+
+        if ($this->isPersonalMode($user) && ! $this->isAdmin($user)) {
+            return false;
         }
 
         return $account->purpose === 'couple_savings'

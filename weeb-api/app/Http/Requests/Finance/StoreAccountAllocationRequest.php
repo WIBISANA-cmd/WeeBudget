@@ -2,9 +2,10 @@
 
 namespace App\Http\Requests\Finance;
 
-use Illuminate\Database\Query\Builder;
+use App\Models\FinancialAccount;
+use App\Services\Finance\CoupleSavingsAccessService;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreAccountAllocationRequest extends FormRequest
 {
@@ -15,23 +16,36 @@ class StoreAccountAllocationRequest extends FormRequest
 
     public function rules(): array
     {
-        $userId = $this->user()?->id;
-
         return [
-            'source_account_id' => [
-                'required',
-                'integer',
-                Rule::exists('financial_accounts', 'id')->where(fn (Builder $query) => $query->where('user_id', $userId)),
-            ],
-            'destination_account_id' => [
-                'required',
-                'integer',
-                'different:source_account_id',
-                Rule::exists('financial_accounts', 'id')->where(fn (Builder $query) => $query->where('user_id', $userId)),
-            ],
+            'source_account_id' => ['required', 'integer'],
+            'destination_account_id' => ['required', 'integer', 'different:source_account_id'],
             'amount' => ['required', 'numeric', 'gt:0', 'max:999999999999.99'],
             'transaction_date' => ['required', 'date'],
             'notes' => ['nullable', 'string'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            if (! $this->user()) {
+                return;
+            }
+
+            $accessService = app(CoupleSavingsAccessService::class);
+
+            foreach (['source_account_id', 'destination_account_id'] as $field) {
+                if ($validator->errors()->has($field) || ! $this->filled($field)) {
+                    continue;
+                }
+
+                $account = FinancialAccount::query()->find($this->integer($field));
+                $canAccess = $account !== null && $accessService->canAccessAccount($account, $this->user());
+
+                if (! $canAccess) {
+                    $validator->errors()->add($field, sprintf('The selected %s is invalid.', str_replace('_', ' ', $field)));
+                }
+            }
+        });
     }
 }
