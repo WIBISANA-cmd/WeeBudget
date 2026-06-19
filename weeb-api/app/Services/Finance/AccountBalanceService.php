@@ -123,7 +123,7 @@ class AccountBalanceService
                 'account_id' => $destinationAccount->id,
                 'transaction_type' => 'income',
                 'amount' => $amount,
-                'need_type' => null,
+                'need_type' => $this->allocationNeedType($destinationAccount),
                 'transaction_date' => $date,
                 'description' => sprintf('Alokasi dari %s', $sourceAccount->name),
                 'notes' => $notes,
@@ -253,6 +253,14 @@ class AccountBalanceService
         $user = \App\Models\User::query()->find($userId);
 
         return $user?->email ?: $user?->name ?: 'Pengguna WeeB';
+    }
+
+    private function allocationNeedType(FinancialAccount $destinationAccount): ?string
+    {
+        return match ($destinationAccount->purpose) {
+            'savings', 'couple_savings', 'emergency_fund' => 'saving',
+            default => null,
+        };
     }
 
     private function resolveAccountId(int $userId, ?int $accountId = null): int
