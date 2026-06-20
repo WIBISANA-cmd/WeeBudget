@@ -231,8 +231,11 @@ export const configs = {
       { key: 'transaction_type', label: 'Tipe', render: (row) => <StatusBadge value={row.transaction_type} /> },
       { key: 'need_type', label: 'Jenis', render: (row) => <StatusBadge value={row.need_type}>{row.need_type || '-'}</StatusBadge> },
       { key: 'account', label: 'Rekening', render: (row) => row.account?.name || '-' },
+      { key: 'scope', label: 'Cakupan', render: (row) => row.is_default ? 'Bawaan' : row.is_shared ? 'Global' : 'Pribadi' },
       { key: 'is_default', label: 'Default', render: (row) => row.is_default ? 'Ya' : 'Tidak' },
     ],
+    canEdit: (row) => row?.can_manage === true,
+    canDelete: (row) => row?.can_manage === true,
   },
   transactions: {
     title: 'Transaksi',

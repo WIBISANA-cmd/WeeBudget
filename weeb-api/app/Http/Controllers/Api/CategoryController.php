@@ -18,9 +18,13 @@ class CategoryController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $isAdmin = ($request->user()->role ?? 'user') === 'admin';
         $query = TransactionCategory::query()
             ->with('account:id,name')
-            ->where(fn ($q) => $q->where('user_id', $request->user()->id)->orWhereNull('user_id'))
+            ->when(
+                ! $isAdmin,
+                fn ($query) => $query->where(fn ($q) => $q->where('user_id', $request->user()->id)->orWhereNull('user_id'))
+            )
             ->when($request->filled('transaction_type'), fn ($q) => $q->whereIn('transaction_type', [$request->transaction_type, 'both']))
             ->when($request->filled('need_type'), fn ($q) => $q->where('need_type', $request->need_type))
             ->orderByDesc('is_default')
@@ -35,7 +39,11 @@ class CategoryController extends Controller
     public function store(StoreCategoryRequest $request): JsonResponse
     {
         $data = $request->validated();
-        $data['user_id'] = $request->user()->id;
+        $isAdmin = ($request->user()->role ?? 'user') === 'admin';
+        $data['user_id'] = $isAdmin ? null : $request->user()->id;
+        if ($isAdmin) {
+            $data['account_id'] = null;
+        }
         $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
         $data['is_default'] = false;
 
@@ -53,6 +61,9 @@ class CategoryController extends Controller
     {
         $model = $this->findCategory($request, $category, customOnly: true);
         $data = $request->validated();
+        if (($request->user()->role ?? 'user') === 'admin') {
+            $data['account_id'] = null;
+        }
         $data['slug'] = $data['slug'] ?? (isset($data['name']) ? Str::slug($data['name']) : $model->slug);
         $model->update($data);
 
@@ -68,9 +79,27 @@ class CategoryController extends Controller
 
     private function findCategory(Request $request, int $id, bool $customOnly = false): TransactionCategory
     {
+        $isAdmin = ($request->user()->role ?? 'user') === 'admin';
+
         return TransactionCategory::query()
             ->where('id', $id)
-            ->where(fn ($q) => $customOnly ? $q->where('user_id', $request->user()->id) : $q->where('user_id', $request->user()->id)->orWhereNull('user_id'))
+            ->where(function ($query) use ($request, $customOnly, $isAdmin) {
+                if ($isAdmin && $customOnly) {
+                    $query->where('is_default', false);
+                    return;
+                }
+
+                if ($isAdmin) {
+                    return;
+                }
+
+                if (! $customOnly) {
+                    $query->where('user_id', $request->user()->id)->orWhereNull('user_id');
+                    return;
+                }
+
+                $query->where('user_id', $request->user()->id);
+            })
             ->firstOrFail();
     }
 }

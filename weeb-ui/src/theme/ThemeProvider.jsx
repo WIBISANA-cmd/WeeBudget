@@ -5,10 +5,17 @@ const THEMES = ['light', 'dark'];
 
 const ThemeContext = createContext(null);
 
-function getSystemTheme() {
+/**
+ * Time-based theme: night (18:30–05:59) → dark, else → light.
+ * Replaces system preference detection to stay in sync with the Navbar sky logic.
+ */
+function getTimeBasedTheme() {
   if (typeof window === 'undefined') return 'light';
 
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  const now = new Date();
+  const totalMin = now.getHours() * 60 + now.getMinutes();
+  // Night: 18:30 (1110) → 05:59 (359)
+  return (totalMin >= 1110 || totalMin < 360) ? 'dark' : 'light';
 }
 
 function getStoredTheme() {
@@ -19,7 +26,7 @@ function getStoredTheme() {
 }
 
 function resolveInitialTheme() {
-  return getStoredTheme() || getSystemTheme();
+  return getStoredTheme() || getTimeBasedTheme();
 }
 
 function applyTheme(theme) {
@@ -28,32 +35,34 @@ function applyTheme(theme) {
 
   root.classList.toggle('dark', isDark);
   root.style.colorScheme = theme;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', isDark ? '#0F172A' : 'rgb(15,60,113)');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', isDark ? '#0a0a0a' : '#08a0ff');
+
+  // Night mode body background per design spec
+  document.body.style.backgroundColor = isDark ? '#0a0a0a' : '';
 }
 
 export function ThemeProvider({ children }) {
   const [theme, setThemeState] = useState(resolveInitialTheme);
-  const [isSystemTheme, setSystemTheme] = useState(() => !getStoredTheme());
+  const [isAutoTheme, setAutoTheme] = useState(() => !getStoredTheme());
 
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
 
+  // Re-sync time-based theme every 60 s when in auto mode
   useEffect(() => {
-    if (!isSystemTheme) return undefined;
+    if (!isAutoTheme) return undefined;
 
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (event) => setThemeState(event.matches ? 'dark' : 'light');
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [isSystemTheme]);
+    const sync = () => setThemeState(getTimeBasedTheme());
+    const id = setInterval(sync, 60_000);
+    return () => clearInterval(id);
+  }, [isAutoTheme]);
 
   const setTheme = useCallback((nextTheme) => {
     if (!THEMES.includes(nextTheme)) return;
 
     window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
-    setSystemTheme(false);
+    setAutoTheme(false);
     setThemeState(nextTheme);
   }, []);
 
@@ -61,20 +70,20 @@ export function ThemeProvider({ children }) {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   }, [setTheme, theme]);
 
-  const resetToSystemTheme = useCallback(() => {
+  const resetToAutoTheme = useCallback(() => {
     window.localStorage.removeItem(THEME_STORAGE_KEY);
-    setSystemTheme(true);
-    setThemeState(getSystemTheme());
+    setAutoTheme(true);
+    setThemeState(getTimeBasedTheme());
   }, []);
 
   const value = useMemo(() => ({
     theme,
     isDark: theme === 'dark',
-    isSystemTheme,
+    isAutoTheme,
     setTheme,
     toggleTheme,
-    resetToSystemTheme,
-  }), [isSystemTheme, resetToSystemTheme, setTheme, theme, toggleTheme]);
+    resetToAutoTheme,
+  }), [isAutoTheme, resetToAutoTheme, setTheme, theme, toggleTheme]);
 
   return (
     <ThemeContext.Provider value={value}>

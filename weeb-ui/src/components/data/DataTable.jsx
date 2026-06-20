@@ -1,6 +1,6 @@
 import Button from '../ui/Button';
 
-export default function DataTable({ columns, rows, onEdit, onDelete }) {
+export default function DataTable({ columns, rows, onEdit, onDelete, canEditRow, canDeleteRow }) {
   return (
     <>
       <div className="space-y-3 md:hidden">
@@ -21,10 +21,10 @@ export default function DataTable({ columns, rows, onEdit, onDelete }) {
                 </div>
               ))}
             </div>
-            {(onEdit || onDelete) && (
+            {((onEdit && (!canEditRow || canEditRow(row))) || (onDelete && (!canDeleteRow || canDeleteRow(row)))) && (
               <div className="mt-4 grid grid-cols-2 gap-2">
-                {onEdit && <Button size="sm" variant="secondary" onClick={() => onEdit(row)} className="w-full">Edit</Button>}
-                {onDelete && <Button size="sm" variant="danger" onClick={() => onDelete(row)} className="w-full">Hapus</Button>}
+                {onEdit && (!canEditRow || canEditRow(row)) && <Button size="sm" variant="secondary" onClick={() => onEdit(row)} className="w-full">Edit</Button>}
+                {onDelete && (!canDeleteRow || canDeleteRow(row)) && <Button size="sm" variant="danger" onClick={() => onDelete(row)} className="w-full">Hapus</Button>}
               </div>
             )}
           </div>
@@ -52,11 +52,11 @@ export default function DataTable({ columns, rows, onEdit, onDelete }) {
                       {column.render ? column.render(row) : row[column.key] ?? '-'}
                     </td>
                   ))}
-                  {(onEdit || onDelete) && (
+                  {((onEdit && (!canEditRow || canEditRow(row))) || (onDelete && (!canDeleteRow || canDeleteRow(row)))) && (
                     <td className="whitespace-nowrap px-4 py-4 text-right">
                       <div className="flex justify-end gap-2">
-                        {onEdit && <Button size="sm" variant="secondary" onClick={() => onEdit(row)}>Edit</Button>}
-                        {onDelete && <Button size="sm" variant="danger" onClick={() => onDelete(row)}>Hapus</Button>}
+                        {onEdit && (!canEditRow || canEditRow(row)) && <Button size="sm" variant="secondary" onClick={() => onEdit(row)}>Edit</Button>}
+                        {onDelete && (!canDeleteRow || canDeleteRow(row)) && <Button size="sm" variant="danger" onClick={() => onDelete(row)}>Hapus</Button>}
                       </div>
                     </td>
                   )}

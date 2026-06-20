@@ -1,0 +1,235 @@
+/* ================================================================== */
+/*  Navbar – Dynamic sky background with glassmorphism                */
+/* ================================================================== */
+
+/* Wrapper — sets the stacking context for sky layers */
+.navbar-sky-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  isolation: isolate;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  min-height: 72px;
+}
+
+/* ---- Sky background images (absolute, crossfade) ---- */
+.navbar-sky-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center 40%;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 800ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity;
+}
+
+.navbar-sky-bg--active {
+  opacity: 1;
+}
+
+/* ---- Glassmorphism + gradient overlay ---- */
+.navbar-glass-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  backdrop-filter: blur(18px) saturate(1.6);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  transition: background 600ms ease;
+}
+
+/* ---- Content container ---- */
+.navbar-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px;
+}
+
+@media (min-width: 640px) {
+  .navbar-content {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+@media (min-width: 768px) {
+  .navbar-content {
+    padding: 16px 32px;
+  }
+}
+
+/* ---- Period icon ---- */
+.navbar-period-icon {
+  flex-shrink: 0;
+  color: #ffffff;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+  transition: color 500ms ease, transform 500ms ease;
+}
+
+:root.dark .navbar-period-icon {
+  animation: navbar-icon-glow 3s ease-in-out infinite;
+}
+
+@keyframes navbar-icon-glow {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.3)); }
+  50%      { filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.6)); }
+}
+
+/* ---- Greeting text ---- */
+.navbar-greeting {
+  font-family: var(--font-outfit, 'Outfit', sans-serif);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: #ffffff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  transition: color 500ms ease;
+}
+
+@media (max-width: 639px) {
+  .navbar-greeting {
+    font-size: 18px;
+  }
+}
+
+/* ---- Clock ---- */
+.navbar-clock-icon {
+  color: #ffffff;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+  transition: color 500ms ease;
+}
+
+.navbar-clock {
+  font-family: var(--font-inter, 'Inter', sans-serif);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  transition: color 500ms ease;
+}
+
+/* ---- Period badge ---- */
+.navbar-period-badge {
+  display: none;
+  padding: 4px 14px;
+  border-radius: 9999px;
+  font-family: var(--font-inter, 'Inter', sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background 500ms ease, color 500ms ease, box-shadow 500ms ease;
+}
+
+@media (min-width: 640px) {
+  .navbar-period-badge {
+    display: inline-flex;
+  }
+}
+
+/* ---- Icon button (bell, hamburger) ---- */
+.navbar-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  padding: 12px;
+  color: #ffffff;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+  transition: background 200ms ease, color 200ms ease, transform 150ms ease;
+}
+
+.navbar-icon-btn:hover {
+  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ---- Notification dot ---- */
+.navbar-notif-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #3c83f6;
+  box-shadow: 0 0 8px rgba(60, 131, 246, 0.6);
+  animation: navbar-dot-pulse 2s ease-in-out infinite;
+}
+
+@keyframes navbar-dot-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(60, 131, 246, 0.4); }
+  50%      { box-shadow: 0 0 14px rgba(60, 131, 246, 0.8); }
+}
+
+/* ---- Profile button area ---- */
+.navbar-profile-divider {
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.navbar-profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 16px;
+  padding: 6px;
+  transition: background 200ms ease;
+}
+
+.navbar-profile-btn:hover,
+.navbar-profile-btn--open {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.navbar-avatar-fallback {
+  color: #ffffff;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+  transition: color 500ms ease;
+}
+
+.navbar-chevron {
+  color: #ffffff;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+  transition: transform 200ms ease, color 500ms ease;
+}
+
+/* ---- Profile dropdown ---- */
+.navbar-profile-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 12px);
+  z-index: 40;
+  width: 288px;
+  border-radius: 24px;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface-panel);
+  padding: 8px;
+  box-shadow: 0 24px 60px -28px rgba(15, 23, 42, 0.35);
+  animation: navbar-dropdown-in 180ms ease-out;
+}
+
+@keyframes navbar-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

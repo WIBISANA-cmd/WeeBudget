@@ -73,13 +73,19 @@ export default function AccountsPage() {
     accounts: allAccounts,
   }), [allAccounts]);
 
-  const defaultAllocationValues = useMemo(() => ({
-    source_account_id: allAccounts[0]?.value || '',
-    destination_account_id: allAccounts[1]?.value || '',
-    amount: '',
-    transaction_date: new Date().toISOString().slice(0, 10),
-    notes: '',
-  }), [allAccounts]);
+  const defaultAllocationValues = useMemo(() => {
+    const salaryAccount = allAccounts.find((account) => account.purpose === 'salary');
+    const sourceAccount = salaryAccount || allAccounts[0] || null;
+    const destinationAccount = allAccounts.find((account) => String(account.value) !== String(sourceAccount?.value || '')) || null;
+
+    return {
+      source_account_id: sourceAccount?.value || '',
+      destination_account_id: destinationAccount?.value || '',
+      amount: '',
+      transaction_date: new Date().toISOString().slice(0, 10),
+      notes: '',
+    };
+  }, [allAccounts]);
 
   useEffect(() => {
     if (!isAllocationOpen) return;
@@ -118,18 +124,20 @@ export default function AccountsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button
-          variant="secondary"
-          onClick={() => setAllocationOpen(true)}
-          disabled={allAccounts.length < 2}
-        >
-          <ArrowRightLeft size={18} className="mr-2" />
-          Alokasi Dana
-        </Button>
-      </div>
-
-      <CrudResourcePage key={pageVersion} config={configs.accounts} />
+      <CrudResourcePage
+        key={pageVersion}
+        config={configs.accounts}
+        headerActions={(
+          <Button
+            variant="secondary"
+            onClick={() => setAllocationOpen(true)}
+            disabled={allAccounts.length < 2}
+          >
+            <ArrowRightLeft size={18} className="mr-2" />
+            Alokasi Dana
+          </Button>
+        )}
+      />
 
       <Modal
         open={isAllocationOpen}

@@ -11,8 +11,14 @@ class CategoryResource extends JsonResource
 
     public function toArray(Request $request): array
     {
+        $isAdmin = ($request->user()?->role ?? 'user') === 'admin';
+        $isShared = $this->user_id === null && ! $this->is_default;
+        $canManage = ($isAdmin && ! $this->is_default)
+            || (int) $this->user_id === (int) $request->user()?->id;
+
         return [
             'id' => $this->id,
+            'user_id' => $this->user_id,
             'account_id' => $this->account_id,
             'name' => $this->name,
             'slug' => $this->slug,
@@ -25,6 +31,8 @@ class CategoryResource extends JsonResource
             'icon' => $this->icon,
             'color' => $this->color,
             'is_default' => $this->is_default,
+            'is_shared' => $isShared,
+            'can_manage' => $canManage,
             'sort_order' => $this->sort_order,
         ];
     }

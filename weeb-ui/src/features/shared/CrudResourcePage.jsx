@@ -80,7 +80,7 @@ function MobileResourceList({ rows, columns, onAction }) {
   );
 }
 
-export default function CrudResourcePage({ config, options = {} }) {
+export default function CrudResourcePage({ config, options = {}, topContent = null, headerActions = null }) {
   const [editing, setEditing] = useState(null);
   const [isFormOpen, setFormOpen] = useState(false);
   const [deleting, setDeleting] = useState(null);
@@ -110,6 +110,10 @@ export default function CrudResourcePage({ config, options = {} }) {
   };
 
   const openEdit = (row) => {
+    if (config.canEdit && !config.canEdit(row)) {
+      return;
+    }
+
     setEditing(row);
     if (config.accountScoped && row.account_id) setSelectedAccountId(row.account_id);
     setActionTarget(null);
@@ -122,6 +126,10 @@ export default function CrudResourcePage({ config, options = {} }) {
   };
 
   const openDelete = (row) => {
+    if (config.canDelete && !config.canDelete(row)) {
+      return;
+    }
+
     setDeleting(row);
     setActionTarget(null);
   };
@@ -157,11 +165,16 @@ export default function CrudResourcePage({ config, options = {} }) {
           <h1 className="text-2xl font-bold text-text-title md:text-3xl">{config.title}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">{config.description}</p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus size={18} className="mr-2" />
-          {config.createLabel || 'Tambah'}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2 md:justify-end">
+          {headerActions}
+          <Button onClick={openCreate}>
+            <Plus size={18} className="mr-2" />
+            {config.createLabel || 'Tambah'}
+          </Button>
+        </div>
       </header>
+
+      {topContent}
 
       {config.summary && <div className="grid gap-4 md:grid-cols-3">{config.summary(resource.items)}</div>}
 
@@ -205,11 +218,11 @@ export default function CrudResourcePage({ config, options = {} }) {
             <>
               <MobileResourceList columns={config.mobileColumns} rows={visibleItems} onAction={setActionTarget} />
               <div className="hidden md:block">
-                <DataTable columns={config.columns} rows={visibleItems} onEdit={openEdit} onDelete={setDeleting} />
+                <DataTable columns={config.columns} rows={visibleItems} onEdit={openEdit} onDelete={setDeleting} canEditRow={config.canEdit} canDeleteRow={config.canDelete} />
               </div>
             </>
           ) : (
-            <DataTable columns={config.columns} rows={visibleItems} onEdit={openEdit} onDelete={setDeleting} />
+            <DataTable columns={config.columns} rows={visibleItems} onEdit={openEdit} onDelete={setDeleting} canEditRow={config.canEdit} canDeleteRow={config.canDelete} />
           )}
         </CardContent>
       </Card>
@@ -257,8 +270,12 @@ export default function CrudResourcePage({ config, options = {} }) {
       >
         <div className="grid gap-3">
           <Button variant="secondary" onClick={() => openDetail(actionTarget)}><Eye size={18} className="mr-2" />Detail</Button>
-          <Button variant="secondary" onClick={() => openEdit(actionTarget)}><Pencil size={18} className="mr-2" />Edit</Button>
-          <Button variant="danger" onClick={() => openDelete(actionTarget)}><Trash2 size={18} className="mr-2" />Hapus</Button>
+          {(!config.canEdit || config.canEdit(actionTarget)) && (
+            <Button variant="secondary" onClick={() => openEdit(actionTarget)}><Pencil size={18} className="mr-2" />Edit</Button>
+          )}
+          {(!config.canDelete || config.canDelete(actionTarget)) && (
+            <Button variant="danger" onClick={() => openDelete(actionTarget)}><Trash2 size={18} className="mr-2" />Hapus</Button>
+          )}
         </div>
       </Modal>
 

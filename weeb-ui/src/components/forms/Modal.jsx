@@ -5,8 +5,8 @@ export default function Modal({ title, description, open, onClose, children, foo
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-end justify-center bg-slate-950/45 p-0 backdrop-blur-sm md:items-center md:p-4">
-      <div className="max-h-[92dvh] w-full overflow-hidden rounded-t-[28px] border border-border-subtle bg-surface-panel shadow-card md:max-h-[90vh] md:max-w-2xl md:rounded-[28px]">
+    <div className="fixed inset-0 z-[200] flex items-end justify-center bg-slate-950/45 p-0 backdrop-blur-sm md:items-center md:p-4">
+      <div className="relative z-[201] max-h-[92dvh] w-full overflow-hidden rounded-t-[28px] border border-border-subtle bg-surface-panel shadow-card md:max-h-[90vh] md:max-w-2xl md:rounded-[28px]">
         <div className="flex justify-center pt-3 md:hidden">
           <div className="h-1.5 w-12 rounded-full bg-surface-300" />
         </div>
