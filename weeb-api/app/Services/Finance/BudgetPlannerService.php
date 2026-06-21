@@ -11,18 +11,18 @@ use Carbon\CarbonImmutable;
 class BudgetPlannerService
 {
     private const DEFAULT_COUPLE_PLANS = [
-        ['key' => 'needs', 'label' => 'Kebutuhan wajib', 'percent' => 50, 'description' => 'Makan, kos, kuota internet, dan kebutuhan yang tidak bisa ditunda.'],
-        ['key' => 'savings', 'label' => 'Tabungan', 'percent' => 20, 'description' => 'Uang yang dipisahkan untuk tujuan jangka pendek atau rencana penting yang sudah ditentukan.'],
-        ['key' => 'couple_savings', 'label' => 'Tabungan berdua', 'percent' => 5, 'description' => 'Setoran bersama pasangan untuk rencana berdua agar kontribusi tetap terlihat jelas.'],
-        ['key' => 'emergency_fund', 'label' => 'Dana darurat', 'percent' => 15, 'description' => 'Cadangan khusus untuk kebutuhan mendadak agar tabungan dan uang harian tidak ikut terganggu.'],
-        ['key' => 'wants', 'label' => 'Keinginan', 'percent' => 10, 'description' => 'Jajan, hiburan, nongkrong, dan wishlist yang masih bisa dikontrol atau ditunda.'],
+        ['key' => 'needs', 'label' => 'Kebutuhan wajib', 'percent' => 50],
+        ['key' => 'savings', 'label' => 'Tabungan', 'percent' => 20],
+        ['key' => 'couple_savings', 'label' => 'Tabungan berdua', 'percent' => 5],
+        ['key' => 'emergency_fund', 'label' => 'Dana darurat', 'percent' => 15],
+        ['key' => 'wants', 'label' => 'Keinginan', 'percent' => 10],
     ];
 
     private const DEFAULT_PERSONAL_PLANS = [
-        ['key' => 'needs', 'label' => 'Kebutuhan wajib', 'percent' => 50, 'description' => 'Makan, kos, kuota internet, dan kebutuhan yang tidak bisa ditunda.'],
-        ['key' => 'savings', 'label' => 'Tabungan', 'percent' => 20, 'description' => 'Uang yang dipisahkan untuk tujuan jangka pendek atau rencana penting yang sudah ditentukan.'],
-        ['key' => 'emergency_fund', 'label' => 'Dana darurat', 'percent' => 15, 'description' => 'Cadangan khusus untuk kebutuhan mendadak agar tabungan dan uang harian tidak ikut terganggu.'],
-        ['key' => 'wants', 'label' => 'Keinginan', 'percent' => 15, 'description' => 'Jajan, hiburan, nongkrong, dan wishlist yang masih bisa dikontrol atau ditunda.'],
+        ['key' => 'needs', 'label' => 'Kebutuhan wajib', 'percent' => 50],
+        ['key' => 'savings', 'label' => 'Tabungan', 'percent' => 20],
+        ['key' => 'emergency_fund', 'label' => 'Dana darurat', 'percent' => 15],
+        ['key' => 'wants', 'label' => 'Keinginan', 'percent' => 15],
     ];
 
     public function generate(User $user, ?float $baseAmount = null): array

@@ -235,12 +235,10 @@ export default function BudgetPlannerPage() {
           <Card key={item.key} className="h-full">
             <CardHeader>
               <CardTitle className="text-base">{item.label}</CardTitle>
-              <CardDescription>Rekomendasi {item.percent}% dari dana dasar</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <p className="text-2xl font-semibold text-text-title">{formatBudgetCurrency(item.appliedAmount)}</p>
-                <p className="mt-1 text-sm text-text-muted">Nominal mengikuti persentase yang sedang dipakai</p>
                 <p className="mt-2 text-sm font-medium text-primary-600">
                   {item.hasCustomPercent ? `Custom saat ini ${item.customPercent}%` : `Masih memakai rekomendasi ${item.percent}%`}
                 </p>
@@ -260,7 +258,6 @@ export default function BudgetPlannerPage() {
                     [item.key]: event.target.value,
                   }))
                 }
-                helperText="Isi persen jika ingin override rekomendasi."
               />
               <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-300">
                 <div className="h-full rounded-full bg-primary-500" style={{ width: `${Math.min(item.appliedPercent, 100)}%` }} />

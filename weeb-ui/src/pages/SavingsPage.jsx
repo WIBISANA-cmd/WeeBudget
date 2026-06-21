@@ -16,9 +16,6 @@ export default function SavingsPage() {
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-text-title md:text-3xl">Tabungan</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-text-muted">
-            Kelola tabungan tunai seperti biasa, lalu pindah ke tab emas untuk memantau nilai gramasi berdasarkan harga terbaru dan historinya.
-          </p>
         </div>
         <div className="inline-flex rounded-2xl border border-border-subtle bg-surface-100 p-1">
           {tabs.map((tab) => (
