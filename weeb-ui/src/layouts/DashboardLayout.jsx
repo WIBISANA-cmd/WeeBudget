@@ -11,7 +11,7 @@ export default function DashboardLayout() {
     <div className="flex min-h-dvh bg-bg-base text-text-body transition-colors duration-200">
       <Sidebar isOpen={isSidebarOpen} close={() => setSidebarOpen(false)} />
       
-      <div className="relative flex min-h-dvh flex-1 flex-col overflow-hidden">
+      <div className="relative flex min-h-dvh flex-1 flex-col overflow-x-hidden">
         <Navbar toggleSidebar={() => setSidebarOpen(!isSidebarOpen)} />
         
         <main className="relative flex-1 overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+6.5rem)] pt-4 sm:px-5 md:px-6 md:pb-8 md:pt-5 lg:px-8">

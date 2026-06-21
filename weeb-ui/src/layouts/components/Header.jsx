@@ -55,7 +55,7 @@ export default function Header({ toggleSidebar }) {
   };
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border-subtle bg-surface-panel/92 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl transition-colors duration-200 sm:px-5 md:px-8 md:py-4">
+    <header className="sticky top-0 z-[100] border-b border-border-subtle bg-surface-panel/92 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl transition-colors duration-200 sm:px-5 md:px-8 md:py-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <button 
@@ -96,7 +96,7 @@ export default function Header({ toggleSidebar }) {
             </button>
 
             {isProfileOpen && (
-              <div className="absolute right-0 top-[calc(100%+0.75rem)] z-40 w-72 rounded-[24px] border border-border-subtle bg-surface-panel p-2 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.35)]">
+              <div className="absolute right-0 top-[calc(100%+0.75rem)] z-[9999] w-72 rounded-[24px] border border-border-subtle bg-surface-panel p-2 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.35)]">
                 <div className="rounded-[20px] bg-surface-100 px-4 py-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-600">{greeting}</p>
                   <p className="mt-1 text-sm font-semibold text-text-title">{user?.name || 'Mode pribadi'}</p>

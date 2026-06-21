@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Download, RefreshCw, X } from 'lucide-react';
+import { Download, X } from 'lucide-react';
 import { registerSW } from 'virtual:pwa-register';
 import Button from '../ui/Button';
 
@@ -11,7 +11,6 @@ export default function PwaManager() {
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isInstalled, setInstalled] = useState(() => isStandaloneMode());
   const [showInstallCard, setShowInstallCard] = useState(false);
-  const [needRefresh, setNeedRefresh] = useState(false);
   const updateServiceWorkerRef = useRef(null);
 
   useEffect(() => {
@@ -20,7 +19,7 @@ export default function PwaManager() {
     updateServiceWorkerRef.current = registerSW({
       immediate: true,
       onNeedRefresh() {
-        setNeedRefresh(true);
+        updateServiceWorkerRef.current?.(true);
       },
       onRegisteredSW(_swUrl, registration) {
         if (!registration) return;
@@ -78,37 +77,15 @@ export default function PwaManager() {
     setShowInstallCard(false);
   };
 
-  const refreshApp = () => {
-    updateServiceWorkerRef.current?.(true);
-  };
 
-  if (!canInstall && !needRefresh) {
+
+  if (!canInstall) {
     return null;
   }
 
   return (
     <div className="fixed inset-x-3 bottom-20 z-[70] flex flex-col items-stretch gap-3 sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[360px]">
-      {needRefresh && (
-        <div className="rounded-2xl border border-primary-500/30 bg-surface-panel p-4 shadow-card">
-          <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-primary-600">
-              <RefreshCw size={20} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold text-text-title">Versi baru tersedia</p>
-              <p className="mt-1 text-sm leading-5 text-text-muted">Muat ulang untuk memakai update terbaru dan membersihkan cache lama.</p>
-              <div className="mt-4 flex gap-2">
-                <Button size="sm" onClick={refreshApp}>
-                  Update sekarang
-                </Button>
-                <Button size="sm" variant="secondary" onClick={() => setNeedRefresh(false)}>
-                  Nanti
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {canInstall && (
         <div className="rounded-2xl border border-border-subtle bg-surface-panel p-4 shadow-card">

@@ -137,7 +137,7 @@ export default function Navbar({ toggleSidebar }) {
   return (
     <nav
       id="navbar-dynamic"
-      className="navbar-sky-wrapper sticky top-0 z-30"
+      className="navbar-sky-wrapper sticky top-0 z-[100]"
       aria-label="Main navigation"
     >
       {/* ---- Sky background layer (crossfade via CSS opacity) ---- */}
