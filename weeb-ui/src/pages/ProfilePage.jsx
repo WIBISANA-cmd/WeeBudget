@@ -11,6 +11,7 @@ const schema = z.object({
   monthly_income_estimate: z.coerce.number().min(0).optional().or(z.literal('')),
   payday_day: z.coerce.number().min(1).max(31).optional().or(z.literal('')),
   daily_safe_amount_target: z.coerce.number().min(0).optional().or(z.literal('')),
+  account_mode: z.enum(['personal', 'couple']).optional(),
 });
 
 export default function ProfilePage() {
@@ -37,6 +38,7 @@ export default function ProfilePage() {
     setError(null);
     try {
       await apiPut('/profile', values);
+      window.location.reload();
     } catch (err) {
       setError(err.response?.data?.message || 'Profil belum bisa disimpan.');
     } finally {
@@ -68,12 +70,14 @@ export default function ProfilePage() {
               monthly_income_estimate: profile?.profile?.monthly_income_estimate || '',
               payday_day: profile?.profile?.payday_day || '',
               daily_safe_amount_target: profile?.profile?.daily_safe_amount_target || '',
+              account_mode: profile?.profile?.account_mode || 'couple',
             }}
             fields={[
               { name: 'name', label: 'Nama panggilan' },
               { name: 'monthly_income_estimate', label: 'Penghasilan bulanan', type: 'number', valueAsNumber: true },
               { name: 'payday_day', label: 'Tanggal gajian', type: 'number', valueAsNumber: true },
               { name: 'daily_safe_amount_target', label: 'Target aman harian', type: 'number', valueAsNumber: true },
+              { name: 'account_mode', label: 'Tipe penggunaan aplikasi', type: 'select', options: [{ label: 'Berdua', value: 'couple' }, { label: 'Pribadi', value: 'personal' }] },
             ]}
             onSubmit={submit}
           />

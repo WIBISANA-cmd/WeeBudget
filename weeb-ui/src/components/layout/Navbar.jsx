@@ -12,6 +12,10 @@ import {
   Sunrise,
   Sunset,
   UserCircle,
+  Settings,
+  CalendarRange,
+  PieChart,
+  Users,
 } from 'lucide-react';
 import { apiPost } from '../../api/http';
 import { cn } from '../../lib/utils';
@@ -237,15 +241,47 @@ export default function Navbar({ toggleSidebar }) {
                     {user?.email || 'Akun aktif'}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={logout}
-                  className="mt-2 flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-danger-base transition-colors hover:bg-danger-base/10"
-                  role="menuitem"
-                >
-                  <LogOut size={18} />
-                  Keluar
-                </button>
+                <div className="mt-2 space-y-1">
+                  <button
+                    onClick={() => { setProfileOpen(false); navigate('/profile'); }}
+                    className="flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body transition-colors hover:bg-surface-100 hover:text-text-title"
+                  >
+                    <Settings size={18} className="text-text-muted" />
+                    Profil
+                  </button>
+                  <button
+                    onClick={() => { setProfileOpen(false); navigate('/periods'); }}
+                    className="flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body transition-colors hover:bg-surface-100 hover:text-text-title"
+                  >
+                    <CalendarRange size={18} className="text-text-muted" />
+                    Periode
+                  </button>
+                  <button
+                    onClick={() => { setProfileOpen(false); navigate('/categories'); }}
+                    className="flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body transition-colors hover:bg-surface-100 hover:text-text-title"
+                  >
+                    <PieChart size={18} className="text-text-muted" />
+                    Kategori
+                  </button>
+                  <button
+                    onClick={() => { setProfileOpen(false); navigate('/users'); }}
+                    className="flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body transition-colors hover:bg-surface-100 hover:text-text-title"
+                  >
+                    <Users size={18} className="text-text-muted" />
+                    User
+                  </button>
+                </div>
+                <div className="mt-2 border-t border-border-subtle pt-2">
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-danger-base transition-colors hover:bg-danger-base/10"
+                    role="menuitem"
+                  >
+                    <LogOut size={18} />
+                    Keluar
+                  </button>
+                </div>
               </div>
             )}
           </div>

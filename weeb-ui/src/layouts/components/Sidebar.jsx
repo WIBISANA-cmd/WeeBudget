@@ -52,17 +52,6 @@ const menuGroups = [
       { icon: Lightbulb, label: 'Insight', path: '/insights' },
     ],
   },
-  {
-    key: 'settings',
-    label: 'Pengaturan',
-    icon: SlidersHorizontal,
-    items: [
-      { icon: CalendarRange, label: 'Periode', path: '/periods' },
-      { icon: PieChart, label: 'Kategori', path: '/categories' },
-      { icon: Settings, label: 'Profil', path: '/profile' },
-      { icon: Users, label: 'User', path: '/users' },
-    ],
-  },
 ];
 
 function isPathActive(pathname, path) {
