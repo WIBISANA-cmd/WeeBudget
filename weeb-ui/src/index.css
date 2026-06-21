@@ -153,4 +153,33 @@
   .custom-select-popover {
     animation: select-popover-in 140ms ease-out;
   }
+
+  /* ── Dashboard animations ── */
+  .dashboard-fade-in {
+    animation: dashboard-fade 400ms ease-out both;
+  }
+
+  .dashboard-card-up {
+    animation: dashboard-card-up 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes dashboard-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dashboard-card-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
