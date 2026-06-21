@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useForm, useWatch } from 'react-hook-form';
 import { Check, ChevronDown, Plus, X } from 'lucide-react';
 import Button from '../ui/Button';
@@ -193,12 +194,12 @@ function CustomSelect({ field, register, error, options, value, values, setValue
         </span>
         <ChevronDown size={18} className={cn('shrink-0 text-primary-600 transition-transform duration-200', isOpen && 'rotate-180')} />
       </button>
-      {isOpen && (
+      {isOpen && typeof document !== 'undefined' && createPortal(
         <div
           id={listboxId}
           role="listbox"
           style={panelStyle}
-          className="custom-select-popover fixed z-[120] overflow-y-auto rounded-xl border border-border-strong bg-surface-panel p-1.5 shadow-2xl shadow-slate-950/25 outline-none"
+          className="custom-select-popover fixed z-[9999] overflow-y-auto rounded-xl border border-border-strong bg-surface-panel p-1.5 shadow-2xl shadow-slate-950/25 outline-none"
         >
           {selectOptions.length === 0 ? (
             <div className="px-3 py-2 text-sm text-text-muted">Tidak ada opsi</div>
@@ -228,7 +229,8 @@ function CustomSelect({ field, register, error, options, value, values, setValue
               );
             })
           )}
-        </div>
+        </div>,
+        document.body
       )}
       {error?.message && <p className="text-xs font-medium text-danger-base">{error.message}</p>}
     </div>
