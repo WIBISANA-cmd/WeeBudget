@@ -22,6 +22,7 @@ class UpdateProfileRequest extends FormRequest
             'payday_frequency' => ['sometimes', Rule::in(['weekly', 'biweekly', 'monthly'])],
             'monthly_income_estimate' => ['nullable', 'numeric', 'min:0', 'max:999999999999.99'],
             'daily_safe_amount_target' => ['nullable', 'numeric', 'min:0', 'max:999999999999.99'],
+            'account_mode' => ['sometimes', Rule::in(['personal', 'couple'])],
             'onboarding_completed_at' => ['nullable', 'date'],
         ];
     }
