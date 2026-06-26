@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
 import { Eye, Pencil, Plus, Trash2, Wallet } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card';
@@ -8,12 +8,13 @@ import EmptyState from '../../components/feedback/EmptyState';
 import ErrorState from '../../components/feedback/ErrorState';
 import LoadingSkeleton from '../../components/feedback/LoadingSkeleton';
 import Modal, { ConfirmDialog } from '../../components/forms/Modal';
-import ResourceForm from '../../components/forms/ResourceForm';
 import StatusBadge from '../../components/feedback/StatusBadge';
 import { apiGet } from '../../api/http';
 import { formatCurrency, formatDate } from '../../lib/formatters';
 import { useCrudResource } from '../../hooks/useCrudResource';
 import { useCategoryOptions } from '../../hooks/useCategoryOptions';
+
+const ResourceForm = lazy(() => import('../../components/forms/ResourceForm'));
 
 const transactionSchema = z.object({
   account_id: z.coerce.number().min(1, 'Rekening wajib dipilih'),
@@ -361,15 +362,17 @@ export default function AccountPurposeTransactionsPage({
         description={`Catat nominal masuk ke rekening ${title}.`}
         fullScreenOnMobile={true}
       >
-        <ResourceForm
-          schema={transactionSchema}
-          fields={fields}
-          defaultValues={defaultValues}
-          options={formOptions}
-          isSaving={resource.isSaving}
-          submitLabel={editing ? 'Simpan perubahan' : 'Simpan transaksi'}
-          onSubmit={submit}
-        />
+        <Suspense fallback={<LoadingSkeleton rows={4} />}>
+          <ResourceForm
+            schema={transactionSchema}
+            fields={fields}
+            defaultValues={defaultValues}
+            options={formOptions}
+            isSaving={resource.isSaving}
+            submitLabel={editing ? 'Simpan perubahan' : 'Simpan transaksi'}
+            onSubmit={submit}
+          />
+        </Suspense>
       </Modal>
 
       <Modal

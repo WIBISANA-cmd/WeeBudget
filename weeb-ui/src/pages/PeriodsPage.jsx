@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -7,11 +7,12 @@ import EmptyState from '../components/feedback/EmptyState';
 import ErrorState from '../components/feedback/ErrorState';
 import LoadingSkeleton from '../components/feedback/LoadingSkeleton';
 import Modal, { ConfirmDialog } from '../components/forms/Modal';
-import ResourceForm from '../components/forms/ResourceForm';
 import StatusBadge from '../components/feedback/StatusBadge';
 import { configs } from '../features/shared/crudConfigs';
 import { useCrudResource } from '../hooks/useCrudResource';
 import { formatDate } from '../lib/formatters';
+
+const ResourceForm = lazy(() => import('../components/forms/ResourceForm'));
 
 function yearRange(activeYear) {
   return [activeYear - 2, activeYear - 1, activeYear, activeYear + 1, activeYear + 2];
@@ -164,14 +165,16 @@ export default function PeriodsPage() {
         description="Atur nama, rentang bulan, tanggal gajian, dan status periode."
         fullScreenOnMobile={true}
       >
-        <ResourceForm
-          schema={config.schema}
-          fields={config.fields}
-          defaultValues={defaultValues}
-          isSaving={resource.isSaving}
-          submitLabel={editing ? 'Simpan perubahan' : 'Simpan periode'}
-          onSubmit={submit}
-        />
+        <Suspense fallback={<LoadingSkeleton rows={4} />}>
+          <ResourceForm
+            schema={config.schema}
+            fields={config.fields}
+            defaultValues={defaultValues}
+            isSaving={resource.isSaving}
+            submitLabel={editing ? 'Simpan perubahan' : 'Simpan periode'}
+            onSubmit={submit}
+          />
+        </Suspense>
       </Modal>
 
       <ConfirmDialog

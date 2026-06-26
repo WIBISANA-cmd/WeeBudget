@@ -101,7 +101,7 @@ export default function Sidebar({ isOpen, close }) {
       )}>
         <div className="flex items-center justify-between border-b border-border-subtle px-5 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)] md:h-20 md:px-6 md:py-0">
           <div>
-            <img src="/logo-app.png" alt="WeeBudget" className="h-11 w-auto object-contain md:h-12" />
+            <img src="/logo-app.png" alt="WeeBudget" width="144" height="48" className="h-11 w-auto object-contain md:h-12" />
           </div>
           <button onClick={close} className="rounded-2xl p-2.5 text-text-muted transition-colors hover:bg-surface-100 hover:text-primary-600 md:hidden">
             <X size={24} />

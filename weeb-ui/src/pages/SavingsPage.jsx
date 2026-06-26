@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import AccountPurposeTransactionsPage from '../features/finance/AccountPurposeTransactionsPage';
-import GoldSavingsPanel from '../features/finance/GoldSavingsPanel';
+import LoadingSkeleton from '../components/feedback/LoadingSkeleton';
 import { cn } from '../lib/utils';
+
+const GoldSavingsPanel = lazy(() => import('../features/finance/GoldSavingsPanel'));
 
 export default function SavingsPage() {
   const [activeTab, setActiveTab] = useState('cash');
@@ -49,7 +51,9 @@ export default function SavingsPage() {
           emptyDescription="Catat setoran pertama agar riwayat tabungan mulai terbentuk."
         />
       ) : (
-        <GoldSavingsPanel />
+        <Suspense fallback={<LoadingSkeleton rows={6} />}>
+          <GoldSavingsPanel />
+        </Suspense>
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
@@ -8,9 +8,10 @@ import EmptyState from '../../components/feedback/EmptyState';
 import ErrorState from '../../components/feedback/ErrorState';
 import LoadingSkeleton from '../../components/feedback/LoadingSkeleton';
 import Modal, { ConfirmDialog } from '../../components/forms/Modal';
-import ResourceForm from '../../components/forms/ResourceForm';
 import { useCrudResource } from '../../hooks/useCrudResource';
 import { formatCurrency, formatDate } from '../../lib/formatters';
+
+const ResourceForm = lazy(() => import('../../components/forms/ResourceForm'));
 
 function MobileResourceList({ rows, columns, onAction }) {
   const [pressTimer, setPressTimer] = useState(null);
@@ -292,17 +293,19 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
         description={config.formDescription}
         fullScreenOnMobile={config.fullScreenOnMobile || config.endpoint === '/transactions' || config.endpoint === '/incomes' || config.endpoint === '/expenses'}
       >
-        <ResourceForm
-          schema={config.schema}
-          fields={config.fields}
-          defaultValues={defaultValues}
-          options={{ ...options, __editing: editing }}
-          isSaving={resource.isSaving}
-          submitLabel={editing ? 'Simpan perubahan' : 'Simpan'}
-          onSubmit={submit}
-          isTransactionForm={config.endpoint === '/transactions' || config.endpoint === '/incomes' || config.endpoint === '/expenses'}
-          formLayout={config.formLayout}
-        />
+        <Suspense fallback={<LoadingSkeleton rows={4} />}>
+          <ResourceForm
+            schema={config.schema}
+            fields={config.fields}
+            defaultValues={defaultValues}
+            options={{ ...options, __editing: editing }}
+            isSaving={resource.isSaving}
+            submitLabel={editing ? 'Simpan perubahan' : 'Simpan'}
+            onSubmit={submit}
+            isTransactionForm={config.endpoint === '/transactions' || config.endpoint === '/incomes' || config.endpoint === '/expenses'}
+            formLayout={config.formLayout}
+          />
+        </Suspense>
       </Modal>
 
       <Modal

@@ -90,7 +90,7 @@ export default function PwaManager() {
       {canInstall && (
         <div className="rounded-2xl border border-border-subtle bg-surface-panel p-4 shadow-card">
           <div className="flex items-start gap-3">
-            <img src="/logo-pwa.png" alt="" className="h-10 w-10 shrink-0 rounded-xl object-cover" />
+            <img src="/logo-pwa.png" alt="" width="40" height="40" loading="lazy" className="h-10 w-10 shrink-0 rounded-xl object-cover" />
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-3">
                 <div>

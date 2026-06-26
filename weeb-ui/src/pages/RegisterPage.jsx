@@ -52,7 +52,7 @@ export default function RegisterPage() {
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl items-center justify-center">
         <section className="grid w-full overflow-hidden rounded-3xl border border-border-subtle bg-surface-panel shadow-xl shadow-card-soft md:grid-cols-[1fr_0.9fr]">
           <div className="p-8 md:p-12">
-            <img src="/logo-app.png" alt="WeeBudget" className="h-16 w-auto object-contain" />
+            <img src="/logo-app.png" alt="WeeBudget" width="192" height="64" className="h-16 w-auto object-contain" />
             <h1 className="mt-6 text-3xl font-bold text-text-title md:text-4xl">Buat Akun WeeB</h1>
             <p className="mt-3 text-sm leading-6 text-text-muted md:text-base">
               Daftar sekarang untuk mulai mengelola keuangan, merancang budget, tabungan, dan dana darurat dalam satu tempat.

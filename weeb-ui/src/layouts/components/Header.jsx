@@ -88,7 +88,7 @@ export default function Header({ toggleSidebar }) {
               aria-expanded={isProfileOpen}
             >
               {user?.avatar_url ? (
-                <img src={user.avatar_url} alt={user.name} className="h-10 w-10 rounded-2xl border border-border-subtle object-cover" />
+                <img src={user.avatar_url} alt={user.name} width="40" height="40" className="h-10 w-10 rounded-2xl border border-border-subtle object-cover" />
               ) : (
                 <UserCircle className="text-primary-500" size={38} strokeWidth={1.5} />
               )}

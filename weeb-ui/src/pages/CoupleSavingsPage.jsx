@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
 import { HeartHandshake, Plus, Settings, UserCircle, Users, Wallet } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
@@ -8,11 +8,12 @@ import EmptyState from '../components/feedback/EmptyState';
 import ErrorState from '../components/feedback/ErrorState';
 import LoadingSkeleton from '../components/feedback/LoadingSkeleton';
 import Modal, { ConfirmDialog } from '../components/forms/Modal';
-import ResourceForm from '../components/forms/ResourceForm';
 import StatusBadge from '../components/feedback/StatusBadge';
 import { apiGet, apiPut } from '../api/http';
 import { useCrudResource } from '../hooks/useCrudResource';
 import { formatCurrency, formatDate } from '../lib/formatters';
+
+const ResourceForm = lazy(() => import('../components/forms/ResourceForm'));
 
 const schema = z.object({
   account_id: z.coerce.number().min(1, 'Rekening wajib dipilih'),
@@ -398,15 +399,17 @@ export default function CoupleSavingsPage() {
         description="Setoran dicatat sebagai transaksi pemasukan ke rekening Tabungan berdua."
         fullScreenOnMobile={true}
       >
-        <ResourceForm
-          schema={schema}
-          fields={fields}
-          defaultValues={defaultValues}
-          options={accountOptions}
-          isSaving={resource.isSaving}
-          submitLabel={editing ? 'Simpan perubahan' : 'Simpan setoran'}
-          onSubmit={submit}
-        />
+        <Suspense fallback={<LoadingSkeleton rows={4} />}>
+          <ResourceForm
+            schema={schema}
+            fields={fields}
+            defaultValues={defaultValues}
+            options={accountOptions}
+            isSaving={resource.isSaving}
+            submitLabel={editing ? 'Simpan perubahan' : 'Simpan setoran'}
+            onSubmit={submit}
+          />
+        </Suspense>
       </Modal>
 
       <Modal
@@ -418,18 +421,20 @@ export default function CoupleSavingsPage() {
         {settingLoading ? (
           <LoadingSkeleton rows={3} />
         ) : (
-          <ResourceForm
-            schema={settingSchema}
-            fields={[
-              { name: 'partner_one_user_id', label: 'Pasangan 1', type: 'select', optionsKey: 'users' },
-              { name: 'partner_two_user_id', label: 'Pasangan 2', type: 'select', optionsKey: 'users' },
-            ]}
-            defaultValues={settingDefaultValues}
-            options={userOptions}
-            isSaving={isSavingSetting}
-            submitLabel="Simpan pasangan"
-            onSubmit={submitSetting}
-          />
+          <Suspense fallback={<LoadingSkeleton rows={3} />}>
+            <ResourceForm
+              schema={settingSchema}
+              fields={[
+                { name: 'partner_one_user_id', label: 'Pasangan 1', type: 'select', optionsKey: 'users' },
+                { name: 'partner_two_user_id', label: 'Pasangan 2', type: 'select', optionsKey: 'users' },
+              ]}
+              defaultValues={settingDefaultValues}
+              options={userOptions}
+              isSaving={isSavingSetting}
+              submitLabel="Simpan pasangan"
+              onSubmit={submitSetting}
+            />
+          </Suspense>
         )}
       </Modal>
 

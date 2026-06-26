@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { ArrowRightLeft } from 'lucide-react';
 import { z } from 'zod';
 import CrudResourcePage from '../features/shared/CrudResourcePage';
@@ -8,9 +8,10 @@ import { resourcesApi } from '../api/resources';
 import { apiGet } from '../api/http';
 import Button from '../components/ui/Button';
 import Modal from '../components/forms/Modal';
-import ResourceForm from '../components/forms/ResourceForm';
 import { Card, CardContent } from '../components/ui/Card';
 import { formatCurrency } from '../lib/formatters';
+
+const ResourceForm = lazy(() => import('../components/forms/ResourceForm'));
 
 const allocationSchema = z.object({
   source_account_id: z.coerce.number().min(1, 'Rekening sumber wajib dipilih'),
@@ -177,15 +178,17 @@ export default function AccountsPage() {
             </CardContent>
           </Card>
         )}
-        <ResourceForm
-          schema={allocationSchema}
-          fields={allocationFields}
-          defaultValues={defaultAllocationValues}
-          options={allocationOptions}
-          isSaving={isSavingAllocation}
-          submitLabel="Simpan alokasi"
-          onSubmit={submitAllocation}
-        />
+        <Suspense fallback={<LoadingSkeleton rows={4} />}>
+          <ResourceForm
+            schema={allocationSchema}
+            fields={allocationFields}
+            defaultValues={defaultAllocationValues}
+            options={allocationOptions}
+            isSaving={isSavingAllocation}
+            submitLabel="Simpan alokasi"
+            onSubmit={submitAllocation}
+          />
+        </Suspense>
         {allAccounts.length < 2 && (
           <p className="mt-3 text-sm text-danger-base">
             Tambahkan minimal dua rekening aktif agar alokasi dana bisa dilakukan.
