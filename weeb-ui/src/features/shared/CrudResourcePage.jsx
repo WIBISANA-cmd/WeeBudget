@@ -222,7 +222,15 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
               </div>
             </>
           ) : (
-            <DataTable columns={config.columns} rows={visibleItems} onEdit={openEdit} onDelete={setDeleting} canEditRow={config.canEdit} canDeleteRow={config.canDelete} />
+            <DataTable
+              columns={config.columns}
+              rows={visibleItems}
+              onEdit={openEdit}
+              onDelete={setDeleting}
+              canEditRow={config.canEdit}
+              canDeleteRow={config.canDelete}
+              mobileLayout={config.mobileLayout}
+            />
           )}
         </CardContent>
       </Card>

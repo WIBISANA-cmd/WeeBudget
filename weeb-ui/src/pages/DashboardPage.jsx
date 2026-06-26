@@ -284,9 +284,6 @@ export default function DashboardPage() {
           <h1 className="max-w-3xl text-[1.75rem] font-bold leading-tight text-text-title md:text-4xl">
             Hai {dashboard.user?.name || 'Teman WeeB'}, ini pusat kendali uangmu.
           </h1>
-          <p className="mt-2.5 max-w-2xl text-sm leading-6 text-text-muted md:text-[15px]">
-            Data di-refresh otomatis setiap 30 detik dari rekening, transaksi, tabungan, dana darurat, tagihan, dan budget planner.
-          </p>
         </div>
         <div className={cn('dashboard-card-up rounded-2xl border px-5 py-3.5', status.cls)} style={{ animationDelay: '120ms' }}>
           <p className="text-[11px] font-bold uppercase tracking-widest">{status.label}</p>

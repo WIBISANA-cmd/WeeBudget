@@ -102,6 +102,7 @@ export const configs = {
     createLabel: 'Tambah rekening',
     emptyTitle: 'Belum ada rekening',
     emptyDescription: 'Buat rekening utama dulu, lalu pisahkan pos tabungan atau dana darurat agar uang aman tidak ikut terpakai.',
+    mobileLayout: 'accounts',
     schema: z.object({
       name: requiredText,
       type: z.enum(['cash', 'bank', 'digital_bank', 'e_wallet', 'other']),
