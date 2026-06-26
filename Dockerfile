@@ -44,7 +44,7 @@ RUN composer install \
     --no-dev \
     --no-interaction \
     --no-progress \
-    --prefer-dist \
+    --prefer-install=source \
     --optimize-autoloader \
     --no-scripts
 
