@@ -61,7 +61,7 @@ class CategoryController extends Controller
     {
         $model = $this->findCategory($request, $category, customOnly: true);
         $data = $request->validated();
-        if (($request->user()->role ?? 'user') === 'admin') {
+        if (($request->user()->role ?? 'user') === 'admin' || $model->user_id === null) {
             $data['account_id'] = null;
         }
         $data['slug'] = $data['slug'] ?? (isset($data['name']) ? Str::slug($data['name']) : $model->slug);
@@ -84,21 +84,16 @@ class CategoryController extends Controller
         return TransactionCategory::query()
             ->where('id', $id)
             ->where(function ($query) use ($request, $customOnly, $isAdmin) {
-                if ($isAdmin && $customOnly) {
-                    $query->where('is_default', false);
-                    return;
-                }
-
                 if ($isAdmin) {
                     return;
                 }
 
-                if (! $customOnly) {
-                    $query->where('user_id', $request->user()->id)->orWhereNull('user_id');
+                if ($customOnly) {
+                    $query->where('user_id', $request->user()->id);
                     return;
                 }
 
-                $query->where('user_id', $request->user()->id);
+                $query->where('user_id', $request->user()->id)->orWhereNull('user_id');
             })
             ->firstOrFail();
     }

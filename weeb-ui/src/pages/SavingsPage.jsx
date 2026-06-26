@@ -43,7 +43,6 @@ export default function SavingsPage() {
       {activeTab === 'cash' ? (
         <AccountPurposeTransactionsPage
           title="Tabungan Cash"
-          description="Pantau total saldo rekening tabungan dan catat setoran tabungan sebagai transaksi."
           purpose="savings"
           createLabel="Tambah tabungan"
           emptyTitle="Belum ada transaksi tabungan"

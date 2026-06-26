@@ -13,7 +13,7 @@ class CategoryResource extends JsonResource
     {
         $isAdmin = ($request->user()?->role ?? 'user') === 'admin';
         $isShared = $this->user_id === null && ! $this->is_default;
-        $canManage = ($isAdmin && ! $this->is_default)
+        $canManage = ($isAdmin && $this->user_id === null)
             || (int) $this->user_id === (int) $request->user()?->id;
 
         return [

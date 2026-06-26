@@ -19,13 +19,6 @@ export const needTypeOptions = [
   { value: 'debt', label: 'Utang/Cicilan' },
 ];
 
-const categoryExamplesByNeedType = {
-  need: 'Contoh: Makan, Kos, Perabotan',
-  want: 'Contoh: Nongkrong, Hobi, Game',
-  saving: 'Contoh: Dana cadangan, Liburan, DP rumah',
-  debt: 'Contoh: Cicilan motor, Kredit HP, Pinjaman',
-};
-
 export const accountTypeOptions = [
   { value: 'cash', label: 'Tunai' },
   { value: 'bank', label: 'Bank' },
@@ -97,7 +90,6 @@ export const configs = {
   accounts: {
     title: 'Manajemen Rekening',
     singular: 'rekening',
-    description: 'Pisahkan rekening sesuai fungsi uangnya: harian, gaji, tabungan, dana darurat, tagihan, dan wishlist agar saldo tidak tercampur.',
     endpoint: '/accounts',
     createLabel: 'Tambah rekening',
     emptyTitle: 'Belum ada rekening',
@@ -161,50 +153,51 @@ export const configs = {
   categories: {
     title: 'Kategori',
     singular: 'kategori',
-    description: 'Buat kategori yang sesuai dengan hidup sehari-hari, bukan kategori yang terlalu akuntansi.',
+    tableDescription: 'Semua kategori yang tampil bisa dikelola dari halaman ini, termasuk kategori bawaan.',
     endpoint: '/categories',
     createLabel: 'Tambah kategori',
     emptyTitle: 'Belum ada kategori custom',
     emptyDescription: 'Kategori bawaan sudah tersedia. Tambahkan kategori custom kalau ada kebutuhan khusus.',
+    unwrappedOnMobile: true,
+    fullScreenOnMobile: true,
+    formLayout: 'categories',
+    mobileLayout: 'categories',
     schema: z.object({
       account_id: z.coerce.number().optional().or(z.literal('')),
-      names: z.array(requiredText).min(1, 'Tambahkan minimal satu pilihan kategori'),
+      name: requiredText,
+      icon: z.string().min(1, 'Pilih icon kategori'),
       transaction_type: z.enum(['income', 'expense', 'both']),
       need_type: z.enum(['need', 'want', 'saving', 'debt']).optional().or(z.literal('')),
     }),
-    defaultValues: { account_id: '', names: [], transaction_type: 'expense', need_type: '' },
+    defaultValues: { account_id: '', name: '', icon: 'layout-grid', transaction_type: 'expense', need_type: '' },
     toPayload: (values, existing) => {
-      const cleanedNames = (values.names || []).map((name) => name.trim()).filter(Boolean);
       const payloadBase = {
         account_id: values.account_id || null,
+        name: values.name.trim(),
+        icon: values.icon || 'layout-grid',
         transaction_type: values.transaction_type,
         need_type: values.transaction_type === 'income' ? null : values.need_type || null,
       };
 
       if (existing) {
-        return {
-          ...payloadBase,
-          name: cleanedNames[0] || existing.name,
-        };
+        return payloadBase;
       }
 
-      return cleanedNames.map((name) => ({
-        ...payloadBase,
-        name,
-      }));
+      return payloadBase;
     },
     toForm: (row) => ({
       account_id: row.account_id || '',
-      names: row.name ? [row.name] : [],
+      name: row.name || '',
+      icon: row.icon || 'layout-grid',
       transaction_type: row.transaction_type || 'expense',
       need_type: row.need_type || '',
     }),
     fields: [
-      { name: 'transaction_type', label: 'Tipe', type: 'select', options: categoryOptions, placeholder: 'Pilih tipe kategori' },
+      { name: 'transaction_type', label: 'Tipe', type: 'tabs', options: categoryOptions, placeholder: 'Pilih tipe kategori' },
       {
         name: 'account_id',
         label: 'Sumber Rekening',
-        type: 'select',
+        type: 'card-select',
         optionsKey: 'accounts',
         placeholder: 'Pilih rekening dari menu rekening',
         clearFieldsOnChange: [],
@@ -219,12 +212,16 @@ export const configs = {
         showWhen: (values) => values?.transaction_type !== 'income',
       },
       {
-        name: 'names',
-        label: 'Pilihan kategori custom',
-        type: 'list',
+        name: 'icon',
+        label: 'Pilih icon kategori',
+        type: 'icon-picker',
         full: true,
-        getPlaceholder: (values) => categoryExamplesByNeedType[values?.need_type] || 'Ketik nama kategori lalu tekan Enter',
-        getMaxItems: (_values, options) => options?.__editing ? 1 : undefined,
+      },
+      {
+        name: 'name',
+        label: 'Label nama kategori',
+        full: true,
+        placeholder: 'Contoh: Makan, Kos, Perabotan',
       },
     ],
     columns: [

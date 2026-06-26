@@ -270,7 +270,7 @@ export default function AccountPurposeTransactionsPage({
 
   const columns = [
     { key: 'transaction_date', label: 'Tanggal', render: (row) => formatDate(row.transaction_date) },
-    { key: 'description', label: 'Kebutuhan', render: (row) => getNeedLabel(row) },
+    { key: 'description', label: 'Kebutuhan', mobileTitle: true, render: (row) => getNeedLabel(row) },
     { key: 'account', label: 'Rekening', render: (row) => row.account?.name || '-' },
     { key: 'amount', label: 'Nominal', render: (row) => <span className={amountClass(row)}>{signedAmount(row)}</span> },
     { key: 'need_type', label: 'Jenis', render: () => <StatusBadge value={needType}>{typeLabel}</StatusBadge> },
@@ -317,7 +317,6 @@ export default function AccountPurposeTransactionsPage({
         <Card>
           <CardHeader>
             <CardTitle>Transaksi {title}</CardTitle>
-            <CardDescription>Setiap penambahan dicatat sebagai transaksi dan memperbarui saldo rekening yang sedang dipilih.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
@@ -360,6 +359,7 @@ export default function AccountPurposeTransactionsPage({
         onClose={() => setFormOpen(false)}
         title={editing ? `Edit transaksi ${title}` : createLabel}
         description={`Catat nominal masuk ke rekening ${title}.`}
+        fullScreenOnMobile={true}
       >
         <ResourceForm
           schema={transactionSchema}

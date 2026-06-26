@@ -126,7 +126,7 @@ export default function AccountsPage() {
     <div className="space-y-4">
       <CrudResourcePage
         key={pageVersion}
-        config={configs.accounts}
+        config={{ ...configs.accounts, noCard: true }}
         headerActions={(
           <Button
             variant="secondary"
@@ -144,6 +144,7 @@ export default function AccountsPage() {
         onClose={() => setAllocationOpen(false)}
         title="Alokasi Dana"
         description="Pindahkan nominal dari satu rekening ke rekening lain tanpa mengubah saldo secara manual."
+        fullScreenOnMobile={true}
       >
         {plannerPreview && (
           <Card className="mb-4 border-primary-500 bg-primary-500/5">

@@ -7,6 +7,7 @@ import ErrorState from '../components/feedback/ErrorState';
 import LoadingSkeleton from '../components/feedback/LoadingSkeleton';
 import { apiGet, apiPut } from '../api/http';
 import { formatCurrency, formatDate } from '../lib/formatters';
+import { cn } from '../lib/utils';
 
 const parseAmount = (value) => Number(String(value || '').replace(/\D/g, ''));
 const parsePercentage = (value) => {
@@ -41,6 +42,15 @@ export default function BudgetPlannerPage() {
   const [isSavingCustomAllocations, setSavingCustomAllocations] = useState(false);
   const [saveMessage, setSaveMessage] = useState(null);
   const [error, setError] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 767px)');
+    setIsMobile(media.matches);
+    const listener = (e) => setIsMobile(e.matches);
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
+  }, []);
 
   const loadPlanner = async (amount = '') => {
     setLoading(true);
@@ -129,23 +139,30 @@ export default function BudgetPlannerPage() {
         <div>
           <h1 className="text-3xl font-bold text-text-title">Budget Planner</h1>
         </div>
-        <div className="flex gap-3">
-          <Input
-            className="min-w-[220px]"
-            inputMode="numeric"
-            label="Saldo/gaji dasar"
-            placeholder="masukkan nominal"
-            value={baseAmount}
-            onChange={(event) => setBaseAmount(formatAmountInput(event.target.value, { allowZero: true }))}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault();
-                loadPlanner(baseAmount);
-              }
-            }}
-          />
-          <Button className="self-end" onClick={() => loadPlanner(baseAmount)} isLoading={isLoading}>
-            <RefreshCw size={16} className="mr-2" />
+        <div className={cn(
+          "flex gap-3",
+          isMobile
+            ? "sticky top-0 z-40 bg-bg-base/95 backdrop-blur py-3 border-b border-border-subtle -mx-4 px-4 items-center"
+            : "items-end"
+        )}>
+          <div className="flex-1">
+            <Input
+              className="min-w-0 w-full"
+              inputMode="numeric"
+              label={isMobile ? undefined : "Saldo/gaji dasar"}
+              placeholder={isMobile ? "Saldo/gaji dasar" : "masukkan nominal"}
+              value={baseAmount}
+              onChange={(event) => setBaseAmount(formatAmountInput(event.target.value, { allowZero: true }))}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  loadPlanner(baseAmount);
+                }
+              }}
+            />
+          </div>
+          <Button className="h-10 md:h-12 shrink-0" onClick={() => loadPlanner(baseAmount)} isLoading={isLoading}>
+            <RefreshCw size={16} className={isMobile ? "mr-1" : "mr-2"} />
             Hitung
           </Button>
         </div>
@@ -188,85 +205,146 @@ export default function BudgetPlannerPage() {
         </CardContent>
       </Card>
 
-      <Card className={isPercentageBalanced ? 'border-success-base' : 'border-danger-base'}>
-        <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <CardTitle>Custom alokasi dana</CardTitle>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={() => setCustomAllocations({})}>
-              Kosongkan input
-            </Button>
-            <Button onClick={saveCustomAllocations} isLoading={isSavingCustomAllocations} disabled={!isPercentageBalanced}>
-              Simpan custom alokasi
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
-            <p className="text-sm text-text-muted">Total persentase custom</p>
-            <p className={`mt-3 text-2xl font-semibold ${isPercentageBalanced ? 'text-text-title' : 'text-danger-base'}`}>{totalCustomPercentage}%</p>
-          </div>
-          <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
-            <p className="text-sm text-text-muted">Total nominal hasil custom</p>
-            <p className="mt-3 text-2xl font-semibold text-text-title">
-              {formatBudgetCurrency(totalCustomAllocation)}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
-            <p className="text-sm text-text-muted">Status persentase</p>
-            <p className={`mt-3 text-lg font-semibold ${isPercentageBalanced ? 'text-primary-600' : 'text-danger-base'}`}>
+      {isMobile ? (
+        <div className="sticky top-[65px] z-35 bg-bg-base/95 backdrop-blur py-3 border-b border-border-subtle -mx-4 px-4 flex items-center justify-between gap-3">
+          <div className="text-sm font-semibold">
+            <span className={isPercentageBalanced ? 'text-success-base' : 'text-danger-base'}>
               {isPercentageBalanced ? 'Sudah pas 100%' : percentageDifference > 0 ? `Kurang ${percentageDifference}%` : `Lebih ${Math.abs(percentageDifference)}%`}
-            </p>
+            </span>
+            <span className="text-xs text-text-muted ml-1.5">({totalCustomPercentage}%)</span>
           </div>
-        </CardContent>
-        
-        {saveMessage && (
-          <CardContent className="pt-0">
-            <div className={`rounded-2xl px-4 py-3 text-sm font-medium ${saveMessage.type === 'success' ? 'bg-success-base/10 text-success-base' : 'bg-danger-base/10 text-danger-base'}`}>
-              {saveMessage.text}
+          <div className="flex gap-2">
+            <Button size="sm" variant="secondary" onClick={() => setCustomAllocations({})}>
+              Reset
+            </Button>
+            <Button size="sm" onClick={saveCustomAllocations} isLoading={isSavingCustomAllocations} disabled={!isPercentageBalanced}>
+              Simpan
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Card className={isPercentageBalanced ? 'border-success-base' : 'border-danger-base'}>
+          <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <CardTitle>Custom alokasi dana</CardTitle>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" onClick={() => setCustomAllocations({})}>
+                Kosongkan input
+              </Button>
+              <Button onClick={saveCustomAllocations} isLoading={isSavingCustomAllocations} disabled={!isPercentageBalanced}>
+                Simpan custom alokasi
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
+              <p className="text-sm text-text-muted">Total persentase custom</p>
+              <p className={`mt-3 text-2xl font-semibold ${isPercentageBalanced ? 'text-text-title' : 'text-danger-base'}`}>{totalCustomPercentage}%</p>
+            </div>
+            <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
+              <p className="text-sm text-text-muted">Total nominal hasil custom</p>
+              <p className="mt-3 text-2xl font-semibold text-text-title">
+                {formatBudgetCurrency(totalCustomAllocation)}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
+              <p className="text-sm text-text-muted">Status persentase</p>
+              <p className={`mt-3 text-lg font-semibold ${isPercentageBalanced ? 'text-primary-600' : 'text-danger-base'}`}>
+                {isPercentageBalanced ? 'Sudah pas 100%' : percentageDifference > 0 ? `Kurang ${percentageDifference}%` : `Lebih ${Math.abs(percentageDifference)}%`}
+              </p>
             </div>
           </CardContent>
-        )}
-      </Card>
+        </Card>
+      )}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        {customAllocationItems.map((item) => (
-          <Card key={item.key} className="h-full">
-            <CardHeader>
-              <CardTitle className="text-base">{item.label}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-2xl font-semibold text-text-title">{formatBudgetCurrency(item.appliedAmount)}</p>
-                <p className="mt-2 text-sm font-medium text-primary-600">
-                  {item.hasCustomPercent ? `Custom saat ini ${item.customPercent}%` : `Masih memakai rekomendasi ${item.percent}%`}
+      {saveMessage && (
+        <div className={cn(
+          "rounded-2xl px-4 py-3 text-sm font-medium",
+          isMobile ? "" : "pt-0",
+          saveMessage.type === 'success' ? 'bg-success-base/10 text-success-base' : 'bg-danger-base/10 text-danger-base'
+        )}>
+          {saveMessage.text}
+        </div>
+      )}
+
+      {isMobile ? (
+        <div className="space-y-3">
+          {customAllocationItems.map((item, index) => (
+            <div key={item.key} className="flex items-center gap-3 bg-surface-panel p-3.5 rounded-2xl border border-border-subtle shadow-sm shadow-card-soft">
+              <span className="text-sm font-bold text-text-muted min-w-[20px]">{index + 1}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-text-title truncate">{item.label}</p>
+                <p className="text-xs text-text-muted mt-0.5">
+                  Rekomendasi: <span className="font-medium text-text-body">{item.percent}%</span>
+                </p>
+                <p className="text-sm font-bold text-primary-600 mt-1">
+                  {formatBudgetCurrency(item.appliedAmount)}
                 </p>
               </div>
-              <Input
-                type="number"
-                inputMode="decimal"
-                min="0"
-                max="100"
-                step="0.01"
-                label="Persentase custom"
-                value={item.percentInput}
-                placeholder={String(item.percent)}
-                onChange={(event) =>
-                  setCustomAllocations((current) => ({
-                    ...current,
-                    [item.key]: event.target.value,
-                  }))
-                }
-              />
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-300">
-                <div className="h-full rounded-full bg-primary-500" style={{ width: `${Math.min(item.appliedPercent, 100)}%` }} />
+              <div className="w-24 shrink-0">
+                <div className="relative">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    value={item.percentInput}
+                    placeholder={String(item.percent)}
+                    onChange={(event) =>
+                      setCustomAllocations((current) => ({
+                        ...current,
+                        [item.key]: event.target.value,
+                      }))
+                    }
+                    className="w-full text-right pr-7 pl-3 h-10 text-sm font-medium rounded-xl border border-border-subtle bg-surface-panel focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-text-muted">%</span>
+                </div>
               </div>
-              <p className="text-sm leading-6 text-text-muted">{item.description}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          {customAllocationItems.map((item) => (
+            <Card key={item.key} className="h-full">
+              <CardHeader>
+                <CardTitle className="text-base">{item.label}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-2xl font-semibold text-text-title">{formatBudgetCurrency(item.appliedAmount)}</p>
+                  <p className="mt-2 text-sm font-medium text-primary-600">
+                    {item.hasCustomPercent ? `Custom saat ini ${item.customPercent}%` : `Masih memakai rekomendasi ${item.percent}%`}
+                  </p>
+                </div>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  label="Persentase custom"
+                  value={item.percentInput}
+                  placeholder={String(item.percent)}
+                  onChange={(event) =>
+                    setCustomAllocations((current) => ({
+                      ...current,
+                      [item.key]: event.target.value,
+                    }))
+                  }
+                />
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-300">
+                  <div className="h-full rounded-full bg-primary-500" style={{ width: `${Math.min(item.appliedPercent, 100)}%` }} />
+                </div>
+                <p className="text-sm leading-6 text-text-muted">{item.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <Card className="border-info-base">
         <CardContent>

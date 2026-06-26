@@ -39,7 +39,6 @@ export default function ReportsPage() {
     <div className="space-y-6">
       <header>
         <h1 className="text-3xl font-bold text-text-title">Laporan Bulanan</h1>
-        <p className="mt-2 text-text-muted">Lihat ringkasan pemasukan, pengeluaran, tabungan, dan kategori terbesar bulan ini.</p>
       </header>
       <div className="grid gap-4 md:grid-cols-4">
         {[

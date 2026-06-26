@@ -232,7 +232,7 @@ export default function CoupleSavingsPage() {
       return <StatusBadge value="income">{partner ? `${partner.label} - ${partner.user.name}` : row.source || '-'}</StatusBadge>;
     } },
     { key: 'account', label: 'Rekening sumber saldo', render: (row) => row.account?.name || '-' },
-    { key: 'description', label: 'Deskripsi', render: (row) => (
+    { key: 'description', label: 'Deskripsi', mobileTitle: true, render: (row) => (
       <div className="space-y-1">
         <p>{row.description || '-'}</p>
         {row.entry_type === 'account_allocation' && (
@@ -396,6 +396,7 @@ export default function CoupleSavingsPage() {
         onClose={() => setFormOpen(false)}
         title={editing ? 'Edit setoran' : 'Tambah setoran'}
         description="Setoran dicatat sebagai transaksi pemasukan ke rekening Tabungan berdua."
+        fullScreenOnMobile={true}
       >
         <ResourceForm
           schema={schema}
@@ -412,7 +413,7 @@ export default function CoupleSavingsPage() {
         open={isSettingOpen}
         onClose={() => setSettingOpen(false)}
         title="Atur pasangan"
-        description="Pilih user aktif yang menjadi Pasangan 1 dan Pasangan 2. Pengaturan ini hanya bisa diubah oleh admin."
+        fullScreenOnMobile={true}
       >
         {settingLoading ? (
           <LoadingSkeleton rows={3} />

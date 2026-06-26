@@ -2,10 +2,50 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useForm, useWatch } from 'react-hook-form';
-import { Check, ChevronDown, Plus, X } from 'lucide-react';
+import {
+  Check, ChevronDown, Plus, X,
+  Coins, TrendingUp, Briefcase, Gift, Wallet,
+  Utensils, Coffee, ShoppingBag, ShoppingCart,
+  Car, Train, HeartPulse, GraduationCap, BookOpen,
+  Clapperboard, Gamepad2, Plane, Receipt, Tv, Wifi, Phone,
+  HeartHandshake, CreditCard, LayoutGrid, Sparkles, Home,
+  User, Shield, Dumbbell, Scissors, Heart, HelpCircle
+} from 'lucide-react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { cn } from '../../lib/utils';
+
+const categoryIconChoices = [
+  { value: 'coins', label: 'Gaji', icon: Coins },
+  { value: 'wallet', label: 'Dompet', icon: Wallet },
+  { value: 'utensils', label: 'Makan', icon: Utensils },
+  { value: 'coffee', label: 'Ngopi', icon: Coffee },
+  { value: 'shopping-bag', label: 'Belanja', icon: ShoppingBag },
+  { value: 'shopping-cart', label: 'Bulanan', icon: ShoppingCart },
+  { value: 'car', label: 'Transport', icon: Car },
+  { value: 'train', label: 'Perjalanan', icon: Train },
+  { value: 'heart-pulse', label: 'Sehat', icon: HeartPulse },
+  { value: 'graduation-cap', label: 'Edukasi', icon: GraduationCap },
+  { value: 'book-open', label: 'Buku', icon: BookOpen },
+  { value: 'clapperboard', label: 'Hiburan', icon: Clapperboard },
+  { value: 'gamepad-2', label: 'Game', icon: Gamepad2 },
+  { value: 'plane', label: 'Liburan', icon: Plane },
+  { value: 'receipt', label: 'Tagihan', icon: Receipt },
+  { value: 'tv', label: 'TV', icon: Tv },
+  { value: 'wifi', label: 'WiFi', icon: Wifi },
+  { value: 'phone', label: 'Pulsa', icon: Phone },
+  { value: 'heart-handshake', label: 'Sosial', icon: HeartHandshake },
+  { value: 'credit-card', label: 'Cicilan', icon: CreditCard },
+  { value: 'piggy-bank', label: 'Tabungan', icon: Wallet },
+  { value: 'layout-grid', label: 'Umum', icon: LayoutGrid },
+  { value: 'sparkles', label: 'Hobi', icon: Sparkles },
+  { value: 'home', label: 'Rumah', icon: Home },
+  { value: 'user', label: 'Pribadi', icon: User },
+  { value: 'shield', label: 'Proteksi', icon: Shield },
+  { value: 'dumbbell', label: 'Olahraga', icon: Dumbbell },
+  { value: 'scissors', label: 'Salon', icon: Scissors },
+  { value: 'heart', label: 'Pasangan', icon: Heart },
+];
 
 const moneyNamePattern = /(amount|balance|income|expense|price|budget|target|estimate|estimated)/i;
 const moneyLabelPattern = /(nominal|saldo|pemasukan|pengeluaran|budget|target|terkumpul|harga|penghasilan|gaji|aman harian)/i;
@@ -61,16 +101,18 @@ function resolveFieldLabel(field, values, options) {
   return field.label;
 }
 
+function getFieldOptions(field, options, values) {
+  const baseOptions = field.options || options[field.optionsKey] || [];
+  return field.getOptions ? field.getOptions({ options: baseOptions, allOptions: options, values }) : baseOptions;
+}
+
 function CustomSelect({ field, register, error, options, value, values, setValue }) {
   const buttonRef = useRef(null);
   const listboxId = useId();
   const [isOpen, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [panelStyle, setPanelStyle] = useState({});
-  const selectOptions = useMemo(() => {
-    const baseOptions = field.options || options[field.optionsKey] || [];
-    return field.getOptions ? field.getOptions({ options: baseOptions, allOptions: options, values }) : baseOptions;
-  }, [field, options, values]);
+  const selectOptions = useMemo(() => getFieldOptions(field, options, values), [field, options, values]);
   const selectedIndex = selectOptions.findIndex((option) => String(option.value) === String(value ?? ''));
   const selectedOption = selectedIndex >= 0 ? selectOptions[selectedIndex] : null;
 
@@ -237,6 +279,118 @@ function CustomSelect({ field, register, error, options, value, values, setValue
   );
 }
 
+function TabsField({ field, error, options, value, values, setValue }) {
+  const tabOptions = getFieldOptions(field, options, values);
+
+  return (
+    <div className="flex w-full flex-col gap-1.5">
+      <label className="text-sm font-medium text-text-body">{resolveFieldLabel(field, values, options)}</label>
+      <div className="flex rounded-2xl bg-surface-100 p-1">
+        {tabOptions.map((option) => {
+          const isActive = String(option.value) === String(value ?? '');
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => {
+                setValue(field.name, option.value, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                field.clearFieldsOnChange?.forEach((fieldName) => {
+                  setValue(fieldName, '', { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                });
+              }}
+              className={cn(
+                'flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition-all',
+                isActive ? 'bg-surface-panel text-primary-600 shadow-sm' : 'text-text-muted hover:text-text-body'
+              )}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+      {error?.message && <p className="text-xs font-medium text-danger-base">{error.message}</p>}
+    </div>
+  );
+}
+
+function CardSelectField({ field, register, error, options, value, values, setValue }) {
+  const cardOptions = getFieldOptions(field, options, values);
+
+  return (
+    <div className="flex w-full flex-col gap-1.5">
+      <label className="text-sm font-medium text-text-body">{resolveFieldLabel(field, values, options)}</label>
+      <input type="hidden" {...register(field.name)} />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        {cardOptions.map((option) => {
+          const isSelected = String(option.value) === String(value ?? '');
+          const [title, meta] = String(option.label || '').split(' - ');
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => {
+                setValue(field.name, option.value, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                field.clearFieldsOnChange?.forEach((fieldName) => {
+                  setValue(fieldName, '', { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                });
+              }}
+              className={cn(
+                'rounded-2xl border px-3 py-3 text-left shadow-sm transition-all',
+                isSelected
+                  ? 'border-primary-500 bg-primary-500/8 shadow-primary-500/10'
+                  : 'border-border-subtle bg-surface-panel hover:border-primary-400'
+              )}
+            >
+              <span className={cn('block truncate text-sm font-semibold', isSelected ? 'text-primary-700' : 'text-text-title')}>
+                {title}
+              </span>
+              <span className="mt-1 block truncate text-xs text-text-muted">
+                {meta || option.description || option.purpose || '-'}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {error?.message && <p className="text-xs font-medium text-danger-base">{error.message}</p>}
+    </div>
+  );
+}
+
+function IconPickerField({ field, register, error, value, values, options, setValue }) {
+  const iconOptions = field.options || categoryIconChoices;
+
+  return (
+    <div className="flex w-full flex-col gap-1.5">
+      <label className="text-sm font-medium text-text-body">{resolveFieldLabel(field, values, options)}</label>
+      <input type="hidden" {...register(field.name)} />
+      <div className="grid grid-cols-5 gap-x-2 gap-y-3 sm:grid-cols-6">
+        {iconOptions.map((option) => {
+          const IconComponent = option.icon || HelpCircle;
+          const isSelected = String(option.value) === String(value ?? '');
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setValue(field.name, option.value, { shouldDirty: true, shouldValidate: true, shouldTouch: true })}
+              className={cn(
+                'flex items-center justify-center rounded-full p-2.5 text-center transition-all',
+                isSelected
+                  ? 'bg-primary-500/12 text-primary-700 ring-2 ring-primary-500/30'
+                  : 'text-text-muted hover:bg-surface-100 hover:text-primary-600'
+              )}
+              aria-label={option.label}
+              title={option.label}
+            >
+              <IconComponent size={20} />
+            </button>
+          );
+        })}
+      </div>
+      {error?.message && <p className="text-xs font-medium text-danger-base">{error.message}</p>}
+    </div>
+  );
+}
+
 function MoneyInput({ field, register, error, value, setValue }) {
   const displayValue = formatThousands(value);
 
@@ -374,6 +528,18 @@ function Field({ field, register, error, options, value, values, setValue }) {
     return <CustomSelect field={field} register={register} error={error} options={options} value={value} values={values} setValue={setValue} />;
   }
 
+  if (field.type === 'tabs') {
+    return <TabsField field={field} error={error} options={options} value={value} values={values} setValue={setValue} />;
+  }
+
+  if (field.type === 'card-select') {
+    return <CardSelectField field={field} register={register} error={error} options={options} value={value} values={values} setValue={setValue} />;
+  }
+
+  if (field.type === 'icon-picker') {
+    return <IconPickerField field={field} register={register} error={error} options={options} value={value} values={values} setValue={setValue} />;
+  }
+
   if (isMoneyField(field)) {
     return <MoneyInput field={field} register={register} error={error} value={value} setValue={setValue} />;
   }
@@ -395,7 +561,132 @@ function Field({ field, register, error, options, value, values, setValue }) {
   return <Input type={field.type || 'text'} {...common} />;
 }
 
-export default function ResourceForm({ schema, fields, defaultValues, options = {}, onSubmit, isSaving, submitLabel = 'Simpan' }) {
+function getCategoryIcon(name) {
+  const lowerName = String(name || '').toLowerCase();
+  if (lowerName.includes('gaji') || lowerName.includes('salary') || lowerName.includes('upah')) return Coins;
+  if (lowerName.includes('investasi') || lowerName.includes('saham') || lowerName.includes('dividen') || lowerName.includes('bunga')) return TrendingUp;
+  if (lowerName.includes('bonus') || lowerName.includes('thr') || lowerName.includes('hadiah') || lowerName.includes('gift')) return Gift;
+  if (lowerName.includes('bisnis') || lowerName.includes('freelance') || lowerName.includes('sampingan')) return Briefcase;
+  if (lowerName.includes('makan') || lowerName.includes('minum') || lowerName.includes('kuliner') || lowerName.includes('food') || lowerName.includes('resto') || lowerName.includes('jajan') || lowerName.includes('kopi') || lowerName.includes('coffee')) return Utensils;
+  if (lowerName.includes('belanja') || lowerName.includes('shopping') || lowerName.includes('mall') || lowerName.includes('supermarket') || lowerName.includes('pasar') || lowerName.includes('bulanan')) return ShoppingBag;
+  if (lowerName.includes('transport') || lowerName.includes('bensin') || lowerName.includes('gojek') || lowerName.includes('grab') || lowerName.includes('krl') || lowerName.includes('ojek') || lowerName.includes('taksi') || lowerName.includes('mobil') || lowerName.includes('motor')) return Car;
+  if (lowerName.includes('sehat') || lowerName.includes('obat') || lowerName.includes('dokter') || lowerName.includes('sakit') || lowerName.includes('klinik') || lowerName.includes('vitamin') || lowerName.includes('apotek')) return HeartPulse;
+  if (lowerName.includes('didik') || lowerName.includes('sekolah') || lowerName.includes('kuliah') || lowerName.includes('buku') || lowerName.includes('kursus') || lowerName.includes('education')) return GraduationCap;
+  if (lowerName.includes('hibur') || lowerName.includes('bioskop') || lowerName.includes('nonton') || lowerName.includes('netflix') || lowerName.includes('game') || lowerName.includes('wisata') || lowerName.includes('liburan') || lowerName.includes('rekreasi') || lowerName.includes('jalan-jalan')) return Clapperboard;
+  if (lowerName.includes('tagihan') || lowerName.includes('listrik') || lowerName.includes('air') || lowerName.includes('wifi') || lowerName.includes('internet') || lowerName.includes('pulsa') || lowerName.includes('bpjs') || lowerName.includes('kontrakan') || lowerName.includes('kos') || lowerName.includes('sewa')) return Receipt;
+  if (lowerName.includes('sedekah') || lowerName.includes('zakat') || lowerName.includes('amal') || lowerName.includes('donasi') || lowerName.includes('sosial')) return HeartHandshake;
+  if (lowerName.includes('cicilan') || lowerName.includes('hutang') || lowerName.includes('pinjaman') || lowerName.includes('credit') || lowerName.includes('kredit') || lowerName.includes('paylater')) return CreditCard;
+  if (lowerName.includes('rumah') || lowerName.includes('home') || lowerName.includes('kost') || lowerName.includes('properti') || lowerName.includes('perabotan')) return Home;
+  if (lowerName.includes('pribadi') || lowerName.includes('diri') || lowerName.includes('skincare') || lowerName.includes('salon') || lowerName.includes('cukur')) return User;
+  if (lowerName.includes('olahraga') || lowerName.includes('sport') || lowerName.includes('gym') || lowerName.includes('fitness')) return Dumbbell;
+  if (lowerName.includes('hobi') || lowerName.includes('hobby')) return Sparkles;
+  
+  return LayoutGrid;
+}
+
+function getCategoryColor(name, isIncomeType) {
+  const lowerName = String(name || '').toLowerCase();
+  if (isIncomeType) {
+    return {
+      bg: 'bg-emerald-500/10 dark:bg-emerald-500/20',
+      text: 'text-emerald-600 dark:text-emerald-400',
+      border: 'border-emerald-500/20 dark:border-emerald-500/40',
+      activeBg: 'bg-emerald-500 text-white',
+      activeBorder: 'border-emerald-500',
+    };
+  }
+  if (lowerName.includes('makan') || lowerName.includes('minum') || lowerName.includes('kuliner') || lowerName.includes('jajan')) {
+    return {
+      bg: 'bg-amber-500/10 dark:bg-amber-500/20',
+      text: 'text-amber-600 dark:text-amber-400',
+      border: 'border-amber-500/20 dark:border-amber-500/40',
+      activeBg: 'bg-amber-500 text-white',
+      activeBorder: 'border-amber-500',
+    };
+  }
+  if (lowerName.includes('belanja') || lowerName.includes('shopping') || lowerName.includes('bulanan')) {
+    return {
+      bg: 'bg-purple-500/10 dark:bg-purple-500/20',
+      text: 'text-purple-600 dark:text-purple-400',
+      border: 'border-purple-500/20 dark:border-purple-500/40',
+      activeBg: 'bg-purple-500 text-white',
+      activeBorder: 'border-purple-500',
+    };
+  }
+  if (lowerName.includes('transport') || lowerName.includes('bensin') || lowerName.includes('mobil') || lowerName.includes('motor')) {
+    return {
+      bg: 'bg-blue-500/10 dark:bg-blue-500/20',
+      text: 'text-blue-600 dark:text-blue-400',
+      border: 'border-blue-500/20 dark:border-blue-500/40',
+      activeBg: 'bg-blue-500 text-white',
+      activeBorder: 'border-blue-500',
+    };
+  }
+  if (lowerName.includes('tagihan') || lowerName.includes('listrik') || lowerName.includes('wifi') || lowerName.includes('internet') || lowerName.includes('pulsa')) {
+    return {
+      bg: 'bg-rose-500/10 dark:bg-rose-500/20',
+      text: 'text-rose-600 dark:text-rose-400',
+      border: 'border-rose-500/20 dark:border-rose-500/40',
+      activeBg: 'bg-rose-500 text-white',
+      activeBorder: 'border-rose-500',
+    };
+  }
+  if (lowerName.includes('hibur') || lowerName.includes('game') || lowerName.includes('nonton') || lowerName.includes('netflix')) {
+    return {
+      bg: 'bg-violet-500/10 dark:bg-violet-500/20',
+      text: 'text-violet-600 dark:text-violet-400',
+      border: 'border-violet-500/20 dark:border-violet-500/40',
+      activeBg: 'bg-violet-500 text-white',
+      activeBorder: 'border-violet-500',
+    };
+  }
+  if (lowerName.includes('sehat') || lowerName.includes('obat') || lowerName.includes('dokter')) {
+    return {
+      bg: 'bg-teal-500/10 dark:bg-teal-500/20',
+      text: 'text-teal-600 dark:text-teal-400',
+      border: 'border-teal-500/20 dark:border-teal-500/40',
+      activeBg: 'bg-teal-500 text-white',
+      activeBorder: 'border-teal-500',
+    };
+  }
+  if (lowerName.includes('sedekah') || lowerName.includes('zakat') || lowerName.includes('amal')) {
+    return {
+      bg: 'bg-orange-500/10 dark:bg-orange-500/20',
+      text: 'text-orange-600 dark:text-orange-400',
+      border: 'border-orange-500/20 dark:border-orange-500/40',
+      activeBg: 'bg-orange-500 text-white',
+      activeBorder: 'border-orange-500',
+    };
+  }
+  if (lowerName.includes('cicilan') || lowerName.includes('hutang') || lowerName.includes('kredit')) {
+    return {
+      bg: 'bg-red-500/10 dark:bg-red-500/20',
+      text: 'text-red-600 dark:text-red-400',
+      border: 'border-red-500/20 dark:border-red-500/40',
+      activeBg: 'bg-red-500 text-white',
+      activeBorder: 'border-red-500',
+    };
+  }
+  return {
+    bg: 'bg-slate-500/10 dark:bg-slate-500/20',
+    text: 'text-slate-600 dark:text-slate-400',
+    border: 'border-slate-500/20 dark:border-slate-500/40',
+    activeBg: 'bg-slate-600 dark:bg-slate-500 text-white',
+    activeBorder: 'border-slate-500',
+  };
+}
+
+export default function ResourceForm({
+  schema,
+  fields,
+  defaultValues,
+  options = {},
+  onSubmit,
+  isSaving,
+  submitLabel = 'Simpan',
+  isTransactionForm = false,
+  formLayout = 'default',
+}) {
   const {
     register,
     handleSubmit,
@@ -410,9 +701,180 @@ export default function ResourceForm({ schema, fields, defaultValues, options = 
     [fields, watchedValues]
   );
 
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 767px)');
+    setIsMobile(media.matches);
+    const listener = (e) => setIsMobile(e.matches);
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
+  }, []);
+
   useEffect(() => {
     reset(defaultValues);
   }, [defaultValues, reset]);
+
+  if (isMobile && formLayout === 'categories') {
+    return (
+      <form className="flex h-full flex-col justify-between gap-6" onSubmit={handleSubmit(onSubmit)}>
+        <div className="flex flex-col gap-5 pb-28">
+          {visibleFields.map((field) => (
+            <div key={field.name} className={field.full ? 'w-full' : ''}>
+              <Field field={field} register={register} error={errors[field.name]} options={options} value={watchedValues?.[field.name]} values={watchedValues} setValue={setValue} />
+            </div>
+          ))}
+        </div>
+
+        <div className="fixed bottom-0 left-0 right-0 border-t border-border-subtle bg-gradient-to-t from-surface-panel via-surface-panel/98 to-surface-panel/90 px-5 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur-xl">
+          <Button type="submit" isLoading={isSaving} className="h-12 w-full rounded-2xl text-sm font-semibold shadow-lg shadow-primary-500/15">
+            {submitLabel}
+          </Button>
+        </div>
+      </form>
+    );
+  }
+
+  if (isMobile && isTransactionForm) {
+    const typeField = fields.find((f) => f.name === 'transaction_type');
+    const categoryField = fields.find((f) => f.name === 'category_id');
+    const otherFields = visibleFields.filter((f) => f.name !== 'transaction_type' && f.name !== 'category_id');
+
+    const handleTypeChange = (nextType) => {
+      setValue('transaction_type', nextType, { shouldDirty: true, shouldValidate: true });
+      setValue('category_id', '', { shouldDirty: true, shouldValidate: true });
+      typeField?.clearFieldsOnChange?.forEach((fieldName) => {
+        setValue(fieldName, '', { shouldDirty: true, shouldValidate: true });
+      });
+    };
+
+    const categoryOptions = categoryField ? (
+      categoryField.options || options[categoryField.optionsKey] || []
+    ) : [];
+    
+    const resolvedCategoryOptions = categoryField?.getOptions ? (
+      categoryField.getOptions({ options: categoryOptions, allOptions: options, values: watchedValues })
+    ) : categoryOptions;
+
+    return (
+      <form className="flex h-full flex-col justify-between gap-6" onSubmit={handleSubmit(onSubmit)}>
+        <div className="flex flex-col gap-6 pb-28">
+          {/* 1. Transaction Type Tabs */}
+          {typeField && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex rounded-2xl bg-surface-100 dark:bg-surface-200 p-1">
+                <button
+                  type="button"
+                  onClick={() => handleTypeChange('expense')}
+                  className={cn(
+                    "flex-1 py-3 text-center text-sm font-semibold rounded-xl transition-all",
+                    watchedValues.transaction_type === 'expense'
+                      ? "bg-surface-panel text-danger-base shadow-sm font-bold"
+                      : "text-text-muted hover:text-text-body"
+                  )}
+                >
+                  Pengeluaran
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTypeChange('income')}
+                  className={cn(
+                    "flex-1 py-3 text-center text-sm font-semibold rounded-xl transition-all",
+                    watchedValues.transaction_type === 'income'
+                      ? "bg-surface-panel text-success-base shadow-sm font-bold"
+                      : "text-text-muted hover:text-text-body"
+                  )}
+                >
+                  Pemasukan
+                </button>
+              </div>
+              {errors.transaction_type?.message && (
+                <p className="text-xs font-medium text-danger-base">{errors.transaction_type.message}</p>
+              )}
+            </div>
+          )}
+
+          {/* 2. Category Grid */}
+          {categoryField && (
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-text-body">
+                {resolveFieldLabel(categoryField, watchedValues, options)}
+              </label>
+              {resolvedCategoryOptions.length === 0 ? (
+                <div className="text-sm text-text-muted text-center py-6 bg-surface-50 dark:bg-surface-900/20 rounded-2xl border border-dashed border-border-subtle">
+                  Belum ada kategori untuk tipe ini.
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  {resolvedCategoryOptions.map((option) => {
+                    const isSelected = String(option.value) === String(watchedValues.category_id || '');
+                    const IconComponent = getCategoryIcon(option.label);
+                    const activeType = watchedValues.transaction_type || defaultValues.transaction_type || 'expense';
+                    const color = getCategoryColor(option.label, activeType === 'income');
+
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
+                          setValue('category_id', option.value, { shouldDirty: true, shouldValidate: true });
+                          categoryField.clearFieldsOnChange?.forEach((fieldName) => {
+                            setValue(fieldName, '', { shouldDirty: true, shouldValidate: true });
+                          });
+                        }}
+                        className={cn(
+                          "flex flex-col items-center justify-center py-3 px-1 transition-all gap-2 duration-200 active:scale-95 rounded-2xl",
+                          isSelected ? color.bg : "bg-transparent hover:bg-surface-100/30"
+                        )}
+                      >
+                        <IconComponent
+                          size={24}
+                          className={cn(
+                            "transition-all duration-200",
+                            isSelected ? color.text : "text-text-muted"
+                          )}
+                        />
+                        <span className={cn(
+                          "text-xs font-semibold text-center truncate w-full",
+                          isSelected ? "text-text-title font-bold" : "text-text-muted"
+                        )}>
+                          {option.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {errors.category_id?.message && (
+                <p className="text-xs font-medium text-danger-base">{errors.category_id.message}</p>
+              )}
+            </div>
+          )}
+
+          {/* 3. Other Fields */}
+          {otherFields.map((field) => (
+            <div key={field.name}>
+              <Field
+                field={field}
+                register={register}
+                error={errors[field.name]}
+                options={options}
+                value={watchedValues?.[field.name]}
+                values={watchedValues}
+                setValue={setValue}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Action Button */}
+        <div className="fixed bottom-0 left-0 right-0 border-t border-border-subtle bg-gradient-to-t from-surface-panel via-surface-panel/98 to-surface-panel/90 px-5 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur-xl">
+          <Button type="submit" isLoading={isSaving} className="h-12 w-full rounded-2xl text-sm font-semibold shadow-lg shadow-primary-500/15">
+            {submitLabel}
+          </Button>
+        </div>
+      </form>
+    );
+  }
 
   return (
     <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>

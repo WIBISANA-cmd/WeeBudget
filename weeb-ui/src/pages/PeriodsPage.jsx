@@ -85,7 +85,7 @@ export default function PeriodsPage() {
   };
 
   const columns = [
-    { key: 'name', label: 'Periode' },
+    { key: 'name', label: 'Periode', mobileTitle: true },
     { key: 'range', label: 'Rentang', render: (row) => `${formatDate(row.start_date)} - ${formatDate(row.end_date)}` },
     { key: 'payday_date', label: 'Gajian', render: (row) => formatDate(row.payday_date) },
     { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status} /> },
@@ -162,6 +162,7 @@ export default function PeriodsPage() {
         onClose={() => setFormOpen(false)}
         title={editing ? 'Edit periode' : `Tambah periode ${year}`}
         description="Atur nama, rentang bulan, tanggal gajian, dan status periode."
+        fullScreenOnMobile={true}
       >
         <ResourceForm
           schema={config.schema}

@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -96,6 +97,42 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
     if (!config.accountScoped || !selectedAccount) return resource.items;
     return resource.items.filter((item) => String(item.account_id) === String(selectedAccount.value));
   }, [config.accountScoped, resource.items, selectedAccount]);
+  const renderTableContent = () => {
+    if (resource.isLoading) {
+      return <LoadingSkeleton rows={5} />;
+    }
+
+    if (resource.error) {
+      return <ErrorState message={resource.error} onRetry={resource.load} />;
+    }
+
+    if (visibleItems.length === 0) {
+      return <EmptyState title={config.emptyTitle} description={config.emptyDescription} action={<Button onClick={openCreate}>{config.createLabel || 'Tambah data'}</Button>} />;
+    }
+
+    if (config.mobileColumns) {
+      return (
+        <>
+          <MobileResourceList columns={config.mobileColumns} rows={visibleItems} onAction={setActionTarget} />
+          <div className="hidden md:block">
+            <DataTable columns={config.columns} rows={visibleItems} onEdit={openEdit} onDelete={openDelete} canEditRow={config.canEdit} canDeleteRow={config.canDelete} />
+          </div>
+        </>
+      );
+    }
+
+    return (
+      <DataTable
+        columns={config.columns}
+        rows={visibleItems}
+        onEdit={openEdit}
+        onDelete={openDelete}
+        canEditRow={config.canEdit}
+        canDeleteRow={config.canDelete}
+        mobileLayout={config.mobileLayout}
+      />
+    );
+  };
 
   const defaultValues = useMemo(() => {
     const base = config.defaultValues || {};
@@ -108,6 +145,17 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
     setEditing(null);
     setFormOpen(true);
   };
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isTransactionRoute = config.endpoint === '/transactions' || config.endpoint === '/incomes' || config.endpoint === '/expenses';
+
+  useEffect(() => {
+    if (location.state?.openCreate && isTransactionRoute) {
+      openCreate();
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, isTransactionRoute, navigate]);
 
   const openEdit = (row) => {
     if (config.canEdit && !config.canEdit(row)) {
@@ -202,44 +250,47 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
         </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{config.tableTitle || config.title}</CardTitle>
-          <CardDescription>{config.tableDescription || 'Kelola data secara langsung dari halaman ini.'}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {resource.isLoading ? (
-            <LoadingSkeleton rows={5} />
-          ) : resource.error ? (
-            <ErrorState message={resource.error} onRetry={resource.load} />
-          ) : visibleItems.length === 0 ? (
-            <EmptyState title={config.emptyTitle} description={config.emptyDescription} action={<Button onClick={openCreate}>{config.createLabel || 'Tambah data'}</Button>} />
-          ) : config.mobileColumns ? (
-            <>
-              <MobileResourceList columns={config.mobileColumns} rows={visibleItems} onAction={setActionTarget} />
-              <div className="hidden md:block">
-                <DataTable columns={config.columns} rows={visibleItems} onEdit={openEdit} onDelete={setDeleting} canEditRow={config.canEdit} canDeleteRow={config.canDelete} />
-              </div>
-            </>
-          ) : (
-            <DataTable
-              columns={config.columns}
-              rows={visibleItems}
-              onEdit={openEdit}
-              onDelete={setDeleting}
-              canEditRow={config.canEdit}
-              canDeleteRow={config.canDelete}
-              mobileLayout={config.mobileLayout}
-            />
+      {config.noCard ? (
+        <div className="space-y-4">
+          {config.tableTitle && (
+            <div className="px-1">
+              <h2 className="text-xl font-bold text-text-title">{config.tableTitle}</h2>
+              {config.tableDescription && <p className="mt-1 text-sm text-text-muted">{config.tableDescription}</p>}
+            </div>
           )}
-        </CardContent>
-      </Card>
+          <div>{renderTableContent()}</div>
+        </div>
+      ) : config.unwrappedOnMobile ? (
+        <>
+          <div className="hidden md:block">
+            <Card>
+              <CardHeader>
+                <CardTitle>{config.tableTitle || config.title}</CardTitle>
+                <CardDescription>{config.tableDescription || 'Kelola data secara langsung dari halaman ini.'}</CardDescription>
+              </CardHeader>
+              <CardContent>{renderTableContent()}</CardContent>
+            </Card>
+          </div>
+          <div className="md:hidden">
+            {renderTableContent()}
+          </div>
+        </>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>{config.tableTitle || config.title}</CardTitle>
+            <CardDescription>{config.tableDescription || 'Kelola data secara langsung dari halaman ini.'}</CardDescription>
+          </CardHeader>
+          <CardContent>{renderTableContent()}</CardContent>
+        </Card>
+      )}
 
       <Modal
         open={isFormOpen}
         onClose={() => setFormOpen(false)}
         title={editing ? `Edit ${config.singular}` : config.createLabel}
         description={config.formDescription}
+        fullScreenOnMobile={config.fullScreenOnMobile || config.endpoint === '/transactions' || config.endpoint === '/incomes' || config.endpoint === '/expenses'}
       >
         <ResourceForm
           schema={config.schema}
@@ -249,6 +300,8 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
           isSaving={resource.isSaving}
           submitLabel={editing ? 'Simpan perubahan' : 'Simpan'}
           onSubmit={submit}
+          isTransactionForm={config.endpoint === '/transactions' || config.endpoint === '/incomes' || config.endpoint === '/expenses'}
+          formLayout={config.formLayout}
         />
       </Modal>
 

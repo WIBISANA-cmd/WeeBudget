@@ -58,6 +58,7 @@ function BillsFundingPanel() {
     {
       key: 'description',
       label: 'Deskripsi',
+      mobileTitle: true,
       render: (row) => row.description || row.notes || '-',
     },
     {

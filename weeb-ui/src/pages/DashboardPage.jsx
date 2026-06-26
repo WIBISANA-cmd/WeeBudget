@@ -86,7 +86,6 @@ function EmptyDashboard({ name }) {
     <div className="dashboard-fade-in space-y-6">
       <header>
         <h1 className="text-2xl font-bold text-text-title md:text-3xl">Dashboard WeeB</h1>
-        <p className="mt-2 text-text-muted">Buat rekening atau catat transaksi pertama agar dashboard mulai membaca pola uangmu.</p>
       </header>
       <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-primary-500/20 bg-primary-500/5 p-8 text-center">
         <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-500/10">
