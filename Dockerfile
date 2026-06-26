@@ -11,29 +11,10 @@ RUN npm ci
 COPY weeb-ui ./
 RUN npm run build
 
-FROM composer:2 AS vendor
-
-WORKDIR /app
-
-COPY weeb-api/composer.json weeb-api/composer.lock ./
-RUN composer install \
-    --no-dev \
-    --no-interaction \
-    --no-progress \
-    --prefer-dist \
-    --optimize-autoloader \
-    --no-scripts
-
-COPY weeb-api ./
-RUN composer dump-autoload --optimize --no-scripts
-
-FROM php:8.4-cli-bookworm
-
-WORKDIR /var/www/html
+FROM php:8.4-cli-bookworm AS php-base
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        nginx \
         git \
         unzip \
         libicu-dev \
@@ -49,6 +30,34 @@ RUN apt-get update \
         pdo_pgsql \
         pdo_sqlite \
         zip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+FROM php-base AS vendor
+
+WORKDIR /app
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+COPY weeb-api/composer.json weeb-api/composer.lock ./
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --no-progress \
+    --prefer-dist \
+    --optimize-autoloader \
+    --no-scripts
+
+COPY weeb-api ./
+RUN composer dump-autoload --optimize --no-scripts
+
+FROM php-base
+
+WORKDIR /var/www/html
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        nginx \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
