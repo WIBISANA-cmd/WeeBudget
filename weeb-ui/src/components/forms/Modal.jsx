@@ -8,13 +8,13 @@ export default function Modal({ title, description, open, onClose, children, foo
   return (
     <div className={cn(
       "fixed inset-0 z-[200] flex bg-slate-950/45 p-0 backdrop-blur-sm md:items-center md:justify-center md:p-4",
-      fullScreenOnMobile ? "items-stretch" : "items-end justify-center"
+      fullScreenOnMobile ? "items-stretch md:items-center md:justify-center" : "items-end justify-center"
     )}>
       <div className={cn(
-        "relative z-[201] overflow-hidden border bg-surface-panel shadow-card border-border-subtle md:max-h-[90vh] md:max-w-2xl md:rounded-[28px]",
+        "relative z-[201] overflow-hidden border border-border-subtle bg-surface-panel shadow-card",
         fullScreenOnMobile
-          ? "flex flex-col h-[100dvh] w-full max-h-[100dvh] rounded-none border-none md:h-auto md:max-h-[90vh] md:rounded-[28px] md:border md:border-border-subtle"
-          : "max-h-[92dvh] w-full rounded-t-[28px]"
+          ? "flex h-[100dvh] w-full max-h-[100dvh] flex-col rounded-none border-none md:h-auto md:w-full md:max-w-3xl md:max-h-[90vh] md:rounded-[28px] md:border md:border-border-subtle"
+          : "w-full max-h-[92dvh] rounded-t-[28px] md:max-w-2xl md:rounded-[28px]"
       )}>
         {!fullScreenOnMobile && (
           <div className="flex justify-center pt-3 md:hidden">
@@ -24,15 +24,15 @@ export default function Modal({ title, description, open, onClose, children, foo
         <div
           className={cn(
             "flex items-start justify-between gap-4 border-b border-border-subtle px-5 py-4 md:px-6",
-            fullScreenOnMobile && "sticky top-0 z-10 bg-surface-panel/96 px-5 pb-4 pt-[calc(env(safe-area-inset-top)+0.875rem)] backdrop-blur-xl"
+            fullScreenOnMobile && "max-md:sticky max-md:top-0 max-md:z-10 max-md:bg-surface-panel/96 max-md:px-5 max-md:pb-4 max-md:pt-[calc(env(safe-area-inset-top)+0.875rem)] max-md:backdrop-blur-xl"
           )}
         >
           <div>
-            <h2 className={cn("text-lg font-semibold text-text-title", fullScreenOnMobile && "text-xl font-bold tracking-tight")}>
+            <h2 className={cn("text-lg font-semibold text-text-title md:text-xl", fullScreenOnMobile && "max-md:text-xl max-md:font-bold max-md:tracking-tight")}>
               {title}
             </h2>
             {description && (
-              <p className={cn("mt-1 text-sm text-text-muted", fullScreenOnMobile && "mt-1.5 max-w-[18rem] text-[13px] leading-5")}>
+              <p className={cn("mt-1 text-sm leading-6 text-text-muted", fullScreenOnMobile && "max-md:mt-1.5 max-md:max-w-[18rem] max-md:text-[13px] max-md:leading-5")}>
                 {description}
               </p>
             )}
@@ -42,19 +42,25 @@ export default function Modal({ title, description, open, onClose, children, foo
             aria-label="Tutup modal"
             className={cn(
               "rounded-2xl p-2.5 text-text-muted hover:bg-surface-100 hover:text-text-title",
-              fullScreenOnMobile && "mt-0.5 rounded-full border border-border-subtle bg-surface-100/90 p-3 shadow-sm"
+              fullScreenOnMobile && "max-md:mt-0.5 max-md:rounded-full max-md:border max-md:border-border-subtle max-md:bg-surface-100/90 max-md:p-3 max-md:shadow-sm"
             )}
           >
             <X size={20} />
           </button>
         </div>
         <div className={cn(
-          "overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 md:max-h-[65vh] md:px-6 md:pb-5 md:pt-5",
-          fullScreenOnMobile ? "flex-1 max-h-none px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-5" : "max-h-[72dvh]"
+          "overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 md:px-6 md:pt-5",
+          fullScreenOnMobile
+            ? "flex-1 max-h-none max-md:px-5 max-md:pb-[calc(env(safe-area-inset-bottom)+1.25rem)] max-md:pt-5 md:max-h-[calc(90vh-5.5rem)] md:pb-6"
+            : "max-h-[72dvh] md:max-h-[calc(90vh-5.5rem)] md:pb-5"
         )}>
           {children}
         </div>
-        {footer && <div className="border-t border-border-subtle px-4 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:px-6 md:py-4">{footer}</div>}
+        {footer && (
+          <div className="border-t border-border-subtle px-4 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:px-6 md:py-4">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

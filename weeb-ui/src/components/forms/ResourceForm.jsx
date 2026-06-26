@@ -883,8 +883,8 @@ export default function ResourceForm({
           <Field field={field} register={register} error={errors[field.name]} options={options} value={watchedValues?.[field.name]} values={watchedValues} setValue={setValue} />
         </div>
       ))}
-      <div className="md:col-span-2 -mx-4 mt-2 border-t border-border-subtle bg-surface-panel/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] pt-4 backdrop-blur md:mx-0 md:border-0 md:bg-transparent md:px-0 md:pb-0 md:pt-2">
-        <Button type="submit" isLoading={isSaving} className="w-full md:w-auto">{submitLabel}</Button>
+      <div className="md:col-span-2 -mx-4 mt-2 border-t border-border-subtle bg-surface-panel/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] pt-4 backdrop-blur md:mx-0 md:flex md:justify-end md:border-0 md:bg-transparent md:px-0 md:pb-0 md:pt-2 md:backdrop-blur-0">
+        <Button type="submit" isLoading={isSaving} className="w-full md:min-w-[180px] md:w-auto">{submitLabel}</Button>
       </div>
     </form>
   );
