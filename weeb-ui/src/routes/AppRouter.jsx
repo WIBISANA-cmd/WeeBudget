@@ -24,6 +24,7 @@ const WishlistPage = lazy(() => import('../pages/WishlistPage'));
 const ProfilePage = lazy(() => import('../pages/ProfilePage'));
 const UsersPage = lazy(() => import('../pages/UsersPage'));
 const LoginPage = lazy(() => import('../pages/LoginPage'));
+const RegisterPage = lazy(() => import('../pages/RegisterPage'));
 const GoogleCallbackPage = lazy(() => import('../pages/GoogleCallbackPage'));
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage'));
 
@@ -79,6 +80,7 @@ export default function AppRouter() {
         <Routes>
           <Route path="/" element={<HomeRedirect />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
           <Route element={<RequireAuth />}>
             <Route path="/onboarding" element={<OnboardingPage />} />

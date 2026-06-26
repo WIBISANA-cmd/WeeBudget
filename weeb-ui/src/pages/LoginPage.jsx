@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { KeyRound, Mail } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -89,6 +89,13 @@ export default function LoginPage() {
                 Masuk dengan Google
               </Button>
               {error && <p className="rounded-xl bg-danger-base/10 px-4 py-3 text-sm text-danger-base">{error}</p>}
+            </div>
+
+            <div className="mt-6 text-center text-sm text-text-muted">
+              Belum punya akun?{' '}
+              <Link to="/register" className="font-semibold text-primary-500 hover:text-primary-600 hover:underline">
+                Daftar di sini
+              </Link>
             </div>
           </div>
           <div className="hidden bg-gradient-to-br from-primary-500 to-sky-500 p-10 text-white md:block">
