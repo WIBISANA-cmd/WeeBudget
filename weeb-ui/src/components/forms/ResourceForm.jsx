@@ -320,37 +320,43 @@ function CardSelectField({ field, register, error, options, value, values, setVa
     <div className="flex w-full flex-col gap-1.5">
       <label className="text-sm font-medium text-text-body">{resolveFieldLabel(field, values, options)}</label>
       <input type="hidden" {...register(field.name)} />
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        {cardOptions.map((option) => {
-          const isSelected = String(option.value) === String(value ?? '');
-          const [title, meta] = String(option.label || '').split(' - ');
-          return (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => {
-                setValue(field.name, option.value, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
-                field.clearFieldsOnChange?.forEach((fieldName) => {
-                  setValue(fieldName, '', { shouldDirty: true, shouldValidate: true, shouldTouch: true });
-                });
-              }}
-              className={cn(
-                'rounded-2xl border px-3 py-3 text-left shadow-sm transition-all',
-                isSelected
-                  ? 'border-primary-500 bg-primary-500/8 shadow-primary-500/10'
-                  : 'border-border-subtle bg-surface-panel hover:border-primary-400'
-              )}
-            >
-              <span className={cn('block truncate text-sm font-semibold', isSelected ? 'text-primary-700' : 'text-text-title')}>
-                {title}
-              </span>
-              <span className="mt-1 block truncate text-xs text-text-muted">
-                {meta || option.description || option.purpose || '-'}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {cardOptions.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border-subtle bg-surface-100/60 px-4 py-5 text-sm leading-6 text-text-muted">
+          Belum ada pilihan rekening yang tersedia. Tambahkan rekening dulu dari menu Rekening.
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {cardOptions.map((option) => {
+            const isSelected = String(option.value) === String(value ?? '');
+            const [title, meta] = String(option.label || '').split(' - ');
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => {
+                  setValue(field.name, option.value, { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                  field.clearFieldsOnChange?.forEach((fieldName) => {
+                    setValue(fieldName, '', { shouldDirty: true, shouldValidate: true, shouldTouch: true });
+                  });
+                }}
+                className={cn(
+                  'rounded-2xl border px-3 py-3 text-left shadow-sm transition-all',
+                  isSelected
+                    ? 'border-primary-500 bg-primary-500/8 shadow-primary-500/10'
+                    : 'border-border-subtle bg-surface-panel hover:border-primary-400'
+                )}
+              >
+                <span className={cn('block truncate text-sm font-semibold', isSelected ? 'text-primary-700' : 'text-text-title')}>
+                  {title}
+                </span>
+                <span className="mt-1 block truncate text-xs text-text-muted">
+                  {meta || option.description || option.purpose || '-'}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
       {error?.message && <p className="text-xs font-medium text-danger-base">{error.message}</p>}
     </div>
   );
@@ -363,7 +369,10 @@ function IconPickerField({ field, register, error, value, values, options, setVa
     <div className="flex w-full flex-col gap-1.5">
       <label className="text-sm font-medium text-text-body">{resolveFieldLabel(field, values, options)}</label>
       <input type="hidden" {...register(field.name)} />
-      <div className="grid grid-cols-5 gap-x-2 gap-y-3 sm:grid-cols-6">
+      <div className={cn(
+        'grid grid-cols-5 gap-x-2 gap-y-3 sm:grid-cols-6',
+        field.compactDesktop && 'md:grid-cols-7 lg:grid-cols-8'
+      )}>
         {iconOptions.map((option) => {
           const IconComponent = option.icon || HelpCircle;
           const isSelected = String(option.value) === String(value ?? '');
@@ -373,7 +382,7 @@ function IconPickerField({ field, register, error, value, values, options, setVa
               type="button"
               onClick={() => setValue(field.name, option.value, { shouldDirty: true, shouldValidate: true, shouldTouch: true })}
               className={cn(
-                'flex items-center justify-center rounded-full p-2.5 text-center transition-all',
+                'flex items-center justify-center rounded-full p-2.5 text-center transition-all md:p-2',
                 isSelected
                   ? 'bg-primary-500/12 text-primary-700 ring-2 ring-primary-500/30'
                   : 'text-text-muted hover:bg-surface-100 hover:text-primary-600'
@@ -869,6 +878,116 @@ export default function ResourceForm({
         {/* Action Button */}
         <div className="fixed bottom-0 left-0 right-0 border-t border-border-subtle bg-gradient-to-t from-surface-panel via-surface-panel/98 to-surface-panel/90 px-5 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur-xl">
           <Button type="submit" isLoading={isSaving} className="h-12 w-full rounded-2xl text-sm font-semibold shadow-lg shadow-primary-500/15">
+            {submitLabel}
+          </Button>
+        </div>
+      </form>
+    );
+  }
+
+  if (formLayout === 'categories') {
+    const transactionTypeField = visibleFields.find((field) => field.name === 'transaction_type');
+    const accountField = visibleFields.find((field) => field.name === 'account_id');
+    const needTypeField = visibleFields.find((field) => field.name === 'need_type');
+    const iconField = visibleFields.find((field) => field.name === 'icon');
+    const nameField = visibleFields.find((field) => field.name === 'name');
+    const handledFields = new Set(['transaction_type', 'account_id', 'need_type', 'icon', 'name']);
+    const remainingFields = visibleFields.filter((field) => !handledFields.has(field.name));
+
+    return (
+      <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
+          <section className="space-y-5 rounded-[28px] border border-border-subtle bg-surface-panel/90 p-5 shadow-sm shadow-card-soft md:p-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-muted">Identitas Kategori</p>
+              <p className="mt-2 text-sm leading-6 text-text-muted">
+                Tentukan tipe kategori dan pilih ikon yang paling mudah dikenali saat dipakai di halaman transaksi.
+              </p>
+            </div>
+            {transactionTypeField && (
+              <Field
+                field={transactionTypeField}
+                register={register}
+                error={errors[transactionTypeField.name]}
+                options={options}
+                value={watchedValues?.[transactionTypeField.name]}
+                values={watchedValues}
+                setValue={setValue}
+              />
+            )}
+            {iconField && (
+              <div className="rounded-[24px] border border-border-subtle bg-surface-100/55 p-4 md:p-5">
+                <Field
+                  field={iconField}
+                  register={register}
+                  error={errors[iconField.name]}
+                  options={options}
+                  value={watchedValues?.[iconField.name]}
+                  values={watchedValues}
+                  setValue={setValue}
+                />
+              </div>
+            )}
+          </section>
+
+          <section className="space-y-5 rounded-[28px] border border-border-subtle bg-gradient-to-br from-surface-panel via-surface-panel to-surface-100/55 p-5 shadow-sm shadow-card-soft md:p-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-muted">Konteks Penggunaan</p>
+              <p className="mt-2 text-sm leading-6 text-text-muted">
+                Hubungkan kategori dengan rekening dan jenis pengeluarannya agar pilihan di transaksi lebih relevan.
+              </p>
+            </div>
+            {accountField && (
+              <Field
+                field={accountField}
+                register={register}
+                error={errors[accountField.name]}
+                options={options}
+                value={watchedValues?.[accountField.name]}
+                values={watchedValues}
+                setValue={setValue}
+              />
+            )}
+            {needTypeField && (
+              <Field
+                field={needTypeField}
+                register={register}
+                error={errors[needTypeField.name]}
+                options={options}
+                value={watchedValues?.[needTypeField.name]}
+                values={watchedValues}
+                setValue={setValue}
+              />
+            )}
+            {nameField && (
+              <Field
+                field={nameField}
+                register={register}
+                error={errors[nameField.name]}
+                options={options}
+                value={watchedValues?.[nameField.name]}
+                values={watchedValues}
+                setValue={setValue}
+              />
+            )}
+            {remainingFields.map((field) => (
+              <div key={field.name}>
+                <Field
+                  field={field}
+                  register={register}
+                  error={errors[field.name]}
+                  options={options}
+                  value={watchedValues?.[field.name]}
+                  values={watchedValues}
+                  setValue={setValue}
+                />
+              </div>
+            ))}
+          </section>
+        </div>
+
+        <div className="flex justify-end border-t border-border-subtle pt-4">
+          <Button type="submit" isLoading={isSaving} className="min-w-[190px]">
             {submitLabel}
           </Button>
         </div>

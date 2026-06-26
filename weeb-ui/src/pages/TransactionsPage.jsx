@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import CrudResourcePage from '../features/shared/CrudResourcePage';
 import { configs } from '../features/shared/crudConfigs';
 import { useAccountOptions } from '../hooks/useAccountOptions';
 import { useCategoryOptions } from '../hooks/useCategoryOptions';
+import { Card, CardContent } from '../components/ui/Card';
 import { formatCurrency, formatDate } from '../lib/formatters';
 
 const getNeedLabel = (row) => row.description || row.category?.name || '-';
@@ -14,9 +16,29 @@ export default function TransactionsPage({ type }) {
   const accountOptions = useAccountOptions();
   const options = { ...categoryOptions, ...accountOptions };
   const transactionType = type || 'expense';
+  const relevantCategories = useMemo(() => {
+    return (categoryOptions.categories || []).filter((category) => {
+      if (!type) return true;
+      return category.type === transactionType || category.type === 'both';
+    });
+  }, [categoryOptions.categories, transactionType, type]);
+  const totalAccountBalance = useMemo(
+    () => (accountOptions.accounts || []).reduce((total, account) => total + Number(account.balance || 0), 0),
+    [accountOptions.accounts]
+  );
   const config = {
     ...configs.transactions,
     title: type === 'income' ? 'Pemasukan' : type === 'expense' ? 'Pengeluaran' : 'Transaksi',
+    description: type === 'income'
+      ? 'Pantau semua arus uang masuk ke rekening aktif, lengkap dengan kategori dan tujuan rekeningnya.'
+      : type === 'expense'
+        ? 'Catat pengeluaran dari rekening yang dipilih agar saldo dan pola belanja selalu terbaca dengan rapi.'
+        : 'Kelola semua arus kas masuk dan keluar dari halaman transaksi utama.',
+    tableDescription: type === 'income'
+      ? 'Riwayat pemasukan ditampilkan per rekening aktif agar sumber dana lebih mudah dibaca.'
+      : type === 'expense'
+        ? 'Riwayat pengeluaran ditampilkan per rekening aktif agar aliran saldo lebih jelas.'
+        : 'Semua transaksi tampil dalam satu tempat untuk memudahkan peninjauan.',
     endpoint: type === 'income' ? '/incomes' : type === 'expense' ? '/expenses' : '/transactions',
     accountScoped: true,
     initialParams: type ? {} : {},
@@ -72,5 +94,40 @@ export default function TransactionsPage({ type }) {
     },
   };
 
-  return <CrudResourcePage config={config} options={options} />;
+  return (
+    <CrudResourcePage
+      config={config}
+      options={options}
+      topContent={(
+        <div className="grid gap-4 xl:grid-cols-[1.2fr_0.9fr_0.9fr]">
+          <Card className={type === 'income'
+            ? 'border-success-base/20 bg-gradient-to-br from-success-base/8 via-surface-panel to-surface-panel'
+            : 'border-primary-500/20 bg-gradient-to-br from-primary-500/8 via-surface-panel to-surface-panel'}
+          >
+            <CardContent className="space-y-3">
+              <p className="text-sm font-medium text-text-muted">Saldo rekening terhubung</p>
+              <p className="text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(totalAccountBalance)}</p>
+              <p className="text-sm leading-6 text-text-muted">
+                Nilai ini merangkum saldo dari rekening aktif yang tersedia untuk transaksi pada halaman ini.
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="space-y-2">
+              <p className="text-sm font-medium text-text-muted">Rekening aktif</p>
+              <p className="text-3xl font-semibold tracking-tight text-text-title">{(accountOptions.accounts || []).length}</p>
+              <p className="text-sm text-text-muted">Bisa dipilih sebagai sumber atau tujuan transaksi.</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="space-y-2">
+              <p className="text-sm font-medium text-text-muted">Kategori tersedia</p>
+              <p className="text-3xl font-semibold tracking-tight text-text-title">{relevantCategories.length}</p>
+              <p className="text-sm text-text-muted">Mengikuti tipe transaksi yang sedang dibuka.</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    />
+  );
 }

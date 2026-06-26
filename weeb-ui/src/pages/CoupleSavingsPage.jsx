@@ -271,11 +271,13 @@ export default function CoupleSavingsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 md:space-y-7">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
+        <div className="max-w-3xl">
           <h1 className="text-2xl font-bold text-text-title md:text-3xl">Tabungan Berdua</h1>
-          
+          <p className="mt-2 text-sm leading-6 text-text-muted">
+            Pantau kontribusi kedua pasangan, saldo rekening tabungan bersama, dan riwayat setoran dalam satu tampilan yang lebih nyaman dibaca.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           {isAdmin && (
@@ -291,13 +293,18 @@ export default function CoupleSavingsPage() {
         </div>
       </header>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-2">
         {[['Pasangan 1', partnerOne], ['Pasangan 2', partnerTwo]].map(([label, partner]) => (
-          <Card key={label} className={partner ? 'border-primary-500' : 'border-warning-base'}>
-            <CardContent className="flex items-center gap-4">
-              <div className="rounded-xl bg-surface-100 p-3 text-primary-600 shadow-sm shadow-card-soft"><HeartHandshake size={24} /></div>
+          <Card
+            key={label}
+            className={partner
+              ? 'border-primary-500/25 bg-gradient-to-br from-primary-500/8 via-surface-panel to-surface-panel'
+              : 'border-warning-base/35 bg-gradient-to-br from-warning-base/8 via-surface-panel to-surface-panel'}
+          >
+            <CardContent className="flex items-center gap-4 p-5 md:p-6">
+              <div className="rounded-2xl bg-surface-panel p-3 text-primary-600 shadow-sm shadow-card-soft"><HeartHandshake size={24} /></div>
               <div className="min-w-0">
-                <p className="text-sm text-text-muted">{label}</p>
+                <p className="text-sm font-medium text-text-muted">{label}</p>
                 <p className="mt-1 truncate text-lg font-semibold text-text-title">{partner?.name || 'Belum diset'}</p>
                 <p className="mt-1 truncate text-xs text-text-muted">{partner?.email || (isAdmin ? 'Klik Atur pasangan untuk memilih user.' : 'Hubungi admin untuk pengaturan pasangan.')}</p>
               </div>
@@ -306,51 +313,51 @@ export default function CoupleSavingsPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardContent className="flex items-center gap-4">
-            <div className="rounded-xl bg-primary-500/10 p-3 text-primary-600"><Wallet size={24} /></div>
+      <div className="grid gap-4 xl:grid-cols-[1.15fr_0.92fr_0.92fr]">
+        <Card className="border-primary-500/20 bg-gradient-to-br from-primary-500/10 via-surface-panel to-surface-panel">
+          <CardContent className="flex items-center gap-4 p-5 md:p-6">
+            <div className="rounded-2xl bg-primary-500/12 p-3 text-primary-600"><Wallet size={24} /></div>
             <div>
-              <p className="text-sm text-text-muted">Total saldo</p>
-              <p className="mt-1 text-2xl font-semibold text-text-title">{formatCurrency(totalBalance)}</p>
-              <p className="mt-1 text-xs text-text-muted">Sumber: saldo rekening Tabungan berdua</p>
+              <p className="text-sm font-medium text-text-muted">Total saldo bersama</p>
+              <p className="mt-1 text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(totalBalance)}</p>
+              <p className="mt-1 text-sm text-text-muted">Sumber: saldo seluruh rekening Tabungan berdua yang aktif.</p>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="flex items-center gap-4">
-            <div className="rounded-xl bg-success-base/10 p-3 text-success-base"><UserCircle size={24} /></div>
+          <CardContent className="flex items-center gap-4 p-5 md:p-6">
+            <div className="rounded-2xl bg-success-base/10 p-3 text-success-base"><UserCircle size={24} /></div>
             <div>
-              <p className="text-sm text-text-muted">Penyetor saat ini</p>
+              <p className="text-sm font-medium text-text-muted">Penyetor saat ini</p>
               <p className="mt-1 text-base font-semibold text-text-title">{user?.name || 'Mode pribadi'}</p>
-              <p className="mt-1 text-xs text-text-muted">{currentSource}</p>
+              <p className="mt-1 text-sm text-text-muted">{currentSource}</p>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="flex items-center gap-4">
-            <div className="rounded-xl bg-warning-base/10 p-3 text-warning-base"><Users size={24} /></div>
+          <CardContent className="flex items-center gap-4 p-5 md:p-6">
+            <div className="rounded-2xl bg-warning-base/10 p-3 text-warning-base"><Users size={24} /></div>
             <div>
-              <p className="text-sm text-text-muted">Kontributor tercatat</p>
-              <p className="mt-1 text-2xl font-semibold text-text-title">{Object.keys(contributorTotals).length}</p>
-              <p className="mt-1 text-xs text-text-muted">Sumber: pengaturan pasangan dan transaksi</p>
+              <p className="text-sm font-medium text-text-muted">Kontributor tercatat</p>
+              <p className="mt-1 text-3xl font-semibold tracking-tight text-text-title">{Object.keys(contributorTotals).length}</p>
+              <p className="mt-1 text-sm text-text-muted">Sumber: pengaturan pasangan dan histori transaksi.</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {contributors.length > 0 && (
-        <Card>
+        <Card className="overflow-visible">
           <CardHeader>
             <CardTitle>Ringkasan Kontribusi</CardTitle>
             <CardDescription>Diurutkan dari total setoran terbesar berdasarkan user penyetor yang tercatat otomatis.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-3 md:grid-cols-2">
+          <CardContent className="grid gap-4 xl:grid-cols-2">
             {contributors.map((item, index) => (
-              <div key={item.source} className="rounded-2xl border border-border-subtle bg-surface-100 p-4">
+              <div key={item.source} className="rounded-[24px] border border-border-subtle bg-surface-100/80 p-5 shadow-sm shadow-card-soft">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="rounded-xl bg-primary-500/10 p-2 text-primary-600">
+                    <div className="rounded-2xl bg-primary-500/10 p-2.5 text-primary-600">
                       {index === 0 ? <HeartHandshake size={20} /> : <Users size={20} />}
                     </div>
                     <div className="min-w-0">
@@ -360,8 +367,8 @@ export default function CoupleSavingsPage() {
                   </div>
                   <StatusBadge value="active">Penyetor</StatusBadge>
                 </div>
-                <p className="mt-4 text-2xl font-semibold text-text-title">{formatCurrency(item.total)}</p>
-                <p className="mt-1 text-xs text-text-muted">Sumber: total transaksi milik penyetor ini</p>
+                <p className="mt-4 text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(item.total)}</p>
+                <p className="mt-1 text-sm text-text-muted">Sumber: total transaksi milik penyetor ini.</p>
               </div>
             ))}
           </CardContent>
@@ -373,7 +380,7 @@ export default function CoupleSavingsPage() {
       ) : accounts.length === 0 ? (
         <EmptyState title="Belum ada rekening Tabungan berdua" description="Buat rekening baru di menu Rekening, lalu pilih klasifikasi uang Tabungan berdua agar saldo bisa ditampilkan di halaman ini." />
       ) : (
-        <Card>
+        <Card className="overflow-visible">
           <CardHeader>
             <CardTitle>Riwayat Setoran</CardTitle>
             <CardDescription>Data kontribusi diambil dari transaksi pemasukan yang masuk ke rekening Tabungan berdua.</CardDescription>

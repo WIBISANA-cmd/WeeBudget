@@ -90,6 +90,8 @@ export const configs = {
   accounts: {
     title: 'Manajemen Rekening',
     singular: 'rekening',
+    description: 'Susun rekening berdasarkan fungsi uangnya agar aliran saldo, transaksi, dan alokasi dana lebih mudah dikendalikan.',
+    tableDescription: 'Setiap rekening mewakili pos uang yang berbeda, sehingga saldo dan mutasi bisa dibaca lebih cepat.',
     endpoint: '/accounts',
     createLabel: 'Tambah rekening',
     emptyTitle: 'Belum ada rekening',
@@ -215,6 +217,7 @@ export const configs = {
         name: 'icon',
         label: 'Pilih icon kategori',
         type: 'icon-picker',
+        compactDesktop: true,
         full: true,
       },
       {

@@ -73,6 +73,11 @@ export default function AccountsPage() {
   const allocationOptions = useMemo(() => ({
     accounts: allAccounts,
   }), [allAccounts]);
+  const totalTrackedBalance = useMemo(
+    () => allAccounts.reduce((total, account) => total + Number(account.balance || 0), 0),
+    [allAccounts]
+  );
+  const purposeCount = useMemo(() => new Set(allAccounts.map((account) => account.purpose).filter(Boolean)).size, [allAccounts]);
 
   const defaultAllocationValues = useMemo(() => {
     const salaryAccount = allAccounts.find((account) => account.purpose === 'salary');
@@ -124,10 +129,37 @@ export default function AccountsPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <CrudResourcePage
         key={pageVersion}
         config={{ ...configs.accounts, noCard: true }}
+        topContent={(
+          <div className="grid gap-4 xl:grid-cols-[1.2fr_0.9fr_0.9fr]">
+            <Card className="border-primary-500/20 bg-gradient-to-br from-primary-500/8 via-surface-panel to-surface-panel">
+              <CardContent className="space-y-3">
+                <p className="text-sm font-medium text-text-muted">Total saldo terpantau</p>
+                <p className="text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(totalTrackedBalance)}</p>
+                <p className="text-sm leading-6 text-text-muted">
+                  Semua rekening aktif dan nonaktif tetap terlihat di sini agar perpindahan saldo antar pos tetap mudah dipantau.
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="space-y-2">
+                <p className="text-sm font-medium text-text-muted">Rekening aktif</p>
+                <p className="text-3xl font-semibold tracking-tight text-text-title">{allAccounts.length}</p>
+                <p className="text-sm text-text-muted">Total rekening yang sedang tercatat pada halaman ini.</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="space-y-2">
+                <p className="text-sm font-medium text-text-muted">Pos uang terpakai</p>
+                <p className="text-3xl font-semibold tracking-tight text-text-title">{purposeCount}</p>
+                <p className="text-sm text-text-muted">Mengikuti klasifikasi rekening yang sudah kamu buat.</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
         headerActions={(
           <Button
             variant="secondary"
@@ -148,7 +180,7 @@ export default function AccountsPage() {
         fullScreenOnMobile={true}
       >
         {plannerPreview && (
-          <Card className="mb-4 border-primary-500 bg-primary-500/5">
+          <Card className="mb-4 border-primary-500/25 bg-gradient-to-br from-primary-500/8 via-surface-panel to-surface-panel">
             <CardContent className="space-y-3">
               <div>
                 <p className="text-sm text-text-muted">Acuan nominal dari Budget Planner</p>

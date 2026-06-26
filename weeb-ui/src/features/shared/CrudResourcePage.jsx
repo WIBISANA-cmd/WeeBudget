@@ -208,9 +208,9 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
   };
 
   return (
-    <div className="space-y-5 pb-10">
-      <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
+    <div className="space-y-5 pb-10 md:space-y-6">
+      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="max-w-3xl">
           <h1 className="text-2xl font-bold text-text-title md:text-3xl">{config.title}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">{config.description}</p>
         </div>
@@ -228,10 +228,26 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
       {config.summary && <div className="grid gap-4 md:grid-cols-3">{config.summary(resource.items)}</div>}
 
       {config.accountScoped && selectedAccount && (
-        <div className="rounded-2xl border border-border-subtle bg-surface-panel p-4 shadow-sm shadow-card-soft">
-          <p className="text-sm text-text-muted">Total saldo {selectedAccount.label.split(' - ')[0]}</p>
-          <p className="mt-1 text-2xl font-semibold text-text-title">{formatCurrency(selectedAccount.balance)}</p>
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+        <div className="rounded-[28px] border border-border-subtle bg-gradient-to-br from-surface-panel via-surface-panel to-surface-100/70 p-4 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.45)] md:p-6">
+          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm font-medium text-text-muted">Ringkasan rekening aktif</p>
+              <p className="mt-2 text-3xl font-semibold tracking-tight text-text-title">
+                {formatCurrency(selectedAccount.balance)}
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-text-muted">
+                <span className="rounded-full bg-surface-panel px-3 py-1 shadow-sm shadow-card-soft">
+                  {selectedAccount.label.split(' - ')[0]}
+                </span>
+                <span>Tampilkan data berdasarkan rekening yang dipilih.</span>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-border-subtle bg-surface-panel/90 px-4 py-3 shadow-sm shadow-card-soft md:min-w-[220px]">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-text-muted">Saldo Tersedia</p>
+              <p className="mt-2 text-xl font-semibold text-text-title">{formatCurrency(selectedAccount.balance)}</p>
+            </div>
+          </div>
+          <div className="mt-5 flex gap-2 overflow-x-auto pb-1 md:mt-6">
             {accountOptions.map((account) => (
               <button
                 key={account.value}
