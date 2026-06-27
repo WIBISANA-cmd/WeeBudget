@@ -46,6 +46,8 @@ class FinanceSummaryService
         $savingBalance = $this->accountBalanceByPurpose($user, 'savings');
         $emergencyFundBalance = $this->accountBalanceByPurpose($user, 'emergency_fund');
         $accountBreakdown = $this->accountBreakdown($user);
+        $focusedBalances = $this->focusedAccountBalances($user);
+        $expenseByNeedType = $this->expenseByNeedType($user, $month, $periodEnd);
         $planner = $this->budgetPlannerService->generate($user, $income > 0 ? $income : null);
         $hasAnyData = $balance > 0 || $income > 0 || $expense > 0 || $savingBalance > 0 || $emergencyFundBalance > 0;
 
@@ -73,6 +75,8 @@ class FinanceSummaryService
             'saving_goal' => $this->balanceProgress('Tabungan', $savingBalance, max($planner['base_amount'] * 0.20, 1)),
             'emergency_fund' => $this->balanceProgress('Dana darurat', $emergencyFundBalance, max($planner['base_amount'] * 0.10, 1)),
             'account_breakdown' => $accountBreakdown,
+            'focused_balances' => $focusedBalances,
+            'expense_by_need_type' => $expenseByNeedType,
             'budget_planner' => $planner,
             'recent_transactions' => $this->recentTransactions($user),
             'upcoming_bills' => $this->upcomingBills($user, $today),
@@ -132,6 +136,68 @@ class FinanceSummaryService
                 'account_count' => (int) $row->account_count,
             ])
             ->all();
+    }
+
+    private function focusedAccountBalances(User $user): array
+    {
+        $accounts = FinancialAccount::query()
+            ->where('user_id', $user->id)
+            ->where('is_active', true)
+            ->get(['id', 'name', 'purpose', 'current_balance']);
+
+        $needAccounts = $accounts->filter(function (FinancialAccount $account) {
+            $name = mb_strtolower((string) $account->name);
+
+            return $account->purpose === 'daily_spending'
+                || str_contains($name, 'kebutuhan');
+        });
+
+        $wantAccounts = $accounts->filter(function (FinancialAccount $account) {
+            $name = mb_strtolower((string) $account->name);
+
+            return $account->purpose === 'wishlist'
+                || str_contains($name, 'keinginan')
+                || str_contains($name, 'wishlist');
+        });
+
+        return [
+            [
+                'key' => 'need',
+                'label' => 'Saldo Kebutuhan',
+                'total' => round((float) $needAccounts->sum('current_balance'), 2),
+                'account_count' => $needAccounts->count(),
+            ],
+            [
+                'key' => 'want',
+                'label' => 'Saldo Keinginan',
+                'total' => round((float) $wantAccounts->sum('current_balance'), 2),
+                'account_count' => $wantAccounts->count(),
+            ],
+        ];
+    }
+
+    private function expenseByNeedType(User $user, CarbonImmutable $start, CarbonImmutable $end): array
+    {
+        $totals = Transaction::query()
+            ->where('user_id', $user->id)
+            ->where('transaction_type', 'expense')
+            ->whereBetween('transaction_date', [$start, $end])
+            ->selectRaw('need_type, sum(amount) as total')
+            ->groupBy('need_type')
+            ->pluck('total', 'need_type');
+
+        return [
+            [
+                'key' => 'need',
+                'label' => 'Kebutuhan',
+                'amount' => round((float) ($totals['need'] ?? 0), 2),
+            ],
+            [
+                'key' => 'want',
+                'label' => 'Keinginan',
+                'amount' => round((float) ($totals['want'] ?? 0), 2),
+            ],
+        ];
     }
 
     private function recentTransactions(User $user): array

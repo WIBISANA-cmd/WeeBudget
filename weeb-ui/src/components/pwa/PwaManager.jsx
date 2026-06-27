@@ -123,7 +123,7 @@ export default function PwaManager() {
                 <button
                   type="button"
                   onClick={() => setShowInstallCard(false)}
-                  className="rounded-lg p-1 text-text-muted transition-colors hover:bg-surface-100 hover:text-text-title"
+                  className="ui-hover-surface ui-hover-icon rounded-lg p-1 text-text-muted"
                   aria-label="Tutup install prompt"
                 >
                   <X size={18} />

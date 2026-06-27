@@ -60,7 +60,7 @@ export default function Header({ toggleSidebar }) {
         <div className="flex min-w-0 items-center gap-3">
           <button 
             onClick={toggleSidebar}
-            className="-ml-2 rounded-2xl p-3 text-text-muted transition-colors hover:bg-surface-100 hover:text-primary-600 md:hidden"
+            className="-ml-2 ui-hover-surface ui-hover-icon rounded-2xl p-3 text-text-muted md:hidden"
           >
             <Menu size={22} />
           </button>
@@ -71,7 +71,7 @@ export default function Header({ toggleSidebar }) {
 
         <div className="flex items-center gap-2.5 md:gap-4">
           <ThemeToggle />
-          <button className="relative rounded-2xl p-3 text-text-muted transition-colors hover:bg-surface-100 hover:text-primary-600">
+          <button className="ui-hover-surface ui-hover-icon relative rounded-2xl p-3 text-text-muted">
             <Bell size={20} />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary-500 rounded-full shadow-glow-primary"></span>
           </button>
@@ -81,8 +81,8 @@ export default function Header({ toggleSidebar }) {
               type="button"
               onClick={() => setProfileOpen((open) => !open)}
               className={cn(
-                'flex items-center gap-2 rounded-2xl px-1.5 py-1.5 transition-colors hover:bg-surface-100',
-                isProfileOpen && 'bg-surface-100'
+                'ui-hover-surface flex items-center gap-2 rounded-2xl px-1.5 py-1.5',
+                isProfileOpen && 'bg-[var(--color-hover-soft)]'
               )}
               aria-haspopup="menu"
               aria-expanded={isProfileOpen}
@@ -105,28 +105,28 @@ export default function Header({ toggleSidebar }) {
                 <div className="mt-2 space-y-1">
                   <button
                     onClick={() => { setProfileOpen(false); navigate('/profile'); }}
-                    className="flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body transition-colors hover:bg-surface-100 hover:text-text-title"
+                    className="ui-hover-surface flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body hover:text-text-title"
                   >
                     <Settings size={18} className="text-text-muted" />
                     Profil
                   </button>
                   <button
                     onClick={() => { setProfileOpen(false); navigate('/periods'); }}
-                    className="flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body transition-colors hover:bg-surface-100 hover:text-text-title"
+                    className="ui-hover-surface flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body hover:text-text-title"
                   >
                     <CalendarRange size={18} className="text-text-muted" />
                     Periode
                   </button>
                   <button
                     onClick={() => { setProfileOpen(false); navigate('/categories'); }}
-                    className="flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body transition-colors hover:bg-surface-100 hover:text-text-title"
+                    className="ui-hover-surface flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body hover:text-text-title"
                   >
                     <PieChart size={18} className="text-text-muted" />
                     Kategori
                   </button>
                   <button
                     onClick={() => { setProfileOpen(false); navigate('/users'); }}
-                    className="flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body transition-colors hover:bg-surface-100 hover:text-text-title"
+                    className="ui-hover-surface flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body hover:text-text-title"
                   >
                     <Users size={18} className="text-text-muted" />
                     User

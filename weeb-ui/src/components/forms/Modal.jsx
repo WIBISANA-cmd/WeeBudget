@@ -41,7 +41,7 @@ export default function Modal({ title, description, open, onClose, children, foo
             onClick={onClose}
             aria-label="Tutup modal"
             className={cn(
-              "rounded-2xl p-2.5 text-text-muted hover:bg-surface-100 hover:text-text-title",
+              "ui-hover-surface ui-hover-icon rounded-2xl p-2.5 text-text-muted",
               fullScreenOnMobile && "max-md:mt-0.5 max-md:rounded-full max-md:border max-md:border-border-subtle max-md:bg-surface-100/90 max-md:p-3 max-md:shadow-sm"
             )}
           >

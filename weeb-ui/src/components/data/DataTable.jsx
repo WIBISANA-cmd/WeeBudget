@@ -74,7 +74,7 @@ export default function DataTable({ columns, rows, onEdit, onDelete, canEditRow,
           {rows.map((row, index) => (
             <div
               key={row.id}
-              className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-surface-100/30"
+              className="ui-hover-surface flex items-center justify-between gap-4 p-4"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-100 text-xs font-semibold text-text-muted">
@@ -89,7 +89,7 @@ export default function DataTable({ columns, rows, onEdit, onDelete, canEditRow,
                   <button
                     type="button"
                     onClick={() => onEdit(row)}
-                    className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-border-subtle bg-surface-panel text-text-body transition-all duration-200 hover:border-primary-500 hover:bg-primary-500/5 hover:text-primary-600 active:scale-95"
+                    className="ui-hover-surface ui-hover-panel ui-hover-icon flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-border-subtle bg-surface-panel text-text-body duration-200 active:scale-95"
                     aria-label="Edit"
                     title="Edit"
                   >
@@ -100,7 +100,7 @@ export default function DataTable({ columns, rows, onEdit, onDelete, canEditRow,
                   <button
                     type="button"
                     onClick={() => onDelete(row)}
-                    className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-border-subtle bg-surface-panel text-danger-base transition-all duration-200 hover:border-danger-base hover:bg-danger-base/5 hover:text-danger-base active:scale-95"
+                    className="ui-hover-surface flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-border-subtle bg-surface-panel text-danger-base duration-200 hover:border-danger-base hover:bg-danger-base/10 active:scale-95"
                     aria-label="Hapus"
                     title="Hapus"
                   >
@@ -116,7 +116,7 @@ export default function DataTable({ columns, rows, onEdit, onDelete, canEditRow,
           {rows.map((row, index) => (
             <div
               key={row.id}
-              className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-surface-100/30"
+              className="ui-hover-surface flex items-center justify-between gap-3 p-4"
             >
               <div className="flex min-w-0 items-center gap-3">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-100 text-xs font-semibold text-text-muted">
@@ -134,7 +134,7 @@ export default function DataTable({ columns, rows, onEdit, onDelete, canEditRow,
                   <button
                     type="button"
                     onClick={() => onEdit(row)}
-                    className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-border-subtle bg-surface-panel text-text-body transition-all duration-200 hover:border-primary-500 hover:bg-primary-500/5 hover:text-primary-600 active:scale-95"
+                    className="ui-hover-surface ui-hover-panel ui-hover-icon flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-border-subtle bg-surface-panel text-text-body duration-200 active:scale-95"
                     aria-label="Edit"
                     title="Edit"
                   >
@@ -145,7 +145,7 @@ export default function DataTable({ columns, rows, onEdit, onDelete, canEditRow,
                   <button
                     type="button"
                     onClick={() => onDelete(row)}
-                    className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-border-subtle bg-surface-panel text-danger-base transition-all duration-200 hover:border-danger-base hover:bg-danger-base/5 hover:text-danger-base active:scale-95"
+                    className="ui-hover-surface flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-border-subtle bg-surface-panel text-danger-base duration-200 hover:border-danger-base hover:bg-danger-base/10 active:scale-95"
                     aria-label="Hapus"
                     title="Hapus"
                   >
@@ -161,7 +161,7 @@ export default function DataTable({ columns, rows, onEdit, onDelete, canEditRow,
           {rows.map((row, index) => {
             const mobileColumns = getDefaultMobileColumns(columns);
             return (
-              <div key={row.id} className="p-4 transition-colors hover:bg-surface-100/30">
+              <div key={row.id} className="ui-hover-surface p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-3">
@@ -225,7 +225,7 @@ export default function DataTable({ columns, rows, onEdit, onDelete, canEditRow,
             </thead>
             <tbody className="divide-y divide-border-subtle bg-surface-panel">
               {rows.map((row) => (
-                <tr key={row.id} className="transition-colors duration-200 hover:bg-surface-100/70">
+                <tr key={row.id} className="ui-hover-surface duration-200">
                   {columns.map((column) => (
                     <td
                       key={column.key}

@@ -15,6 +15,8 @@
   --color-surface-100: #F3F4F6;
   --color-surface-200: #E5E7EB;
   --color-surface-300: #D1D5DB;
+  --color-hover-soft: rgba(17, 24, 39, 0.05);
+  --color-hover-strong: rgba(60, 131, 246, 0.08);
 
   /* Borders */
   --color-border-subtle: rgba(17, 24, 39, 0.08);
@@ -48,6 +50,8 @@
   --shadow-glow-primary: 0 10px 30px -14px rgba(60, 131, 246, 0.55);
   --shadow-card: 0 18px 45px -32px rgba(15, 23, 42, 0.35), 0 1px 2px rgba(15, 23, 42, 0.06);
   --shadow-card-soft: 0 1px 2px rgba(15, 23, 42, 0.08);
+  --shadow-hover-soft: 0 18px 40px -30px rgba(15, 23, 42, 0.22);
+  --shadow-hover-panel: 0 22px 48px -34px rgba(60, 131, 246, 0.24);
 }
 
 @keyframes shimmer {
@@ -82,6 +86,8 @@
     --color-surface-100: #172033;
     --color-surface-200: #1F2937;
     --color-surface-300: #334155;
+    --color-hover-soft: rgba(148, 163, 184, 0.08);
+    --color-hover-strong: rgba(60, 131, 246, 0.14);
 
     /* Borders */
     --color-border-subtle: rgba(148, 163, 184, 0.18);
@@ -107,6 +113,8 @@
     --shadow-glow-primary: 0 16px 42px -18px rgba(60, 131, 246, 0.72);
     --shadow-card: 0 22px 55px -34px rgba(0, 0, 0, 0.72), 0 1px 0 rgba(255, 255, 255, 0.03);
     --shadow-card-soft: 0 1px 0 rgba(255, 255, 255, 0.04);
+    --shadow-hover-soft: 0 18px 40px -30px rgba(0, 0, 0, 0.52);
+    --shadow-hover-panel: 0 24px 52px -36px rgba(60, 131, 246, 0.32);
   }
 
   html {
@@ -161,6 +169,31 @@
 
   .dashboard-card-up {
     animation: dashboard-card-up 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .ui-hover-surface {
+    transition:
+      background-color 180ms ease,
+      color 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms ease,
+      transform 180ms ease;
+  }
+
+  .ui-hover-surface:hover {
+    background-color: var(--color-hover-soft);
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-hover-soft);
+  }
+
+  .ui-hover-panel:hover {
+    background-color: var(--color-hover-strong);
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-hover-panel);
+  }
+
+  .ui-hover-icon:hover {
+    color: var(--color-primary-500);
   }
 }
 

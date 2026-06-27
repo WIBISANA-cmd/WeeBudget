@@ -21,6 +21,7 @@ import { apiPost } from '../../api/http';
 import { cn } from '../../lib/utils';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { useTimeOfDay } from '../../hooks/useTimeOfDay';
+import ThemeToggle from '../ui/ThemeToggle';
 
 /* ------------------------------------------------------------------ */
 /*  Sky image preloader – avoids a blank flash on first period change  */
@@ -53,7 +54,7 @@ const PERIOD_ICON = {
 export default function Navbar({ toggleSidebar }) {
   const navigate = useNavigate();
   const { user } = useCurrentUser();
-  const { period, theme, skyImage, greeting } = useTimeOfDay();
+  const { period, skyImage, greeting } = useTimeOfDay();
 
   const [isProfileOpen, setProfileOpen] = useState(false);
   const profileMenuRef = useRef(null);
@@ -65,24 +66,6 @@ export default function Navbar({ toggleSidebar }) {
     const id = setInterval(() => setClock(formatTime(new Date())), 1_000);
     return () => clearInterval(id);
   }, []);
-
-  /* Apply theme class on <html> based on time-of-day */
-  useEffect(() => {
-    const root = document.documentElement;
-    const isDark = theme === 'dark';
-    root.classList.toggle('dark', isDark);
-    root.style.colorScheme = isDark ? 'dark' : 'light';
-    document
-      .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', isDark ? '#0a0a0a' : '#08a0ff');
-
-    // Night mode body override
-    if (isDark) {
-      document.body.style.backgroundColor = '#0a0a0a';
-    } else {
-      document.body.style.backgroundColor = '';
-    }
-  }, [theme]);
 
   /* Preload all sky images on mount */
   useEffect(preloadSkyImages, []);
@@ -187,6 +170,9 @@ export default function Navbar({ toggleSidebar }) {
 
         {/* Right side */}
         <div className="flex items-center gap-2.5 md:gap-4">
+          <ThemeToggle className="hidden md:inline-flex" showLabel />
+          <ThemeToggle className="md:hidden" />
+
           {/* Period badge */}
           <span className="navbar-period-badge">
             {period.charAt(0).toUpperCase() + period.slice(1)}
@@ -244,28 +230,28 @@ export default function Navbar({ toggleSidebar }) {
                 <div className="mt-2 space-y-1">
                   <button
                     onClick={() => { setProfileOpen(false); navigate('/profile'); }}
-                    className="flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body transition-colors hover:bg-surface-100 hover:text-text-title"
+                    className="ui-hover-surface flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body hover:text-text-title"
                   >
                     <Settings size={18} className="text-text-muted" />
                     Profil
                   </button>
                   <button
                     onClick={() => { setProfileOpen(false); navigate('/periods'); }}
-                    className="flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body transition-colors hover:bg-surface-100 hover:text-text-title"
+                    className="ui-hover-surface flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body hover:text-text-title"
                   >
                     <CalendarRange size={18} className="text-text-muted" />
                     Periode
                   </button>
                   <button
                     onClick={() => { setProfileOpen(false); navigate('/categories'); }}
-                    className="flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body transition-colors hover:bg-surface-100 hover:text-text-title"
+                    className="ui-hover-surface flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body hover:text-text-title"
                   >
                     <PieChart size={18} className="text-text-muted" />
                     Kategori
                   </button>
                   <button
                     onClick={() => { setProfileOpen(false); navigate('/users'); }}
-                    className="flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body transition-colors hover:bg-surface-100 hover:text-text-title"
+                    className="ui-hover-surface flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body hover:text-text-title"
                   >
                     <Users size={18} className="text-text-muted" />
                     User

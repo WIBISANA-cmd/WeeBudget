@@ -7,7 +7,7 @@ const Card = forwardRef(({ className, interactive, children, ...props }, ref) =>
       ref={ref}
       className={cn(
         "bg-surface-panel rounded-2xl border border-border-subtle shadow-card overflow-hidden transition-colors duration-200",
-        interactive && "transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:border-border-strong hover:shadow-glow-primary",
+        interactive && "ui-hover-surface ui-hover-panel cursor-pointer duration-300 hover:-translate-y-1",
         className
       )}
       {...props}

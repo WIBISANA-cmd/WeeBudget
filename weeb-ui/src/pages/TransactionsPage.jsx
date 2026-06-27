@@ -9,8 +9,16 @@ import { formatCurrency, formatDate } from '../lib/formatters';
 import { cn } from '../lib/utils';
 
 const isIncome = (row) => row.transaction_type === 'income';
-const signedAmount = (row) => `${isIncome(row) ? '+' : '-'}${formatCurrency(row.amount)}`;
-const amountClass = (row) => isIncome(row) ? 'text-success-base' : 'text-danger-base';
+const isAllocation = (row) => row.entry_type === 'account_allocation';
+const isCashflowTransaction = (row) => !isAllocation(row);
+const signedAmount = (row) => {
+  if (isAllocation(row)) return formatCurrency(row.amount);
+  return `${isIncome(row) ? '+' : '-'}${formatCurrency(row.amount)}`;
+};
+const amountClass = (row) => {
+  if (isAllocation(row)) return 'text-primary-600';
+  return isIncome(row) ? 'text-success-base' : 'text-danger-base';
+};
 const transactionTypeTabs = [
   { label: 'Pemasukan', to: '/transactions/income' },
   { label: 'Pengeluaran', to: '/transactions/expense' },
@@ -29,6 +37,10 @@ export default function TransactionsPage({ type }) {
     endpoint: type === 'income' ? '/incomes' : type === 'expense' ? '/expenses' : '/transactions',
     accountScoped: false,
     initialParams: { per_page: 1000 },
+    filterItems: (items) => {
+      if (!type) return items;
+      return items.filter((row) => isCashflowTransaction(row));
+    },
     defaultValues: { ...configs.transactions.defaultValues, transaction_type: transactionType, need_type: type === 'income' ? '' : 'need', notes: undefined },
     columns: configs.transactions.columns.map((column) => (
       column.key === 'amount'
@@ -63,10 +75,10 @@ export default function TransactionsPage({ type }) {
       dateKey: (row) => row.transaction_date,
       groupSummary: (rows) => {
         const incomeTotal = rows
-          .filter((row) => row.transaction_type === 'income')
+          .filter((row) => row.transaction_type === 'income' && isCashflowTransaction(row))
           .reduce((total, row) => total + Number(row.amount || 0), 0);
         const expenseTotal = rows
-          .filter((row) => row.transaction_type === 'expense')
+          .filter((row) => row.transaction_type === 'expense' && isCashflowTransaction(row))
           .reduce((total, row) => total + Number(row.amount || 0), 0);
 
         return [
@@ -79,7 +91,7 @@ export default function TransactionsPage({ type }) {
       { label: 'Tanggal', render: (row) => formatDate(row.transaction_date) },
       { label: 'Rekening', render: (row) => row.account?.name || '-' },
       { label: 'Kategori', render: (row) => row.category?.name || '-' },
-      { label: 'Tipe', render: (row) => row.transaction_type === 'income' ? 'Pemasukan' : 'Pengeluaran' },
+      { label: 'Tipe', render: (row) => isAllocation(row) ? 'Alokasi Dana' : (row.transaction_type === 'income' ? 'Pemasukan' : 'Pengeluaran') },
       { label: 'Nominal', render: (row) => <span className={amountClass(row)}>{signedAmount(row)}</span> },
     ],
     toPayload: (values, _editing, formOptions) => {
@@ -104,10 +116,10 @@ export default function TransactionsPage({ type }) {
       options={options}
       topContent={({ resource }) => {
         const incomeTotal = resource.items
-          .filter((row) => row.transaction_type === 'income')
+          .filter((row) => row.transaction_type === 'income' && isCashflowTransaction(row))
           .reduce((total, row) => total + Number(row.amount || 0), 0);
         const expenseTotal = resource.items
-          .filter((row) => row.transaction_type === 'expense')
+          .filter((row) => row.transaction_type === 'expense' && isCashflowTransaction(row))
           .reduce((total, row) => total + Number(row.amount || 0), 0);
 
         return (

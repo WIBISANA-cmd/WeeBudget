@@ -14,9 +14,9 @@ const Button = forwardRef(({
   
   const variants = {
     primary: "bg-primary-500 text-white shadow-glow-primary hover:bg-primary-600 hover:shadow-lg",
-    secondary: "bg-surface-panel text-text-body border border-border-subtle shadow-sm shadow-card-soft hover:border-primary-500 hover:bg-primary-500/5 hover:text-primary-600",
-    outline: "border border-border-strong bg-surface-panel text-primary-600 hover:bg-primary-500/5",
-    ghost: "bg-transparent text-primary-600 hover:bg-primary-500/10",
+    secondary: "ui-hover-surface ui-hover-panel bg-surface-panel text-text-body border border-border-subtle shadow-sm shadow-card-soft hover:text-primary-600",
+    outline: "ui-hover-surface ui-hover-panel border border-border-strong bg-surface-panel text-primary-600",
+    ghost: "ui-hover-surface bg-transparent text-primary-600",
     danger: "bg-danger-base text-white hover:bg-danger-base/90 shadow-sm shadow-danger-base/20 dark:text-slate-950",
   };
 

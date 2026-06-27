@@ -103,7 +103,7 @@ export default function Sidebar({ isOpen, close }) {
           <div>
             <img src="/logo-app.png" alt="WeeBudget" width="144" height="48" className="h-11 w-auto object-contain md:h-12" />
           </div>
-          <button onClick={close} className="rounded-2xl p-2.5 text-text-muted transition-colors hover:bg-surface-100 hover:text-primary-600 md:hidden">
+          <button onClick={close} className="ui-hover-surface ui-hover-icon rounded-2xl p-2.5 text-text-muted md:hidden">
             <X size={24} />
           </button>
         </div>
@@ -124,7 +124,7 @@ export default function Sidebar({ isOpen, close }) {
                     "group flex min-h-12 items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-200",
                     isActive
                       ? "bg-primary-500/10 text-primary-600 border border-primary-500/20 shadow-sm shadow-primary-500/10"
-                      : "text-text-muted hover:bg-surface-100 hover:text-text-title"
+                      : "ui-hover-surface text-text-muted hover:text-text-title"
                   )}
                 >
                   {({ isActive }) => (
@@ -150,7 +150,7 @@ export default function Sidebar({ isOpen, close }) {
                     "flex min-h-12 w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold transition-all duration-200",
                     isActiveGroup
                       ? "bg-surface-100 text-text-title"
-                      : "text-text-muted hover:bg-surface-100 hover:text-text-title"
+                      : "ui-hover-surface text-text-muted hover:text-text-title"
                   )}
                 >
                   <group.icon size={19} className={cn("shrink-0 transition-colors", isActiveGroup ? "text-primary-600" : "text-text-muted")} />
@@ -169,7 +169,7 @@ export default function Sidebar({ isOpen, close }) {
                           "group flex min-h-11 items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium transition-all duration-200",
                           isActive
                             ? "bg-primary-500/10 text-primary-600 border border-primary-500/20 shadow-sm shadow-primary-500/10"
-                            : "text-text-muted hover:bg-surface-100 hover:text-text-title"
+                            : "ui-hover-surface text-text-muted hover:text-text-title"
                         )}
                       >
                         {({ isActive }) => (
