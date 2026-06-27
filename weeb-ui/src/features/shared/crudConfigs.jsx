@@ -9,7 +9,6 @@ const requiredText = z.string().min(2, 'Minimal 2 karakter');
 export const categoryOptions = [
   { value: 'income', label: 'Pemasukan' },
   { value: 'expense', label: 'Pengeluaran' },
-  { value: 'both', label: 'Keduanya' },
 ];
 
 export const needTypeOptions = [
