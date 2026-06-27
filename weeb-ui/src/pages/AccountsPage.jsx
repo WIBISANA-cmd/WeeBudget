@@ -142,23 +142,18 @@ export default function AccountsPage() {
               <CardContent className="space-y-3">
                 <p className="text-sm font-medium text-text-muted">Total saldo terpantau</p>
                 <p className="text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(totalTrackedBalance)}</p>
-                <p className="text-sm leading-6 text-text-muted">
-                  Semua rekening aktif dan nonaktif tetap terlihat di sini agar perpindahan saldo antar pos tetap mudah dipantau.
-                </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="space-y-2">
                 <p className="text-sm font-medium text-text-muted">Rekening aktif</p>
                 <p className="text-3xl font-semibold tracking-tight text-text-title">{allAccounts.length}</p>
-                <p className="text-sm text-text-muted">Total rekening yang sedang tercatat pada halaman ini.</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="space-y-2">
                 <p className="text-sm font-medium text-text-muted">Pos uang terpakai</p>
                 <p className="text-3xl font-semibold tracking-tight text-text-title">{purposeCount}</p>
-                <p className="text-sm text-text-muted">Mengikuti klasifikasi rekening yang sudah kamu buat.</p>
               </CardContent>
             </Card>
           </div>

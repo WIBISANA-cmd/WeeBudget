@@ -90,7 +90,6 @@ export const configs = {
   accounts: {
     title: 'Manajemen Rekening',
     singular: 'rekening',
-    description: 'Susun rekening berdasarkan fungsi uangnya agar aliran saldo, transaksi, dan alokasi dana lebih mudah dikendalikan.',
     tableDescription: 'Setiap rekening mewakili pos uang yang berbeda, sehingga saldo dan mutasi bisa dibaca lebih cepat.',
     endpoint: '/accounts',
     createLabel: 'Tambah rekening',
