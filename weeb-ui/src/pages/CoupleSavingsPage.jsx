@@ -12,6 +12,7 @@ import StatusBadge from '../components/feedback/StatusBadge';
 import { apiGet, apiPut } from '../api/http';
 import { useCrudResource } from '../hooks/useCrudResource';
 import { formatCurrency, formatDate } from '../lib/formatters';
+import { refreshPageQuickly } from '../lib/pageRefresh';
 
 const ResourceForm = lazy(() => import('../components/forms/ResourceForm'));
 
@@ -188,6 +189,7 @@ export default function CoupleSavingsPage() {
       setFormOpen(false);
       setEditing(null);
       await loadAccounts();
+      refreshPageQuickly();
     } else {
       alert(result.message);
     }
@@ -199,6 +201,7 @@ export default function CoupleSavingsPage() {
       const response = await apiPut('/couple-savings/setting', values);
       setSetting(response.data);
       setSettingOpen(false);
+      refreshPageQuickly();
     } catch (err) {
       alert(err.response?.data?.message || 'Pengaturan pasangan belum bisa disimpan.');
     } finally {

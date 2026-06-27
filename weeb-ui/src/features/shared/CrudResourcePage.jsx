@@ -10,6 +10,7 @@ import LoadingSkeleton from '../../components/feedback/LoadingSkeleton';
 import Modal, { ConfirmDialog } from '../../components/forms/Modal';
 import { useCrudResource } from '../../hooks/useCrudResource';
 import { formatCurrency, formatDate } from '../../lib/formatters';
+import { refreshPageQuickly } from '../../lib/pageRefresh';
 
 const ResourceForm = lazy(() => import('../../components/forms/ResourceForm'));
 
@@ -190,6 +191,7 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
     if (result.ok) {
       setFormOpen(false);
       setEditing(null);
+      refreshPageQuickly();
     } else {
       alert(result.message);
     }

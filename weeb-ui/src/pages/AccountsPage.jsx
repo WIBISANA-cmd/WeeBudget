@@ -10,6 +10,7 @@ import Button from '../components/ui/Button';
 import Modal from '../components/forms/Modal';
 import { Card, CardContent } from '../components/ui/Card';
 import { formatCurrency } from '../lib/formatters';
+import { refreshPageQuickly } from '../lib/pageRefresh';
 
 const ResourceForm = lazy(() => import('../components/forms/ResourceForm'));
 
@@ -118,6 +119,7 @@ export default function AccountsPage() {
       await accountOptions.reloadAccounts?.();
       setAllocationOpen(false);
       setPageVersion((current) => current + 1);
+      refreshPageQuickly();
     } catch (error) {
       const message = error.response?.data?.errors
         ? Object.values(error.response.data.errors).flat()[0]

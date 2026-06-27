@@ -13,6 +13,7 @@ import { apiGet } from '../../api/http';
 import { formatCurrency, formatDate } from '../../lib/formatters';
 import { useCrudResource } from '../../hooks/useCrudResource';
 import { useCategoryOptions } from '../../hooks/useCategoryOptions';
+import { refreshPageQuickly } from '../../lib/pageRefresh';
 
 const ResourceForm = lazy(() => import('../../components/forms/ResourceForm'));
 
@@ -243,6 +244,7 @@ export default function AccountPurposeTransactionsPage({
       setFormOpen(false);
       setEditing(null);
       await loadAccounts();
+      refreshPageQuickly();
     } else {
       alert(result.message);
     }
