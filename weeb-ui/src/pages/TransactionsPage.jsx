@@ -49,7 +49,7 @@ export default function TransactionsPage({ type }) {
         : column
     )),
     fields: [
-      ...(type ? [] : [{ name: 'transaction_type', label: 'Tipe', type: 'select', options: [{ value: 'income', label: 'Pemasukan' }, { value: 'expense', label: 'Pengeluaran' }], clearFieldsOnChange: ['category_id'] }]),
+      ...(type ? [] : [{ name: 'transaction_type', label: 'Tipe', type: 'tabs', options: [{ value: 'income', label: 'Pemasukan' }, { value: 'expense', label: 'Pengeluaran' }], clearFieldsOnChange: ['category_id'] }]),
       { name: 'account_id', type: 'hidden' },
       {
         name: 'category_id',
@@ -64,10 +64,13 @@ export default function TransactionsPage({ type }) {
       },
       { name: 'amount', label: 'Nominal', type: 'number', valueAsNumber: true },
       { name: 'transaction_date', label: 'Tanggal', type: 'date' },
+      { name: 'description', label: 'Deskripsi / Keterangan', full: true, placeholder: 'Contoh: Belanja mingguan, transfer dari freelance' },
     ],
     mobileColumns: {
-      title: getNeedLabel,
-      subtitle: (row) => row.account?.name || '-',
+      title: (row) => row.description || row.category?.name || '-',
+      titleLabel: 'Deskripsi',
+      numberLabel: 'No',
+      amountLabel: 'Nominal',
       amount: signedAmount,
       amountClass,
       dateKey: (row) => row.transaction_date,
@@ -88,6 +91,7 @@ export default function TransactionsPage({ type }) {
         transaction_type: activeType,
         account_id: values.account_id || null,
         category_id: values.category_id || null,
+        description: values.description || null,
         need_type: activeType === 'income' ? null : selectedCategory?.needType || values.need_type || null,
         notes: undefined,
       };
@@ -99,7 +103,7 @@ export default function TransactionsPage({ type }) {
       config={config}
       options={options}
       topContent={(
-        <div className="grid gap-4 xl:grid-cols-[1.2fr_0.9fr_0.9fr]">
+        <div className="hidden gap-4 md:grid xl:grid-cols-[1.2fr_0.9fr_0.9fr]">
           <Card className={type === 'income'
             ? 'border-success-base/20 bg-gradient-to-br from-success-base/8 via-surface-panel to-surface-panel'
             : 'border-primary-500/20 bg-gradient-to-br from-primary-500/8 via-surface-panel to-surface-panel'}
