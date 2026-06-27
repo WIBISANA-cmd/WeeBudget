@@ -54,7 +54,18 @@ function MobileResourceList({ rows, columns, onAction }) {
       </div>
       {groupedRows.map((group) => (
         <div key={group.key} className="space-y-2">
-          <p className="px-1 text-xs font-semibold uppercase tracking-wide text-text-muted">{group.label}</p>
+          <div className="space-y-1 px-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">{group.label}</p>
+            {columns.groupSummary && (
+              <div className="flex flex-wrap gap-2 text-xs text-text-muted">
+                {columns.groupSummary(group.rows).map((item) => (
+                  <span key={item.label} className="rounded-full bg-surface-100 px-2.5 py-1">
+                    <span className="font-semibold text-text-body">{item.label}:</span> {item.value}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
           {group.rows.map((row, index) => (
             <button
               key={row.id}
@@ -96,9 +107,16 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
     return accountOptions.find((account) => String(account.value) === String(selectedAccountId)) || accountOptions[0] || null;
   }, [accountOptions, selectedAccountId]);
   const visibleItems = useMemo(() => {
-    if (!config.accountScoped || !selectedAccount) return resource.items;
-    return resource.items.filter((item) => String(item.account_id) === String(selectedAccount.value));
-  }, [config.accountScoped, resource.items, selectedAccount]);
+    const accountScopedItems = (!config.accountScoped || !selectedAccount)
+      ? resource.items
+      : resource.items.filter((item) => String(item.account_id) === String(selectedAccount.value));
+
+    if (typeof config.filterItems === 'function') {
+      return config.filterItems(accountScopedItems, { selectedAccount, options, resource });
+    }
+
+    return accountScopedItems;
+  }, [config, options, resource, selectedAccount]);
   const renderTableContent = () => {
     if (resource.isLoading) {
       return <LoadingSkeleton rows={5} />;
@@ -225,7 +243,7 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
         </div>
       </header>
 
-      {topContent}
+      {typeof topContent === 'function' ? topContent({ resource, visibleItems }) : topContent}
 
       {config.summary && <div className="grid gap-4 md:grid-cols-3">{config.summary(resource.items)}</div>}
 

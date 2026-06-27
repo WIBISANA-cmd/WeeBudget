@@ -1,47 +1,34 @@
 import { useMemo } from 'react';
+import { NavLink } from 'react-router-dom';
 import CrudResourcePage from '../features/shared/CrudResourcePage';
 import { configs } from '../features/shared/crudConfigs';
 import { useAccountOptions } from '../hooks/useAccountOptions';
 import { useCategoryOptions } from '../hooks/useCategoryOptions';
 import { Card, CardContent } from '../components/ui/Card';
 import { formatCurrency, formatDate } from '../lib/formatters';
+import { cn } from '../lib/utils';
 
-const getNeedLabel = (row) => row.description || row.category?.name || '-';
 const isIncome = (row) => row.transaction_type === 'income';
 const signedAmount = (row) => `${isIncome(row) ? '+' : '-'}${formatCurrency(row.amount)}`;
 const amountClass = (row) => isIncome(row) ? 'text-success-base' : 'text-danger-base';
+const transactionTypeTabs = [
+  { label: 'Pemasukan', to: '/transactions/income' },
+  { label: 'Pengeluaran', to: '/transactions/expense' },
+];
 
 export default function TransactionsPage({ type }) {
   const categoryOptions = useCategoryOptions();
   const accountOptions = useAccountOptions();
   const options = { ...categoryOptions, ...accountOptions };
   const transactionType = type || 'expense';
-  const relevantCategories = useMemo(() => {
-    return (categoryOptions.categories || []).filter((category) => {
-      if (!type) return true;
-      return category.type === transactionType || category.type === 'both';
-    });
-  }, [categoryOptions.categories, transactionType, type]);
-  const totalAccountBalance = useMemo(
-    () => (accountOptions.accounts || []).reduce((total, account) => total + Number(account.balance || 0), 0),
-    [accountOptions.accounts]
-  );
   const config = {
     ...configs.transactions,
     title: type === 'income' ? 'Pemasukan' : type === 'expense' ? 'Pengeluaran' : 'Transaksi',
-    description: type === 'income'
-      ? 'Pantau semua arus uang masuk ke rekening aktif, lengkap dengan kategori dan tujuan rekeningnya.'
-      : type === 'expense'
-        ? 'Catat pengeluaran dari rekening yang dipilih agar saldo dan pola belanja selalu terbaca dengan rapi.'
-        : 'Kelola semua arus kas masuk dan keluar dari halaman transaksi utama.',
-    tableDescription: type === 'income'
-      ? 'Riwayat pemasukan ditampilkan per rekening aktif agar sumber dana lebih mudah dibaca.'
-      : type === 'expense'
-        ? 'Riwayat pengeluaran ditampilkan per rekening aktif agar aliran saldo lebih jelas.'
-        : 'Semua transaksi tampil dalam satu tempat untuk memudahkan peninjauan.',
+    description: type ? '' : 'Kelola semua arus kas masuk dan keluar dari halaman transaksi utama.',
+    tableDescription: type ? '' : 'Semua transaksi tampil dalam satu tempat untuk memudahkan peninjauan.',
     endpoint: type === 'income' ? '/incomes' : type === 'expense' ? '/expenses' : '/transactions',
-    accountScoped: true,
-    initialParams: type ? {} : {},
+    accountScoped: false,
+    initialParams: { per_page: 1000 },
     defaultValues: { ...configs.transactions.defaultValues, transaction_type: transactionType, need_type: type === 'income' ? '' : 'need', notes: undefined },
     columns: configs.transactions.columns.map((column) => (
       column.key === 'amount'
@@ -50,7 +37,7 @@ export default function TransactionsPage({ type }) {
     )),
     fields: [
       ...(type ? [] : [{ name: 'transaction_type', label: 'Tipe', type: 'tabs', options: [{ value: 'income', label: 'Pemasukan' }, { value: 'expense', label: 'Pengeluaran' }], clearFieldsOnChange: ['category_id'] }]),
-      { name: 'account_id', type: 'hidden' },
+      { name: 'account_id', label: 'Sumber Rekening', type: 'select', optionsKey: 'accounts', placeholder: 'Pilih rekening sumber transaksi' },
       {
         name: 'category_id',
         label: 'Kategori',
@@ -74,6 +61,19 @@ export default function TransactionsPage({ type }) {
       amount: signedAmount,
       amountClass,
       dateKey: (row) => row.transaction_date,
+      groupSummary: (rows) => {
+        const incomeTotal = rows
+          .filter((row) => row.transaction_type === 'income')
+          .reduce((total, row) => total + Number(row.amount || 0), 0);
+        const expenseTotal = rows
+          .filter((row) => row.transaction_type === 'expense')
+          .reduce((total, row) => total + Number(row.amount || 0), 0);
+
+        return [
+          { label: 'Pemasukan', value: formatCurrency(incomeTotal) },
+          { label: 'Pengeluaran', value: formatCurrency(expenseTotal) },
+        ];
+      },
     },
     detailRows: [
       { label: 'Tanggal', render: (row) => formatDate(row.transaction_date) },
@@ -102,36 +102,52 @@ export default function TransactionsPage({ type }) {
     <CrudResourcePage
       config={config}
       options={options}
-      topContent={(
-        <div className="hidden gap-4 md:grid xl:grid-cols-[1.2fr_0.9fr_0.9fr]">
-          <Card className={type === 'income'
-            ? 'border-success-base/20 bg-gradient-to-br from-success-base/8 via-surface-panel to-surface-panel'
-            : 'border-primary-500/20 bg-gradient-to-br from-primary-500/8 via-surface-panel to-surface-panel'}
-          >
-            <CardContent className="space-y-3">
-              <p className="text-sm font-medium text-text-muted">Saldo rekening terhubung</p>
-              <p className="text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(totalAccountBalance)}</p>
-              <p className="text-sm leading-6 text-text-muted">
-                Nilai ini merangkum saldo dari rekening aktif yang tersedia untuk transaksi pada halaman ini.
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="space-y-2">
-              <p className="text-sm font-medium text-text-muted">Rekening aktif</p>
-              <p className="text-3xl font-semibold tracking-tight text-text-title">{(accountOptions.accounts || []).length}</p>
-              <p className="text-sm text-text-muted">Bisa dipilih sebagai sumber atau tujuan transaksi.</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="space-y-2">
-              <p className="text-sm font-medium text-text-muted">Kategori tersedia</p>
-              <p className="text-3xl font-semibold tracking-tight text-text-title">{relevantCategories.length}</p>
-              <p className="text-sm text-text-muted">Mengikuti tipe transaksi yang sedang dibuka.</p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      topContent={({ resource }) => {
+        const incomeTotal = resource.items
+          .filter((row) => row.transaction_type === 'income')
+          .reduce((total, row) => total + Number(row.amount || 0), 0);
+        const expenseTotal = resource.items
+          .filter((row) => row.transaction_type === 'expense')
+          .reduce((total, row) => total + Number(row.amount || 0), 0);
+
+        return (
+          <div className="space-y-4">
+            <div className="rounded-[24px] border border-border-subtle bg-gradient-to-br from-surface-panel via-surface-panel to-surface-100/70 p-3 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.45)] md:rounded-[28px] md:p-4">
+              <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap">
+                {transactionTypeTabs.map((tab) => (
+                  <NavLink
+                    key={tab.to}
+                    to={tab.to}
+                    className={({ isActive }) => cn(
+                      'flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-semibold transition-colors',
+                      isActive
+                        ? 'bg-primary-500 text-white shadow-sm shadow-primary-500/20'
+                        : 'bg-surface-panel text-text-body hover:border-primary-500 hover:text-primary-600'
+                    )}
+                  >
+                    {tab.label}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+
+            <div className="hidden gap-4 md:grid xl:grid-cols-2">
+              <Card className="border-success-base/20 bg-gradient-to-br from-success-base/8 via-surface-panel to-surface-panel">
+                <CardContent className="space-y-2">
+                  <p className="text-sm font-medium text-text-muted">Total pemasukan periode saat ini</p>
+                  <p className="text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(incomeTotal)}</p>
+                </CardContent>
+              </Card>
+              <Card className="border-danger-base/20 bg-gradient-to-br from-danger-base/8 via-surface-panel to-surface-panel">
+                <CardContent className="space-y-2">
+                  <p className="text-sm font-medium text-text-muted">Total pengeluaran periode saat ini</p>
+                  <p className="text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(expenseTotal)}</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
+      }}
     />
   );
 }

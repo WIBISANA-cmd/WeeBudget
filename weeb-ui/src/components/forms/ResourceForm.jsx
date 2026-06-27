@@ -745,8 +745,9 @@ export default function ResourceForm({
 
   if (isMobile && isTransactionForm) {
     const typeField = fields.find((f) => f.name === 'transaction_type');
+    const accountField = visibleFields.find((f) => f.name === 'account_id');
     const categoryField = fields.find((f) => f.name === 'category_id');
-    const otherFields = visibleFields.filter((f) => f.name !== 'transaction_type' && f.name !== 'category_id');
+    const otherFields = visibleFields.filter((f) => !['transaction_type', 'account_id', 'category_id'].includes(f.name));
 
     const handleTypeChange = (nextType) => {
       setValue('transaction_type', nextType, { shouldDirty: true, shouldValidate: true });
@@ -799,6 +800,20 @@ export default function ResourceForm({
               {errors.transaction_type?.message && (
                 <p className="text-xs font-medium text-danger-base">{errors.transaction_type.message}</p>
               )}
+            </div>
+          )}
+
+          {accountField && (
+            <div>
+              <Field
+                field={accountField}
+                register={register}
+                error={errors[accountField.name]}
+                options={options}
+                value={watchedValues?.[accountField.name]}
+                values={watchedValues}
+                setValue={setValue}
+              />
             </div>
           )}
 

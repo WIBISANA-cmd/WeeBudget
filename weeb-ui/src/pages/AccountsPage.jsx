@@ -10,6 +10,7 @@ import Button from '../components/ui/Button';
 import Modal from '../components/forms/Modal';
 import { Card, CardContent } from '../components/ui/Card';
 import { formatCurrency } from '../lib/formatters';
+import LoadingSkeleton from '../components/feedback/LoadingSkeleton';
 import { refreshPageQuickly } from '../lib/pageRefresh';
 
 const ResourceForm = lazy(() => import('../components/forms/ResourceForm'));
