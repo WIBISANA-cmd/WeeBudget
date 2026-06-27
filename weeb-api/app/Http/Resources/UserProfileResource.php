@@ -19,6 +19,9 @@ class UserProfileResource extends JsonResource
             'monthly_income_estimate' => $this->monthly_income_estimate,
             'daily_safe_amount_target' => $this->daily_safe_amount_target,
             'account_mode' => $this->account_mode ?? 'couple',
+            'transaction_reminder_enabled' => (bool) $this->transaction_reminder_enabled,
+            'transaction_reminder_time' => $this->transaction_reminder_time,
+            'transaction_reminder_last_sent_at' => $this->transaction_reminder_last_sent_at?->toISOString(),
             'onboarding_completed_at' => $this->onboarding_completed_at?->toDateString(),
         ];
     }

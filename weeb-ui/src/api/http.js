@@ -15,7 +15,7 @@ export async function apiPut(url, payload) {
   return response.data;
 }
 
-export async function apiDelete(url) {
-  const response = await apiClient.delete(url);
+export async function apiDelete(url, data) {
+  const response = await apiClient.delete(url, data ? { data } : undefined);
   return response.data;
 }

@@ -23,6 +23,7 @@ if [ -n "${WEEB_ADMIN_EMAIL:-}" ] && [ -n "${WEEB_ADMIN_PASSWORD:-}" ]; then
   php artisan db:seed --class=AdminUserSeeder --force
 fi
 
+php artisan schedule:work &
 php artisan serve --host=127.0.0.1 --port=8000 &
 
 exec nginx -g "daemon off;"

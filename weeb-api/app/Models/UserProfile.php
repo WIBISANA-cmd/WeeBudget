@@ -18,6 +18,9 @@ class UserProfile extends Model
         'monthly_income_estimate',
         'daily_safe_amount_target',
         'account_mode',
+        'transaction_reminder_enabled',
+        'transaction_reminder_time',
+        'transaction_reminder_last_sent_at',
         'budget_planner_allocations',
         'onboarding_completed_at',
     ];
@@ -27,6 +30,8 @@ class UserProfile extends Model
         return [
             'monthly_income_estimate' => 'decimal:2',
             'daily_safe_amount_target' => 'decimal:2',
+            'transaction_reminder_enabled' => 'boolean',
+            'transaction_reminder_last_sent_at' => 'datetime',
             'budget_planner_allocations' => 'array',
             'onboarding_completed_at' => 'date',
         ];

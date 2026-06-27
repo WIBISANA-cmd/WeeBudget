@@ -5,6 +5,7 @@ import ResourceForm from '../components/forms/ResourceForm';
 import LoadingSkeleton from '../components/feedback/LoadingSkeleton';
 import ErrorState from '../components/feedback/ErrorState';
 import { apiGet, apiPut } from '../api/http';
+import { ensureTransactionReminderSubscription, removeTransactionReminderSubscription } from '../lib/pushNotifications';
 
 const schema = z.object({
   name: z.string().min(2),
@@ -12,6 +13,8 @@ const schema = z.object({
   payday_day: z.coerce.number().min(1).max(31).optional().or(z.literal('')),
   daily_safe_amount_target: z.coerce.number().min(0).optional().or(z.literal('')),
   account_mode: z.enum(['personal', 'couple']).optional(),
+  transaction_reminder_enabled: z.enum(['1', '0']).optional(),
+  transaction_reminder_time: z.string().optional(),
 });
 
 export default function ProfilePage() {
@@ -37,7 +40,22 @@ export default function ProfilePage() {
     setSaving(true);
     setError(null);
     try {
-      await apiPut('/profile', values);
+      const payload = {
+        ...values,
+        transaction_reminder_enabled: values.transaction_reminder_enabled === '1',
+        transaction_reminder_time: values.transaction_reminder_enabled === '1'
+          ? (values.transaction_reminder_time || '20:00')
+          : null,
+      };
+
+      await apiPut('/profile', payload);
+
+      if (payload.transaction_reminder_enabled) {
+        await ensureTransactionReminderSubscription({ requestPermission: true });
+      } else {
+        await removeTransactionReminderSubscription();
+      }
+
       window.location.reload();
     } catch (err) {
       setError(err.response?.data?.message || 'Profil belum bisa disimpan.');
@@ -71,6 +89,8 @@ export default function ProfilePage() {
               payday_day: profile?.profile?.payday_day || '',
               daily_safe_amount_target: profile?.profile?.daily_safe_amount_target || '',
               account_mode: profile?.profile?.account_mode || 'couple',
+              transaction_reminder_enabled: profile?.profile?.transaction_reminder_enabled ? '1' : '0',
+              transaction_reminder_time: profile?.profile?.transaction_reminder_time || '20:00',
             }}
             fields={[
               { name: 'name', label: 'Nama panggilan' },
@@ -78,6 +98,21 @@ export default function ProfilePage() {
               { name: 'payday_day', label: 'Tanggal gajian', type: 'number', valueAsNumber: true },
               { name: 'daily_safe_amount_target', label: 'Target aman harian', type: 'number', valueAsNumber: true },
               { name: 'account_mode', label: 'Tipe penggunaan aplikasi', type: 'select', options: [{ label: 'Berdua', value: 'couple' }, { label: 'Pribadi', value: 'personal' }] },
+              {
+                name: 'transaction_reminder_enabled',
+                label: 'Pengingat pencatatan transaksi',
+                type: 'select',
+                options: [
+                  { label: 'Aktif', value: '1' },
+                  { label: 'Nonaktif', value: '0' },
+                ],
+              },
+              {
+                name: 'transaction_reminder_time',
+                label: 'Jam pengingat',
+                type: 'time',
+                showWhen: { transaction_reminder_enabled: '1' },
+              },
             ]}
             onSubmit={submit}
           />

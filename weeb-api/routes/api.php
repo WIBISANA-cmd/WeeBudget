@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\MonthlyReportController;
 use App\Http\Controllers\Api\OnboardingController;
 use App\Http\Controllers\Api\PaydaySimulationController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\PushNotificationController;
 use App\Http\Controllers\Api\RecurringTransactionController;
 use App\Http\Controllers\Api\SavingGoalController;
 use App\Http\Controllers\Api\UserManagementController;
@@ -43,6 +44,9 @@ Route::middleware(UseDefaultUser::class)->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.patch');
+    Route::get('/push/vapid-public-key', [PushNotificationController::class, 'vapidPublicKey'])->name('push.vapid-public-key');
+    Route::post('/push/subscriptions', [PushNotificationController::class, 'subscribe'])->name('push.subscriptions.store');
+    Route::delete('/push/subscriptions', [PushNotificationController::class, 'unsubscribe'])->name('push.subscriptions.destroy');
 
     Route::get('/onboarding', [OnboardingController::class, 'show'])->name('onboarding.show');
     Route::post('/onboarding', [OnboardingController::class, 'store'])->name('onboarding.store');

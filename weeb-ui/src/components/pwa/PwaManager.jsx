@@ -2,12 +2,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Download, X } from 'lucide-react';
 import { registerSW } from 'virtual:pwa-register';
 import Button from '../ui/Button';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { ensureTransactionReminderSubscription } from '../../lib/pushNotifications';
 
 function isStandaloneMode() {
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 }
 
 export default function PwaManager() {
+  const { user } = useCurrentUser();
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isInstalled, setInstalled] = useState(() => isStandaloneMode());
   const [showInstallCard, setShowInstallCard] = useState(false);
@@ -60,6 +63,26 @@ export default function PwaManager() {
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
+
+  useEffect(() => {
+    const reminderEnabled = user?.profile?.transaction_reminder_enabled;
+
+    if (!reminderEnabled || typeof window === 'undefined') {
+      return;
+    }
+
+    if (!isStandaloneMode() || Notification.permission !== 'granted') {
+      return;
+    }
+
+    queueMicrotask(async () => {
+      try {
+        await ensureTransactionReminderSubscription();
+      } catch {
+        // Silent best-effort sync. User-facing prompt happens from profile settings.
+      }
+    });
+  }, [user?.profile?.transaction_reminder_enabled]);
 
   const canInstall = useMemo(() => Boolean(installPrompt) && !isInstalled && showInstallCard, [installPrompt, isInstalled, showInstallCard]);
 

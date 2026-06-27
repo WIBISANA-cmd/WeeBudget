@@ -23,6 +23,8 @@ class UpdateProfileRequest extends FormRequest
             'monthly_income_estimate' => ['nullable', 'numeric', 'min:0', 'max:999999999999.99'],
             'daily_safe_amount_target' => ['nullable', 'numeric', 'min:0', 'max:999999999999.99'],
             'account_mode' => ['sometimes', Rule::in(['personal', 'couple'])],
+            'transaction_reminder_enabled' => ['sometimes', 'boolean'],
+            'transaction_reminder_time' => ['nullable', 'date_format:H:i'],
             'onboarding_completed_at' => ['nullable', 'date'],
         ];
     }
