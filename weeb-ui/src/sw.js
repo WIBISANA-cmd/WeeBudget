@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 import { clientsClaim } from 'workbox-core';
-import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
+import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
 import { CacheFirst, NetworkOnly, StaleWhileRevalidate } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
@@ -57,7 +57,7 @@ registerRoute(
   })
 );
 
-registerRoute(new NavigationRoute(new StaleWhileRevalidate({ cacheName: 'weeb-pages' }), {
+registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html'), {
   denylist: [/^\/api(?:\/|$)/, /^\/sanctum(?:\/|$)/],
 }));
 

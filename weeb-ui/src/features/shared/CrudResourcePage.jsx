@@ -11,8 +11,9 @@ import Modal, { ConfirmDialog } from '../../components/forms/Modal';
 import { useCrudResource } from '../../hooks/useCrudResource';
 import { formatCurrency, formatDate } from '../../lib/formatters';
 import { refreshPageQuickly } from '../../lib/pageRefresh';
+import { lazyWithRetry } from '../../lib/lazyWithRetry';
 
-const ResourceForm = lazy(() => import('../../components/forms/ResourceForm'));
+const ResourceForm = lazy(lazyWithRetry(() => import('../../components/forms/ResourceForm'), 'ResourceForm'));
 
 function MobileResourceList({ rows, columns, onAction }) {
   const [pressTimer, setPressTimer] = useState(null);

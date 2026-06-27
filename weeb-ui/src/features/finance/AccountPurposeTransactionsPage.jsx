@@ -14,8 +14,9 @@ import { formatCurrency, formatDate } from '../../lib/formatters';
 import { useCrudResource } from '../../hooks/useCrudResource';
 import { useCategoryOptions } from '../../hooks/useCategoryOptions';
 import { refreshPageQuickly } from '../../lib/pageRefresh';
+import { lazyWithRetry } from '../../lib/lazyWithRetry';
 
-const ResourceForm = lazy(() => import('../../components/forms/ResourceForm'));
+const ResourceForm = lazy(lazyWithRetry(() => import('../../components/forms/ResourceForm'), 'ResourceForm'));
 
 const transactionSchema = z.object({
   account_id: z.coerce.number().min(1, 'Rekening wajib dipilih'),
