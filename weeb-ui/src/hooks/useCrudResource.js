@@ -20,24 +20,41 @@ export function useCrudResource(endpoint, initialParams = {}) {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
   const [params, setParams] = useState(initialParams);
+  const [page, setPage] = useState(1);
+  const [isIncrementing, setIsIncrementing] = useState(false);
 
-  const load = useCallback(async (nextParams = params) => {
-    setIsLoading(true);
+  const load = useCallback(async (nextParams = params, targetPage = 1, append = false) => {
+    if (append) {
+      setIsIncrementing(true);
+    } else {
+      setIsLoading(true);
+    }
     setError(null);
     try {
-      const response = await resourcesApi.list(endpoint, nextParams);
-      setItems(response.data || []);
+      const response = await resourcesApi.list(endpoint, { ...nextParams, page: targetPage });
+      if (append) {
+        setItems((prev) => [...prev, ...(response.data || [])]);
+      } else {
+        setItems(response.data || []);
+      }
       setMeta(response.meta || null);
+      setPage(targetPage);
     } catch (err) {
       setError(err.response?.data?.message || 'Data belum bisa dimuat.');
     } finally {
       setIsLoading(false);
+      setIsIncrementing(false);
     }
   }, [endpoint, params]);
 
   useEffect(() => {
-    queueMicrotask(() => load(params));
+    queueMicrotask(() => load(params, 1, false));
   }, [load, params]);
+
+  const loadNextPage = useCallback(async () => {
+    if (isLoading || isIncrementing || !meta || page >= meta.last_page) return;
+    await load(params, page + 1, true);
+  }, [load, params, page, meta, isLoading, isIncrementing]);
 
   const save = async (payload, id = null) => {
     setIsSaving(true);
@@ -79,5 +96,5 @@ export function useCrudResource(endpoint, initialParams = {}) {
     }
   };
 
-  return { items, meta, isLoading, isSaving, error, params, setParams, load, save, remove };
+  return { items, meta, isLoading, isSaving, error, params, setParams, load, save, remove, loadNextPage, isIncrementing };
 }

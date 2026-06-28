@@ -129,17 +129,50 @@ class AccountBalanceService
 
             $this->applyEffect($outgoing);
 
-            // Adjust destination account balance directly without creating an incoming transaction
-            $this->adjustAccountBalance(
-                accountId: $destinationAccount->id,
-                userId: $userId,
-                amount: $amount,
-            );
+            $isCoupleSavingsDestination = $destinationAccount->purpose === 'couple_savings';
+            $incoming = null;
+
+            if ($isCoupleSavingsDestination) {
+                $incoming = Transaction::query()->create([
+                    'user_id' => $userId,
+                    'account_id' => $destinationAccount->id,
+                    'transaction_type' => 'income',
+                    'amount' => $amount,
+                    'need_type' => $this->allocationNeedType($destinationAccount),
+                    'transaction_date' => $date,
+                    'description' => sprintf('Alokasi dari %s', $sourceAccount->name),
+                    'notes' => $notes,
+                    'source' => $actorLabel,
+                    'metadata' => [
+                        'direction' => 'in',
+                        'actor_label' => $actorLabel,
+                        'actor_user_id' => $userId,
+                        'counterpart_account_id' => $sourceAccount->id,
+                        'counterpart_account_name' => $sourceAccount->name,
+                        'counterpart_transaction_id' => $outgoing->id,
+                    ],
+                ]);
+
+                $outgoing->metadata = [
+                    ...($outgoing->metadata ?? []),
+                    'counterpart_transaction_id' => $incoming->id,
+                ];
+                $outgoing->save();
+
+                $this->applyEffect($incoming);
+            } else {
+                // Adjust destination account balance directly without creating an incoming transaction
+                $this->adjustAccountBalance(
+                    accountId: $destinationAccount->id,
+                    userId: $userId,
+                    amount: $amount,
+                );
+            }
 
             return [
                 'source_account' => $sourceAccount->fresh(),
                 'destination_account' => $destinationAccount->fresh(),
-                'transactions' => [$outgoing],
+                'transactions' => $incoming ? [$outgoing, $incoming] : [$outgoing],
             ];
         });
     }
@@ -208,7 +241,7 @@ class AccountBalanceService
 
     private function findAllocationCounterpart(Transaction $transaction, int $userId): ?Transaction
     {
-        if ($transaction->source !== 'account_allocation') {
+        if (empty(data_get($transaction->metadata, 'actor_user_id'))) {
             return null;
         }
 
@@ -218,7 +251,6 @@ class AccountBalanceService
 
         return Transaction::query()
             ->where('user_id', $userId)
-            ->where('source', 'account_allocation')
             ->whereKeyNot($transaction->id)
             ->when(
                 $counterpartId,

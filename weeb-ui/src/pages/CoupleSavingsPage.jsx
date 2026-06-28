@@ -278,9 +278,6 @@ export default function CoupleSavingsPage() {
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="max-w-3xl">
           <h1 className="text-2xl font-bold text-text-title md:text-3xl">Tabungan Berdua</h1>
-          <p className="mt-2 text-sm leading-6 text-text-muted">
-            Pantau kontribusi kedua pasangan, saldo rekening tabungan bersama, dan riwayat setoran dalam satu tampilan yang lebih nyaman dibaca.
-          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           {isAdmin && (

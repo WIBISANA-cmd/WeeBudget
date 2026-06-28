@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
@@ -118,6 +118,69 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
 
     return accountScopedItems;
   }, [config, options, resource, selectedAccount]);
+  const isTransactionRoute = config.endpoint === '/transactions' || config.endpoint === '/incomes' || config.endpoint === '/expenses';
+  const [visibleDatesCount, setVisibleDatesCount] = useState(3);
+
+  const uniqueDates = useMemo(() => {
+    const dates = new Set();
+    visibleItems.forEach((item) => {
+      const date = item.transaction_date || item.date || 'Tanpa tanggal';
+      dates.add(date);
+    });
+    return Array.from(dates);
+  }, [visibleItems]);
+
+  const renderedItems = useMemo(() => {
+    if (!isTransactionRoute) return visibleItems;
+    const allowedDates = new Set(uniqueDates.slice(0, visibleDatesCount));
+    return visibleItems.filter((item) => {
+      const date = item.transaction_date || item.date || 'Tanpa tanggal';
+      return allowedDates.has(date);
+    });
+  }, [visibleItems, uniqueDates, visibleDatesCount, isTransactionRoute]);
+
+  // Reset visible dates count when params change (e.g. filter changes)
+  useEffect(() => {
+    if (isTransactionRoute) {
+      setVisibleDatesCount(3);
+    }
+  }, [resource.params, isTransactionRoute]);
+
+  // Automatically increment visible dates when new items are fetched and we had run out
+  const prevUniqueDatesLengthRef = useRef(0);
+  useEffect(() => {
+    if (isTransactionRoute) {
+      const prevLength = prevUniqueDatesLengthRef.current;
+      const currentLength = uniqueDates.length;
+      if (currentLength > prevLength && prevLength > 0 && visibleDatesCount >= prevLength) {
+        setVisibleDatesCount((prev) => prev + 3);
+      }
+      prevUniqueDatesLengthRef.current = currentLength;
+    }
+  }, [uniqueDates.length, isTransactionRoute, visibleDatesCount]);
+
+  // Handle scrolling to bottom to reveal more dates or load more pages
+  useEffect(() => {
+    if (!isTransactionRoute) return;
+
+    const handleScroll = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight;
+      const clientHeight = document.documentElement.clientHeight;
+
+      if (scrollTop + clientHeight >= scrollHeight - 100) {
+        if (visibleDatesCount < uniqueDates.length) {
+          setVisibleDatesCount((prev) => prev + 3);
+        } else if (resource.meta && resource.meta.current_page < resource.meta.last_page) {
+          resource.loadNextPage();
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isTransactionRoute, visibleDatesCount, uniqueDates.length, resource]);
+
   const renderTableContent = () => {
     if (resource.isLoading) {
       return <LoadingSkeleton rows={5} />;
@@ -134,24 +197,36 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
     if (config.mobileColumns) {
       return (
         <>
-          <MobileResourceList columns={config.mobileColumns} rows={visibleItems} onAction={setActionTarget} />
+          <MobileResourceList columns={config.mobileColumns} rows={renderedItems} onAction={setActionTarget} />
           <div className="hidden md:block">
-            <DataTable columns={config.columns} rows={visibleItems} onEdit={openEdit} onDelete={openDelete} canEditRow={config.canEdit} canDeleteRow={config.canDelete} />
+            <DataTable columns={config.columns} rows={renderedItems} onEdit={openEdit} onDelete={openDelete} canEditRow={config.canEdit} canDeleteRow={config.canDelete} />
           </div>
+          {resource.isIncrementing && (
+            <div className="mt-4 flex justify-center py-2">
+              <span className="h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></span>
+            </div>
+          )}
         </>
       );
     }
 
     return (
-      <DataTable
-        columns={config.columns}
-        rows={visibleItems}
-        onEdit={openEdit}
-        onDelete={openDelete}
-        canEditRow={config.canEdit}
-        canDeleteRow={config.canDelete}
-        mobileLayout={config.mobileLayout}
-      />
+      <>
+        <DataTable
+          columns={config.columns}
+          rows={renderedItems}
+          onEdit={openEdit}
+          onDelete={openDelete}
+          canEditRow={config.canEdit}
+          canDeleteRow={config.canDelete}
+          mobileLayout={config.mobileLayout}
+        />
+        {resource.isIncrementing && (
+          <div className="mt-4 flex justify-center py-2">
+            <span className="h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></span>
+          </div>
+        )}
+      </>
     );
   };
 
@@ -169,7 +244,6 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
 
   const location = useLocation();
   const navigate = useNavigate();
-  const isTransactionRoute = config.endpoint === '/transactions' || config.endpoint === '/incomes' || config.endpoint === '/expenses';
 
   useEffect(() => {
     if (location.state?.openCreate && isTransactionRoute) {

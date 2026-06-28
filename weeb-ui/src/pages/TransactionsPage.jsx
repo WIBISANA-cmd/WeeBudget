@@ -32,11 +32,11 @@ export default function TransactionsPage({ type }) {
   const config = {
     ...configs.transactions,
     title: type === 'income' ? 'Pemasukan' : type === 'expense' ? 'Pengeluaran' : 'Transaksi',
-    description: type ? '' : 'Kelola semua arus kas masuk dan keluar dari halaman transaksi utama.',
     tableDescription: type ? '' : 'Semua transaksi tampil dalam satu tempat untuk memudahkan peninjauan.',
     endpoint: type === 'income' ? '/incomes' : type === 'expense' ? '/expenses' : '/transactions',
     accountScoped: false,
-    initialParams: { per_page: 1000 },
+    initialParams: { per_page: 30 },
+    noCard: true,
     filterItems: (items) => {
       if (!type) return items;
       return items.filter((row) => isCashflowTransaction(row));
