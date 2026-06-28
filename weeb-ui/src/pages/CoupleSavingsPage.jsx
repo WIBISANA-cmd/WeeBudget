@@ -1,6 +1,6 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
-import { HeartHandshake, Plus, Settings, UserCircle, Users, Wallet } from 'lucide-react';
+import { HeartHandshake, Pencil, Plus, Settings, Trash2, UserCircle, Users, Wallet } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import DataTable from '../components/data/DataTable';
@@ -32,6 +32,89 @@ const settingSchema = z.object({
   path: ['partner_two_user_id'],
 });
 
+function MobileSavingsList({ rows, partnerBySource, onAction }) {
+  const [pressTimer, setPressTimer] = useState(null);
+  const groupedRows = useMemo(() => {
+    return rows.reduce((groups, row) => {
+      const key = row.transaction_date || 'Tanpa tanggal';
+      const existing = groups.find((group) => group.key === key);
+      if (existing) {
+        existing.rows.push(row);
+      } else {
+        groups.push({ key, label: key === 'Tanpa tanggal' ? key : formatDate(key), rows: [row] });
+      }
+      return groups;
+    }, []);
+  }, [rows]);
+
+  const cancelPress = () => {
+    if (pressTimer) {
+      clearTimeout(pressTimer);
+      setPressTimer(null);
+    }
+  };
+
+  const startPress = (row) => {
+    cancelPress();
+    const timer = window.setTimeout(() => {
+      onAction(row);
+      setPressTimer(null);
+    }, 550);
+    setPressTimer(timer);
+  };
+
+  return (
+    <div className="space-y-3 md:hidden">
+      <div className="grid grid-cols-[44px_1fr_auto] gap-3 rounded-xl bg-surface-100 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
+        <span>No</span>
+        <span>Setoran</span>
+        <span className="text-right">Nominal</span>
+      </div>
+      {groupedRows.map((group) => (
+        <div key={group.key} className="space-y-2">
+          <div className="px-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">{group.label}</p>
+          </div>
+          {group.rows.map((row, index) => {
+            const partner = partnerBySource[row.source];
+            const senderLabel = partner ? `${partner.label} (${partner.user.name})` : row.source || 'Tanpa penyetor';
+            const typeLabel = row.entry_type === 'account_allocation' ? 'Alokasi Dana' : 'Setoran Manual';
+            const accountLabel = row.account?.name ? ` • ${row.account.name}` : '';
+
+            return (
+              <button
+                key={row.id}
+                type="button"
+                onPointerDown={() => startPress(row)}
+                onPointerUp={cancelPress}
+                onPointerCancel={cancelPress}
+                onPointerLeave={cancelPress}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  onAction(row);
+                }}
+                onClick={() => onAction(row)}
+                className="grid min-h-[58px] w-full grid-cols-[44px_1fr_auto] items-center gap-3 rounded-xl border border-border-subtle bg-surface-panel px-3 py-3 text-left shadow-sm shadow-card-soft active:border-primary-500 active:bg-primary-500/5"
+              >
+                <span className="text-sm font-semibold text-text-muted">{index + 1}</span>
+                <span className="min-w-0 text-sm font-medium text-text-title">
+                  <span className="block truncate">{row.description || 'Setoran Tabungan Berdua'}</span>
+                  <span className="mt-0.5 block text-xs font-normal text-text-muted">
+                    {senderLabel} • {typeLabel}{accountLabel}
+                  </span>
+                </span>
+                <span className="text-right text-sm font-semibold text-success-base">
+                  +{formatCurrency(row.amount)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function CoupleSavingsPage() {
   const [accounts, setAccounts] = useState([]);
   const [user, setUser] = useState(null);
@@ -44,12 +127,68 @@ export default function CoupleSavingsPage() {
   const [isFormOpen, setFormOpen] = useState(false);
   const [isSettingOpen, setSettingOpen] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [actionTarget, setActionTarget] = useState(null);
 
   const resource = useCrudResource('/transactions', {
     transaction_type: 'income',
     account_purpose: 'couple_savings',
-    per_page: 100,
+    per_page: 30,
   });
+
+  const [visibleDatesCount, setVisibleDatesCount] = useState(3);
+
+  const uniqueDates = useMemo(() => {
+    const dates = new Set();
+    resource.items.forEach((item) => {
+      const date = item.transaction_date || 'Tanpa tanggal';
+      dates.add(date);
+    });
+    return Array.from(dates);
+  }, [resource.items]);
+
+  const renderedItems = useMemo(() => {
+    const allowedDates = new Set(uniqueDates.slice(0, visibleDatesCount));
+    return resource.items.filter((item) => {
+      const date = item.transaction_date || 'Tanpa tanggal';
+      return allowedDates.has(date);
+    });
+  }, [resource.items, uniqueDates, visibleDatesCount]);
+
+  // Reset visible dates count when params change
+  useEffect(() => {
+    setVisibleDatesCount(3);
+  }, [resource.params]);
+
+  // Automatically increment visible dates when new items are fetched and we had run out
+  const prevUniqueDatesLengthRef = useRef(0);
+  useEffect(() => {
+    const prevLength = prevUniqueDatesLengthRef.current;
+    const currentLength = uniqueDates.length;
+    if (currentLength > prevLength && prevLength > 0 && visibleDatesCount >= prevLength) {
+      setVisibleDatesCount((prev) => prev + 3);
+    }
+    prevUniqueDatesLengthRef.current = currentLength;
+  }, [uniqueDates.length, visibleDatesCount]);
+
+  // Handle scrolling to bottom to reveal more dates or load more pages
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight;
+      const clientHeight = document.documentElement.clientHeight;
+
+      if (scrollTop + clientHeight >= scrollHeight - 100) {
+        if (visibleDatesCount < uniqueDates.length) {
+          setVisibleDatesCount((prev) => prev + 3);
+        } else if (resource.meta && resource.meta.current_page < resource.meta.last_page) {
+          resource.loadNextPage();
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [visibleDatesCount, uniqueDates.length, resource]);
 
   const loadAccounts = async () => {
     setAccountsLoading(true);
@@ -320,83 +459,59 @@ export default function CoupleSavingsPage() {
             <div>
               <p className="text-sm font-medium text-text-muted">Total saldo bersama</p>
               <p className="mt-1 text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(totalBalance)}</p>
-              <p className="mt-1 text-sm text-text-muted">Sumber: saldo seluruh rekening Tabungan berdua yang aktif.</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-4 p-5 md:p-6">
-            <div className="rounded-2xl bg-success-base/10 p-3 text-success-base"><UserCircle size={24} /></div>
-            <div>
-              <p className="text-sm font-medium text-text-muted">Penyetor saat ini</p>
-              <p className="mt-1 text-base font-semibold text-text-title">{user?.name || 'Mode pribadi'}</p>
-              <p className="mt-1 text-sm text-text-muted">{currentSource}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-4 p-5 md:p-6">
-            <div className="rounded-2xl bg-warning-base/10 p-3 text-warning-base"><Users size={24} /></div>
-            <div>
-              <p className="text-sm font-medium text-text-muted">Kontributor tercatat</p>
-              <p className="mt-1 text-3xl font-semibold tracking-tight text-text-title">{Object.keys(contributorTotals).length}</p>
-              <p className="mt-1 text-sm text-text-muted">Sumber: pengaturan pasangan dan histori transaksi.</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {contributors.length > 0 && (
-        <Card className="overflow-visible">
-          <CardHeader>
-            <CardTitle>Ringkasan Kontribusi</CardTitle>
-            <CardDescription>Diurutkan dari total setoran terbesar berdasarkan user penyetor yang tercatat otomatis.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 xl:grid-cols-2">
-            {contributors.map((item, index) => (
-              <div key={item.source} className="rounded-[24px] border border-border-subtle bg-surface-100/80 p-5 shadow-sm shadow-card-soft">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="rounded-2xl bg-primary-500/10 p-2.5 text-primary-600">
-                      {index === 0 ? <HeartHandshake size={20} /> : <Users size={20} />}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-text-title">{item.source} - {item.name}</p>
-                      <p className="truncate text-xs text-text-muted">{item.email}</p>
-                    </div>
-                  </div>
-                  <StatusBadge value="active">Penyetor</StatusBadge>
-                </div>
-                <p className="mt-4 text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(item.total)}</p>
-                <p className="mt-1 text-sm text-text-muted">Sumber: total transaksi milik penyetor ini.</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
+
 
       {accountsLoading ? (
         <LoadingSkeleton rows={2} />
       ) : accounts.length === 0 ? (
         <EmptyState title="Belum ada rekening Tabungan berdua" description="Buat rekening baru di menu Rekening, lalu pilih klasifikasi uang Tabungan berdua agar saldo bisa ditampilkan di halaman ini." />
       ) : (
-        <Card className="overflow-visible">
-          <CardHeader>
-            <CardTitle>Riwayat Setoran</CardTitle>
-            <CardDescription>Data kontribusi diambil dari transaksi pemasukan yang masuk ke rekening Tabungan berdua.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {resource.isLoading ? (
-              <LoadingSkeleton rows={5} />
-            ) : resource.error ? (
-              <ErrorState message={resource.error} onRetry={resource.load} />
-            ) : resource.items.length === 0 ? (
-              <EmptyState title="Belum ada setoran" description="Catat setoran pertama dari salah satu pasangan." action={<Button onClick={openCreate}>Tambah setoran</Button>} />
-            ) : (
-              <DataTable columns={columns} rows={resource.items} onEdit={openEdit} onDelete={openDelete} />
-            )}
-          </CardContent>
-        </Card>
+        <>
+          <div className="md:hidden space-y-4 mt-2">
+            <div className="px-1">
+            </div>
+            <div>
+              {resource.isLoading ? (
+                <LoadingSkeleton rows={5} />
+              ) : resource.error ? (
+                <ErrorState message={resource.error} onRetry={resource.load} />
+              ) : resource.items.length === 0 ? (
+                <EmptyState title="Belum ada setoran" description="Catat setoran pertama dari salah satu pasangan." action={<Button onClick={openCreate}>Tambah setoran</Button>} />
+              ) : (
+                <MobileSavingsList rows={renderedItems} partnerBySource={partnerBySource} onAction={setActionTarget} />
+              )}
+              {resource.isIncrementing && (
+                <div className="mt-4 flex justify-center py-2">
+                  <span className="h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="hidden md:block">
+            <Card className="overflow-visible">
+              <CardHeader>
+                <CardTitle>Riwayat Setoran</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {resource.isLoading ? (
+                  <LoadingSkeleton rows={5} />
+                ) : resource.error ? (
+                  <ErrorState message={resource.error} onRetry={resource.load} />
+                ) : resource.items.length === 0 ? (
+                  <EmptyState title="Belum ada setoran" description="Catat setoran pertama dari salah satu pasangan." action={<Button onClick={openCreate}>Tambah setoran</Button>} />
+                ) : (
+                  <DataTable columns={columns} rows={resource.items} onEdit={openEdit} onDelete={openDelete} />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </>
       )}
 
       <Modal
@@ -443,6 +558,46 @@ export default function CoupleSavingsPage() {
             />
           </Suspense>
         )}
+      </Modal>
+
+      <Modal
+        open={Boolean(actionTarget)}
+        onClose={() => setActionTarget(null)}
+        title="Pilih Tindakan"
+        description={actionTarget ? (actionTarget.description || 'Setoran Tabungan Berdua') : undefined}
+      >
+        <div className="grid gap-3 py-2">
+          {actionTarget && canManageSetoran(actionTarget) ? (
+            <>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  const target = actionTarget;
+                  setActionTarget(null);
+                  openEdit(target);
+                }}
+              >
+                <Pencil size={18} className="mr-2" />
+                Edit Setoran
+              </Button>
+              <Button
+                variant="danger"
+                onClick={() => {
+                  const target = actionTarget;
+                  setActionTarget(null);
+                  openDelete(target);
+                }}
+              >
+                <Trash2 size={18} className="mr-2" />
+                Hapus Setoran
+              </Button>
+            </>
+          ) : (
+            <p className="text-center text-sm text-text-muted py-4">
+              Setoran pasangan lain hanya bisa dilihat, tidak bisa diedit atau dihapus.
+            </p>
+          )}
+        </div>
       </Modal>
 
       <ConfirmDialog
