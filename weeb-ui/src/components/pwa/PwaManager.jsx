@@ -20,7 +20,6 @@ export default function PwaManager() {
     let updateIntervalId;
 
     updateServiceWorkerRef.current = registerSW({
-      immediate: true,
       onRegisteredSW(_swUrl, registration) {
         if (!registration) return;
 

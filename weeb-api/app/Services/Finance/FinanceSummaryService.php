@@ -48,7 +48,7 @@ class FinanceSummaryService
         $accountBreakdown = $this->accountBreakdown($user);
         $focusedBalances = $this->focusedAccountBalances($user);
         $expenseByNeedType = $this->expenseByNeedType($user, $month, $periodEnd);
-        $planner = $this->budgetPlannerService->generate($user, $income > 0 ? $income : null);
+        $planner = $this->budgetPlannerService->generate($user);
         $hasAnyData = $balance > 0 || $income > 0 || $expense > 0 || $savingBalance > 0 || $emergencyFundBalance > 0;
 
         return [
