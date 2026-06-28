@@ -34,8 +34,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
-Route::post('/auth/login', [PasswordAuthController::class, 'login'])->name('auth.login');
-Route::post('/auth/register', [PasswordAuthController::class, 'register'])->name('auth.register');
+Route::post('/auth/google/exchange', [GoogleAuthController::class, 'exchange'])->middleware('throttle:20,1')->name('auth.google.exchange');
+Route::post('/auth/login', [PasswordAuthController::class, 'login'])->middleware('throttle:10,1')->name('auth.login');
+Route::post('/auth/register', [PasswordAuthController::class, 'register'])->middleware('throttle:5,1')->name('auth.register');
 
 Route::middleware(UseDefaultUser::class)->group(function () {
     Route::get('/auth/me', [GoogleAuthController::class, 'me'])->name('auth.me');

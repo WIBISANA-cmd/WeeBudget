@@ -22,7 +22,7 @@ class BillController extends Controller
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->orderBy('next_due_date');
 
-        $paginator = $query->paginate($request->integer('per_page', 20));
+        $paginator = $query->paginate($this->perPage($request, 20));
 
         return $this->paginated(BillResource::collection($paginator), $paginator, 'Bills loaded.');
     }

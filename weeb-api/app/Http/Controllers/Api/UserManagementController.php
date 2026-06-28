@@ -29,7 +29,7 @@ class UserManagementController extends Controller
                 ->orWhere('email', 'like', '%'.$request->search.'%')))
             ->latest('id');
 
-        $paginator = $query->paginate($request->integer('per_page', 20));
+        $paginator = $query->paginate($this->perPage($request, 20));
 
         return $this->paginated(UserResource::collection($paginator), $paginator, 'Users loaded.');
     }

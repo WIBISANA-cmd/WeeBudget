@@ -21,7 +21,7 @@ class MonthlyReportController extends Controller
             ->where('user_id', $request->user()->id)
             ->latest('month');
 
-        $paginator = $query->paginate($request->integer('per_page', 12));
+        $paginator = $query->paginate($this->perPage($request, 12));
 
         return $this->paginated(MonthlyReportResource::collection($paginator), $paginator, 'Monthly reports loaded.');
     }

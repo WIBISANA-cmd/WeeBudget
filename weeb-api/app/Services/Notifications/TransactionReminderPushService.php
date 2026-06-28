@@ -155,8 +155,8 @@ class TransactionReminderPushService
 
     protected function vapidKeys(): array
     {
-        $publicKey = env('WEEB_VAPID_PUBLIC_KEY');
-        $privateKey = env('WEEB_VAPID_PRIVATE_KEY');
+        $publicKey = config('weeb.vapid_public_key');
+        $privateKey = config('weeb.vapid_private_key');
 
         if ($publicKey && $privateKey) {
             return compact('publicKey', 'privateKey');

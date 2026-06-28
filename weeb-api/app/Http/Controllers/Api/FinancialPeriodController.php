@@ -27,7 +27,7 @@ class FinancialPeriodController extends Controller
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->latest('start_date');
 
-        $paginator = $query->paginate($request->integer('per_page', 20));
+        $paginator = $query->paginate($this->perPage($request, 20));
 
         return $this->paginated(FinancialPeriodResource::collection($paginator), $paginator, 'Financial periods loaded.');
     }

@@ -32,7 +32,7 @@ class UseDefaultUser
             }
         }
 
-        if (! filter_var(env('WEEB_ALLOW_GUEST_USER', false), FILTER_VALIDATE_BOOL)) {
+        if (! config('weeb.allow_guest_user', false)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Login required.',
@@ -40,12 +40,12 @@ class UseDefaultUser
             ], 401);
         }
 
-        $email = config('app.default_user_email', env('WEEB_DEFAULT_USER_EMAIL', 'local@weeb.id'));
+        $email = config('weeb.default_user_email', 'local@weeb.id');
 
         $user = User::query()->firstOrCreate(
             ['email' => $email],
             [
-                'name' => env('WEEB_DEFAULT_USER_NAME', 'Teman WeeB'),
+                'name' => config('weeb.default_user_name', 'Teman WeeB'),
                 'password' => Hash::make(Str::password(32)),
             ],
         );

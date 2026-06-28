@@ -40,7 +40,7 @@ class AllTransactionController extends Controller
             ->latest('transaction_date')
             ->latest('id');
 
-        $paginator = $query->paginate($request->integer('per_page', 20));
+        $paginator = $query->paginate($this->perPage($request, 20));
 
         return $this->paginated(TransactionResource::collection($paginator), $paginator, 'Transactions loaded.');
     }

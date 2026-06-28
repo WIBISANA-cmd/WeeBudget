@@ -54,6 +54,10 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'frontend_url' => env('FRONTEND_URL', 'http://127.0.0.1:5173'),
+
+    'default_user_email' => env('WEEB_DEFAULT_USER_EMAIL', 'local@weeb.id'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

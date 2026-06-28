@@ -38,4 +38,9 @@ trait RespondsWithApi
     {
         return $this->success(null, $message);
     }
+
+    protected function perPage(\Illuminate\Http\Request $request, int $default = 20, int $max = 100): int
+    {
+        return max(1, min($request->integer('per_page', $default), $max));
+    }
 }

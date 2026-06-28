@@ -10,6 +10,7 @@ use App\Models\UserProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
@@ -49,9 +50,33 @@ class GoogleAuthController extends Controller
         UserProfile::query()->firstOrCreate(['user_id' => $user->id]);
 
         $token = $user->createToken('google-auth', ['*'], null)->plainTextToken;
-        $frontendUrl = rtrim(env('FRONTEND_URL', 'http://127.0.0.1:5173'), '/');
 
-        return redirect()->away("{$frontendUrl}/auth/google/callback?token=".urlencode($token));
+        // Store token under a short-lived, single-use code to avoid
+        // exposing the real token in URLs (browser history, server logs, Referer).
+        $code = Str::random(64);
+        Cache::put("google_auth_code:{$code}", $token, now()->addSeconds(60));
+
+        $frontendUrl = rtrim(config('app.frontend_url', 'http://127.0.0.1:5173'), '/');
+
+        return redirect()->away("{$frontendUrl}/auth/google/callback?code=".urlencode($code));
+    }
+
+    public function exchange(Request $request): JsonResponse
+    {
+        $request->validate(['code' => ['required', 'string', 'size:64']]);
+
+        $cacheKey = "google_auth_code:{$request->input('code')}";
+        $token = Cache::pull($cacheKey);
+
+        if (! $token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired code.',
+                'data' => null,
+            ], 422);
+        }
+
+        return $this->success(['token' => $token], 'Token exchanged.');
     }
 
     public function me(Request $request): JsonResponse

@@ -24,10 +24,12 @@ class GoldSavingsMarketController extends Controller
 
             return $this->success($marketData, 'Gold savings market loaded.');
         } catch (Throwable $exception) {
+            report($exception);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Gold savings market unavailable.',
-                'error' => $exception->getMessage(),
+                'data' => null,
             ], 502);
         }
     }

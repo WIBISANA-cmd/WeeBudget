@@ -24,7 +24,7 @@ class BudgetController extends Controller
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->latest('month');
 
-        $paginator = $query->paginate($request->integer('per_page', 12));
+        $paginator = $query->paginate($this->perPage($request, 12));
 
         return $this->paginated(BudgetResource::collection($paginator), $paginator, 'Budgets loaded.');
     }

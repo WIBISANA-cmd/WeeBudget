@@ -31,7 +31,7 @@ class CategoryController extends Controller
             ->orderBy('sort_order')
             ->orderBy('name');
 
-        $paginator = $query->paginate($request->integer('per_page', 20));
+        $paginator = $query->paginate($this->perPage($request, 20));
 
         return $this->paginated(CategoryResource::collection($paginator), $paginator, 'Categories loaded.');
     }

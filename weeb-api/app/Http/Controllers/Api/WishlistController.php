@@ -23,7 +23,7 @@ class WishlistController extends Controller
             ->when($request->filled('need_type'), fn ($q) => $q->where('need_type', $request->need_type))
             ->latest();
 
-        $paginator = $query->paginate($request->integer('per_page', 20));
+        $paginator = $query->paginate($this->perPage($request, 20));
 
         return $this->paginated(WishlistResource::collection($paginator), $paginator, 'Wishlist loaded.');
     }

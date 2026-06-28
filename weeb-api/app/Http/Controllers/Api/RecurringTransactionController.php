@@ -23,7 +23,7 @@ class RecurringTransactionController extends Controller
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->orderBy('next_run_date');
 
-        $paginator = $query->paginate($request->integer('per_page', 20));
+        $paginator = $query->paginate($this->perPage($request, 20));
 
         return $this->paginated(RecurringTransactionResource::collection($paginator), $paginator, 'Recurring transactions loaded.');
     }

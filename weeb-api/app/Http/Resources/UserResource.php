@@ -17,7 +17,7 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'role' => $this->role ?? 'user',
             'status' => $this->status ?? 'active',
-            'google_id' => $this->google_id,
+            'has_google' => ! empty($this->google_id),
             'avatar_url' => $this->avatar_url,
             'email_verified_at' => $this->email_verified_at?->toISOString(),
             'last_login_at' => $this->last_login_at?->toISOString(),
