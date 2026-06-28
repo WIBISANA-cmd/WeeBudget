@@ -5,33 +5,8 @@ import Button from '../ui/Button';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { ensureTransactionReminderSubscription } from '../../lib/pushNotifications';
 
-const UPDATE_RELOAD_GUARD_KEY = 'weeb_pwa_update_reloaded_at';
-const UPDATE_RELOAD_GUARD_MS = 15_000;
-
 function isStandaloneMode() {
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-}
-
-function hasRecentUpdateReload() {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  const raw = window.sessionStorage.getItem(UPDATE_RELOAD_GUARD_KEY);
-  if (!raw) {
-    return false;
-  }
-
-  const lastReloadAt = Number(raw);
-  return Number.isFinite(lastReloadAt) && Date.now() - lastReloadAt < UPDATE_RELOAD_GUARD_MS;
-}
-
-function markUpdateReload() {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  window.sessionStorage.setItem(UPDATE_RELOAD_GUARD_KEY, String(Date.now()));
 }
 
 export default function PwaManager() {
@@ -40,88 +15,27 @@ export default function PwaManager() {
   const [isInstalled, setInstalled] = useState(() => isStandaloneMode());
   const [showInstallCard, setShowInstallCard] = useState(false);
   const updateServiceWorkerRef = useRef(null);
-  const hasReloadedForUpdateRef = useRef(hasRecentUpdateReload());
 
   useEffect(() => {
     let updateIntervalId;
-    let unregisterVisibilitySync = null;
 
     updateServiceWorkerRef.current = registerSW({
       immediate: true,
-      onNeedRefresh() {
-        if (hasReloadedForUpdateRef.current) return;
-        updateServiceWorkerRef.current?.(true);
-      },
       onRegisteredSW(_swUrl, registration) {
         if (!registration) return;
-
-        const activateWaitingWorker = async () => {
-          const latestRegistration = await navigator.serviceWorker?.getRegistration();
-
-          if (latestRegistration?.waiting) {
-            if (hasReloadedForUpdateRef.current) return true;
-            updateServiceWorkerRef.current?.(true);
-            return true;
-          }
-
-          return false;
-        };
-
-        const syncRegistration = async () => {
-          if (navigator.onLine) {
-            await registration.update();
-          }
-
-          try {
-            await activateWaitingWorker();
-          } catch {
-            // Best-effort check only.
-          }
-        };
 
         updateIntervalId = window.setInterval(() => {
           if (document.visibilityState === 'visible' && navigator.onLine) {
             registration.update();
           }
         }, 15 * 60 * 1000);
-
-        const handleVisible = () => {
-          if (document.visibilityState === 'visible') {
-            syncRegistration();
-          }
-        };
-
-        const handleFocus = () => {
-          syncRegistration();
-        };
-
-        document.addEventListener('visibilitychange', handleVisible);
-        window.addEventListener('focus', handleFocus);
-
-        unregisterVisibilitySync = () => {
-          document.removeEventListener('visibilitychange', handleVisible);
-          window.removeEventListener('focus', handleFocus);
-        };
-
-        queueMicrotask(syncRegistration);
       },
     });
-
-    const handleControllerChange = () => {
-      if (hasReloadedForUpdateRef.current) return;
-      hasReloadedForUpdateRef.current = true;
-      markUpdateReload();
-      window.location.reload();
-    };
-
-    navigator.serviceWorker?.addEventListener('controllerchange', handleControllerChange);
 
     return () => {
       if (updateIntervalId) {
         window.clearInterval(updateIntervalId);
       }
-      unregisterVisibilitySync?.();
-      navigator.serviceWorker?.removeEventListener('controllerchange', handleControllerChange);
     };
   }, []);
 
