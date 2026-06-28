@@ -767,6 +767,8 @@ export default function ResourceForm({
 
     return (
       <form className="flex h-full flex-col justify-between gap-6" onSubmit={handleSubmit(onSubmit)}>
+        <input type="hidden" {...register('transaction_type')} />
+        <input type="hidden" {...register('category_id')} />
         <div className="flex flex-col gap-6 pb-28">
           {/* 1. Transaction Type Tabs */}
           {typeField && (
