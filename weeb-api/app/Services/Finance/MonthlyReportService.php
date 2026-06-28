@@ -18,9 +18,21 @@ class MonthlyReportService
         $start = $month->startOfMonth();
         $end = $start->addMonthNoOverflow();
 
-        $income = (float) Transaction::query()->where('user_id', $user->id)->where('transaction_type', 'income')->whereBetween('transaction_date', [$start, $end->subDay()])->sum('amount');
-        $expense = (float) Transaction::query()->where('user_id', $user->id)->where('transaction_type', 'expense')->whereBetween('transaction_date', [$start, $end->subDay()])->sum('amount');
-        $saving = (float) Transaction::query()->where('user_id', $user->id)->where('transaction_type', 'expense')->where('need_type', 'saving')->whereBetween('transaction_date', [$start, $end->subDay()])->sum('amount');
+        $baseQuery = Transaction::query()
+            ->where('user_id', $user->id)
+            ->whereBetween('transaction_date', [$start, $end->subDay()])
+            ->where(fn ($query) => $query->whereNull('source')->orWhere('source', '!=', 'account_allocation'));
+
+        $income = (float) (clone $baseQuery)
+            ->where('transaction_type', 'income')
+            ->sum('amount');
+        $expense = (float) (clone $baseQuery)
+            ->where('transaction_type', 'expense')
+            ->sum('amount');
+        $saving = (float) (clone $baseQuery)
+            ->where('transaction_type', 'expense')
+            ->where('need_type', 'saving')
+            ->sum('amount');
         $health = $this->healthScoreService->calculate($user, $start);
 
         return MonthlyReport::query()->updateOrCreate(

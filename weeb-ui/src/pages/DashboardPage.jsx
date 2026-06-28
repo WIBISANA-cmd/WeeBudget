@@ -136,34 +136,86 @@ export default function DashboardPage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
-        {focusedBalances.map((item, index) => (
-          <Card
-            key={item.key}
-            className={cn(
-              'dashboard-card-up overflow-hidden',
-              item.key === 'need'
-                ? 'border-primary-500/25 bg-gradient-to-br from-primary-500/10 via-transparent to-transparent'
-                : 'border-warning-base/25 bg-gradient-to-br from-warning-base/10 via-transparent to-transparent'
-            )}
-            style={{ animationDelay: `${index * 70}ms` }}
-          >
-            <CardContent className="flex items-start justify-between gap-4 p-5 md:p-6">
-              <div>
-                <p className="text-sm font-medium text-text-muted">{item.label}</p>
-                <p className="mt-3 text-3xl font-bold tracking-tight text-text-title md:text-4xl">
-                  {formatCurrency(item.total)}
-                </p>
-                <p className="mt-2 text-sm text-text-muted">{item.account_count} rekening terhubung</p>
-              </div>
-              <span className={cn(
-                'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl',
-                item.key === 'need' ? 'bg-primary-500/12 text-primary-600' : 'bg-warning-base/12 text-warning-base'
-              )}>
-                {item.key === 'need' ? <Wallet size={24} /> : <Sparkles size={24} />}
-              </span>
-            </CardContent>
-          </Card>
-        ))}
+        {focusedBalances.map((item, index) => {
+          const isNeed = item.key === 'need';
+          return (
+            <Card
+              key={item.key}
+              className={cn(
+                'dashboard-card-up overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:shadow-md border',
+                isNeed
+                  ? 'border-indigo-500/20 bg-gradient-to-br from-indigo-500/15 via-surface-panel/40 to-surface-panel/90 shadow-sm shadow-indigo-500/5 dark:border-indigo-500/30 dark:from-indigo-950/40 dark:via-surface-panel dark:to-surface-panel'
+                  : 'border-amber-500/20 bg-gradient-to-br from-amber-500/15 via-surface-panel/40 to-surface-panel/90 shadow-sm shadow-amber-500/5 dark:border-amber-500/30 dark:from-amber-950/40 dark:via-surface-panel dark:to-surface-panel'
+              )}
+              style={{ animationDelay: `${index * 70}ms` }}
+            >
+              <CardContent className="flex items-center justify-between gap-4 p-5 md:p-6">
+                <div className="space-y-1.5">
+                  <span className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold',
+                    isNeed
+                      ? 'bg-indigo-500/12 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400'
+                      : 'bg-amber-500/12 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400'
+                  )}>
+                    <span className={cn('h-1.5 w-1.5 rounded-full', isNeed ? 'bg-indigo-500' : 'bg-amber-500')} />
+                    {item.label}
+                  </span>
+                  <p className="text-3xl font-bold tracking-tight text-text-title md:text-4xl">
+                    {formatCurrency(item.total)}
+                  </p>
+                  <p className="text-xs text-text-muted font-medium">
+                    {item.account_count} rekening terhubung
+                  </p>
+                </div>
+                <div className="shrink-0 transition-transform duration-300 hover:scale-110">
+                  {isNeed ? (
+                    <svg className="w-14 h-14 drop-shadow-md" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <linearGradient id="walletBody" x1="4" y1="10" x2="44" y2="38" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#6366F1" />
+                          <stop offset="100%" stopColor="#4338CA" />
+                        </linearGradient>
+                        <linearGradient id="walletFlap" x1="22" y1="16" x2="44" y2="32" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#818CF8" />
+                          <stop offset="100%" stopColor="#4F46E5" />
+                        </linearGradient>
+                      </defs>
+                      {/* Main Wallet Body */}
+                      <rect x="4" y="10" width="40" height="28" rx="6" fill="url(#walletBody)" />
+                      {/* Cash peeking out */}
+                      <path d="M12 10V7.5C12 6.67157 12.6716 6 13.5 6H34.5C35.3284 6 36 6.67157 36 7.5V10" stroke="#C7D2FE" strokeWidth="2" strokeLinecap="round" />
+                      <path d="M16 10V8.5C16 8.22386 16.2239 8 16.5 8H31.5C31.7761 8 32 8.22386 32 8.5V10" stroke="#EEF2FF" strokeWidth="1.5" strokeLinecap="round" />
+                      {/* Leather Flap */}
+                      <path d="M26 16H40C42.2091 16 44 17.7909 44 20V28C44 30.2091 42.2091 32 40 32H26C23.7909 32 22 30.2091 22 28V20C22 17.7909 23.7909 16 26 16Z" fill="url(#walletFlap)" />
+                      {/* Gold Badge */}
+                      <circle cx="34" cy="24" r="3.5" fill="#F59E0B" stroke="#D97706" strokeWidth="1" />
+                      <circle cx="34" cy="24" r="1" fill="#FFF" />
+                    </svg>
+                  ) : (
+                    <svg className="w-14 h-14 drop-shadow-md" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <linearGradient id="bagBody" x1="6" y1="14" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#F59E0B" />
+                          <stop offset="100%" stopColor="#D97706" />
+                        </linearGradient>
+                        <linearGradient id="bagHandle" x1="16" y1="4" x2="32" y2="14" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#FEF3C7" />
+                          <stop offset="100%" stopColor="#FBBF24" />
+                        </linearGradient>
+                      </defs>
+                      {/* Bag Handles */}
+                      <path d="M16 14V10C16 5.58172 19.5817 2 24 2C28.4183 2 32 5.58172 32 10V14" stroke="url(#bagHandle)" strokeWidth="3" strokeLinecap="round" />
+                      {/* Main Bag Body */}
+                      <path d="M6 14L8.5 41C8.7 42.7 10.1 44 11.8 44H36.2C37.9 44 39.3 42.7 39.5 41L42 14H6Z" fill="url(#bagBody)" />
+                      {/* Decorative Ribbon/Star */}
+                      <path d="M24 22L25.8 26.5L30.5 27L27 30.2L28.2 35L24 32.5L19.8 35L21 30.2L17.5 27L22.2 26.5L24 22Z" fill="#FFF" fillOpacity="0.9" />
+                    </svg>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">

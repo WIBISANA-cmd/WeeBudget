@@ -18,6 +18,7 @@ class ExpenseStatisticService
             ->where('transactions.user_id', $user->id)
             ->where('transactions.transaction_type', 'expense')
             ->whereBetween('transaction_date', [$start, $end->subDay()])
+            ->where(fn ($query) => $query->whereNull('transactions.source')->orWhere('transactions.source', '!=', 'account_allocation'))
             ->leftJoin('transaction_categories', 'transactions.category_id', '=', 'transaction_categories.id')
             ->groupBy('transactions.category_id', 'transaction_categories.name')
             ->orderByDesc('total')
