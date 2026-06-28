@@ -11,7 +11,6 @@ import {
   Sun,
   Sunrise,
   Sunset,
-  UserCircle,
   Settings,
   CalendarRange,
   PieChart,
@@ -22,6 +21,7 @@ import { cn } from '../../lib/utils';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { useTimeOfDay } from '../../hooks/useTimeOfDay';
 import ThemeToggle from '../ui/ThemeToggle';
+import UserAvatar from '../ui/UserAvatar';
 
 /* ------------------------------------------------------------------ */
 /*  Sky image preloader – avoids a blank flash on first period change  */
@@ -196,15 +196,15 @@ export default function Navbar({ toggleSidebar }) {
               aria-haspopup="menu"
               aria-expanded={isProfileOpen}
             >
-              {user?.avatar_url ? (
-                <img
-                  src={user.avatar_url}
-                  alt={user.name}
-                  className="h-10 w-10 rounded-2xl border border-white/30 object-cover"
-                />
-              ) : (
-                <UserCircle className="navbar-avatar-fallback" size={38} strokeWidth={1.5} />
-              )}
+              <UserAvatar
+                src={user?.avatar_url}
+                alt={user?.name || 'User avatar'}
+                size={40}
+                priority
+                imageClassName="rounded-2xl border border-white/30"
+                fallbackClassName="bg-transparent"
+                className="h-10 w-10"
+              />
               <ChevronDown
                 size={16}
                 className={cn(

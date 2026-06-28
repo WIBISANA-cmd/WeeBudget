@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, ChevronDown, LogOut, Menu, UserCircle, Settings, CalendarRange, PieChart, Users } from 'lucide-react';
+import { Bell, ChevronDown, LogOut, Menu, Settings, CalendarRange, PieChart, Users } from 'lucide-react';
 import { apiPost } from '../../api/http';
 import { cn } from '../../lib/utils';
 import ThemeToggle from '../../components/ui/ThemeToggle';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
+import UserAvatar from '../../components/ui/UserAvatar';
 
 export default function Header({ toggleSidebar }) {
   const navigate = useNavigate();
@@ -87,11 +88,14 @@ export default function Header({ toggleSidebar }) {
               aria-haspopup="menu"
               aria-expanded={isProfileOpen}
             >
-              {user?.avatar_url ? (
-                <img src={user.avatar_url} alt={user.name} width="40" height="40" className="h-10 w-10 rounded-2xl border border-border-subtle object-cover" />
-              ) : (
-                <UserCircle className="text-primary-500" size={38} strokeWidth={1.5} />
-              )}
+              <UserAvatar
+                src={user?.avatar_url}
+                alt={user?.name || 'User avatar'}
+                size={40}
+                priority
+                imageClassName="rounded-2xl border border-border-subtle"
+                className="h-10 w-10"
+              />
               <ChevronDown size={16} className={cn('hidden text-text-muted transition-transform md:block', isProfileOpen && 'rotate-180')} />
             </button>
 
