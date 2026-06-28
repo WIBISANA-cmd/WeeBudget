@@ -9,6 +9,42 @@ function isStandaloneMode() {
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 }
 
+async function detectNewBuild() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const currentEntry = Array.from(document.scripts)
+    .map((script) => script.src)
+    .find((src) => src && /\/assets\/index-[^/]+\.js/.test(src));
+
+  if (!currentEntry) {
+    return false;
+  }
+
+  const response = await fetch(`/index.html?ts=${Date.now()}`, {
+    cache: 'no-store',
+    headers: {
+      'cache-control': 'no-cache',
+    },
+  });
+
+  if (!response.ok) {
+    return false;
+  }
+
+  const html = await response.text();
+  const match = html.match(/src="(\/assets\/index-[^"]+\.js)"/);
+
+  if (!match?.[1]) {
+    return false;
+  }
+
+  const latestEntry = new URL(match[1], window.location.origin).href;
+
+  return latestEntry !== currentEntry;
+}
+
 export default function PwaManager() {
   const { user } = useCurrentUser();
   const [installPrompt, setInstallPrompt] = useState(null);
@@ -29,13 +65,35 @@ export default function PwaManager() {
       onRegisteredSW(_swUrl, registration) {
         if (!registration) return;
 
-        if (registration.waiting) {
-          updateServiceWorkerRef.current?.(true);
-        }
+        const activateWaitingWorker = async () => {
+          const latestRegistration = await navigator.serviceWorker?.getRegistration();
 
-        const syncRegistration = () => {
+          if (latestRegistration?.waiting) {
+            updateServiceWorkerRef.current?.(true);
+            return true;
+          }
+
+          return false;
+        };
+
+        const syncRegistration = async () => {
           if (navigator.onLine) {
-            registration.update();
+            await registration.update();
+          }
+
+          try {
+            const hasWaitingWorker = await activateWaitingWorker();
+            if (hasWaitingWorker) {
+              return;
+            }
+
+            const hasNewBuild = await detectNewBuild();
+            if (hasNewBuild && !hasReloadedForUpdateRef.current) {
+              hasReloadedForUpdateRef.current = true;
+              window.location.reload();
+            }
+          } catch {
+            // Best-effort check only.
           }
         };
 
@@ -62,6 +120,8 @@ export default function PwaManager() {
           document.removeEventListener('visibilitychange', handleVisible);
           window.removeEventListener('focus', handleFocus);
         };
+
+        queueMicrotask(syncRegistration);
       },
     });
 
