@@ -12,7 +12,7 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.js',
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       injectRegister: false,
       manifestFilename: 'site.webmanifest',
       includeAssets: ['logo-pwa.png', 'pwa/icon.svg', 'pwa/icon-source.png', 'pwa/icon-192.png', 'pwa/icon-512.png', 'pwa/maskable-512.png', 'pwa/apple-touch-icon.png'],

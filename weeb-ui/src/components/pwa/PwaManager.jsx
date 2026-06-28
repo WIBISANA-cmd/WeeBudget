@@ -15,9 +15,11 @@ export default function PwaManager() {
   const [isInstalled, setInstalled] = useState(() => isStandaloneMode());
   const [showInstallCard, setShowInstallCard] = useState(false);
   const updateServiceWorkerRef = useRef(null);
+  const hasReloadedForUpdateRef = useRef(false);
 
   useEffect(() => {
     let updateIntervalId;
+    let unregisterVisibilitySync = null;
 
     updateServiceWorkerRef.current = registerSW({
       immediate: true,
@@ -27,18 +29,56 @@ export default function PwaManager() {
       onRegisteredSW(_swUrl, registration) {
         if (!registration) return;
 
+        if (registration.waiting) {
+          updateServiceWorkerRef.current?.(true);
+        }
+
+        const syncRegistration = () => {
+          if (navigator.onLine) {
+            registration.update();
+          }
+        };
+
         updateIntervalId = window.setInterval(() => {
           if (document.visibilityState === 'visible' && navigator.onLine) {
             registration.update();
           }
         }, 15 * 60 * 1000);
+
+        const handleVisible = () => {
+          if (document.visibilityState === 'visible') {
+            syncRegistration();
+          }
+        };
+
+        const handleFocus = () => {
+          syncRegistration();
+        };
+
+        document.addEventListener('visibilitychange', handleVisible);
+        window.addEventListener('focus', handleFocus);
+
+        unregisterVisibilitySync = () => {
+          document.removeEventListener('visibilitychange', handleVisible);
+          window.removeEventListener('focus', handleFocus);
+        };
       },
     });
+
+    const handleControllerChange = () => {
+      if (hasReloadedForUpdateRef.current) return;
+      hasReloadedForUpdateRef.current = true;
+      window.location.reload();
+    };
+
+    navigator.serviceWorker?.addEventListener('controllerchange', handleControllerChange);
 
     return () => {
       if (updateIntervalId) {
         window.clearInterval(updateIntervalId);
       }
+      unregisterVisibilitySync?.();
+      navigator.serviceWorker?.removeEventListener('controllerchange', handleControllerChange);
     };
   }, []);
 
