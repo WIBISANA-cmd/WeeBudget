@@ -78,6 +78,15 @@ class AccountBalanceService
             if ($counterpart !== null) {
                 $this->reverseEffect($counterpart);
                 $counterpart->delete();
+            } else {
+                $counterpartAccountId = data_get($model->metadata, 'counterpart_account_id');
+                if ($counterpartAccountId && data_get($model->metadata, 'direction') === 'out') {
+                    $this->adjustAccountBalance(
+                        accountId: (int) $counterpartAccountId,
+                        userId: $userId,
+                        amount: -1 * $model->amount,
+                    );
+                }
             }
         });
     }
@@ -118,43 +127,19 @@ class AccountBalanceService
                 ],
             ]);
 
-            $incoming = Transaction::query()->create([
-                'user_id' => $userId,
-                'account_id' => $destinationAccount->id,
-                'transaction_type' => 'income',
-                'amount' => $amount,
-                'need_type' => $this->allocationNeedType($destinationAccount),
-                'transaction_date' => $date,
-                'description' => sprintf('Alokasi dari %s', $sourceAccount->name),
-                'notes' => $notes,
-                'source' => $actorLabel,
-                'metadata' => [
-                    'direction' => 'in',
-                    'actor_label' => $actorLabel,
-                    'actor_user_id' => $userId,
-                    'counterpart_account_id' => $sourceAccount->id,
-                    'counterpart_account_name' => $sourceAccount->name,
-                ],
-            ]);
-
-            $outgoing->metadata = [
-                ...($outgoing->metadata ?? []),
-                'counterpart_transaction_id' => $incoming->id,
-            ];
-            $incoming->metadata = [
-                ...($incoming->metadata ?? []),
-                'counterpart_transaction_id' => $outgoing->id,
-            ];
-            $outgoing->save();
-            $incoming->save();
-
             $this->applyEffect($outgoing);
-            $this->applyEffect($incoming);
+
+            // Adjust destination account balance directly without creating an incoming transaction
+            $this->adjustAccountBalance(
+                accountId: $destinationAccount->id,
+                userId: $userId,
+                amount: $amount,
+            );
 
             return [
                 'source_account' => $sourceAccount->fresh(),
                 'destination_account' => $destinationAccount->fresh(),
-                'transactions' => [$outgoing, $incoming],
+                'transactions' => [$outgoing],
             ];
         });
     }
