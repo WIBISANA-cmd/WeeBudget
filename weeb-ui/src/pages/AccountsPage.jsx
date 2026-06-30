@@ -201,21 +201,32 @@ export default function AccountsPage() {
         {plannerPreview && (
           <Card className="mb-4 border-primary-500/25 bg-gradient-to-br from-primary-500/8 via-surface-panel to-surface-panel">
             <CardContent className="space-y-3">
-              <div>
-                <p className="text-sm text-text-muted">Acuan nominal dari Budget Planner</p>
-                <p className="mt-1 text-lg font-semibold text-text-title">
-                  Dana dasar {formatCurrency(plannerPreview.base_amount || 0)}
-                </p>
-                <p className="mt-1 text-xs text-text-muted">
-                  Planner ini dihitung dari nominal alokasi yang kamu input di form, bukan dari total seluruh saldo rekening.
-                </p>
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="text-sm text-text-muted">Acuan nominal dari Budget Planner</p>
+                  <p className="mt-1 text-lg font-semibold text-text-title">
+                    Dana dasar {formatCurrency(plannerPreview.base_amount || 0)}
+                  </p>
+                  <p className="mt-1 text-xs text-text-muted">
+                    Planner ini dihitung dari nominal alokasi yang kamu input di form, bukan dari total seluruh saldo rekening.
+                  </p>
+                </div>
+                <div className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                  plannerPreview.has_custom_allocations
+                    ? 'bg-success-base/10 text-success-base'
+                    : 'bg-info-base/10 text-info-base'
+                }`}>
+                  {plannerPreview.has_custom_allocations ? 'Menggunakan custom planner tersimpan' : 'Menggunakan planner rekomendasi default'}
+                </div>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 {(plannerPreview.allocations || []).map((item) => (
                   <div key={item.key} className="rounded-2xl bg-surface-panel p-4 shadow-sm shadow-card-soft">
                     <p className="text-sm text-text-muted">{item.label}</p>
                     <p className="mt-1 text-lg font-semibold text-primary-600">{formatCurrency(item.amount)}</p>
-                    <p className="mt-1 text-xs text-text-muted">{item.percent}% dari dana dasar</p>
+                    <p className="mt-1 text-xs text-text-muted">
+                      {plannerPreview.has_custom_allocations ? 'Custom tersimpan' : 'Rekomendasi default'}: {item.percent}% dari dana dasar
+                    </p>
                   </div>
                 ))}
               </div>
