@@ -4,7 +4,6 @@ import {
 } from 'recharts';
 import {
   AlertTriangle, RefreshCw, Sparkles,
-  Wallet,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { useDashboard } from '../hooks/useDashboard';
@@ -107,14 +106,15 @@ export default function DashboardPage() {
 
   const summary = dashboard.summary;
   const status = STATUS_MAP[dashboard.status] ?? STATUS_MAP.watch;
-  const planner = dashboard.budget_planner?.allocations ?? [];
+  const accountBalances = dashboard.account_balances ?? [];
   const focusedBalances = dashboard.focused_balances ?? [];
   const expenseByNeedType = dashboard.expense_by_need_type ?? [];
   const periodLabel = dashboard.period?.label || 'periode aktif';
-  const budgetPlannerChart = planner.map((item) => ({
-    name: item.label,
-    amount: Number(item.amount || 0),
-    percent: item.percent,
+  const accountCashflowChart = accountBalances.map((item) => ({
+    name: item.name,
+    pemasukan: Number(item.income || 0),
+    pengeluaran: Number(item.expense || 0),
+    saldo: Number(item.balance || 0),
   }));
 
   return (
@@ -281,34 +281,45 @@ export default function DashboardPage() {
       <section>
         <Card className="dashboard-card-up" style={{ animationDelay: '140ms' }}>
           <CardHeader>
-            <CardTitle>Budget Planner</CardTitle>
-            <CardDescription>Alokasi dana utama berdasarkan perencanaan bulan ini.</CardDescription>
+            <CardTitle>Saldo Rekening & Cashflow</CardTitle>
+            <CardDescription>Saldo setiap rekening aktif dan arus pemasukan-pengeluaran selama {periodLabel.toLowerCase()}.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-6 xl:grid-cols-[1fr_0.95fr]">
+          <CardContent className="space-y-6">
             <div className="h-[280px] md:h-[320px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={budgetPlannerChart} layout="vertical" margin={{ top: 10, right: 24, left: 20, bottom: 0 }}>
-                  <CartesianGrid stroke="var(--color-border-subtle)" horizontal={false} />
-                  <XAxis type="number" stroke="var(--color-text-muted)" tickLine={false} axisLine={false} tickFormatter={compactCurrency} fontSize={12} />
-                  <YAxis type="category" dataKey="name" stroke="var(--color-text-muted)" tickLine={false} axisLine={false} width={100} fontSize={12} />
+                <BarChart data={accountCashflowChart} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
+                  <CartesianGrid stroke="var(--color-border-subtle)" vertical={false} />
+                  <XAxis dataKey="name" stroke="var(--color-text-muted)" tickLine={false} axisLine={false} fontSize={12} interval={0} angle={accountCashflowChart.length > 4 ? -16 : 0} textAnchor={accountCashflowChart.length > 4 ? 'end' : 'middle'} height={accountCashflowChart.length > 4 ? 56 : 30} />
+                  <YAxis stroke="var(--color-text-muted)" tickLine={false} axisLine={false} tickFormatter={compactCurrency} width={44} fontSize={12} />
                   <Tooltip formatter={(v) => formatCurrency(v)} contentStyle={TOOLTIP_STYLE} />
-                  <Bar dataKey="amount" fill="var(--color-primary-500)" radius={[0, 10, 10, 0]} animationDuration={1000} />
+                  <Bar dataKey="pemasukan" name="Pemasukan" fill="var(--color-success-base)" radius={[8, 8, 0, 0]} animationDuration={1000} />
+                  <Bar dataKey="pengeluaran" name="Pengeluaran" fill="var(--color-primary-500)" radius={[8, 8, 0, 0]} animationDuration={1000} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-              {planner.map((item, index) => (
-                <div key={item.key} className="rounded-2xl border border-border-subtle bg-surface-100/70 p-4">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {accountBalances.map((item) => (
+                <div key={item.id} className="rounded-2xl border border-border-subtle bg-surface-100/70 p-4">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="font-semibold text-text-title">{item.label}</p>
-                    <span className="rounded-full bg-primary-500/10 px-2.5 py-0.5 text-[11px] font-bold text-primary-600">{item.percent}%</span>
+                    <p className="font-semibold text-text-title">{item.name}</p>
+                    <span className="rounded-full bg-primary-500/10 px-2.5 py-0.5 text-[11px] font-bold text-primary-600">{item.purpose_label}</span>
                   </div>
-                  <p className="mt-2.5 text-xl font-bold tabular-nums text-text-title">{formatCurrency(item.amount)}</p>
-                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-300">
-                    <div
-                      className="h-full rounded-full bg-primary-500 transition-all duration-700 ease-out"
-                      style={{ width: `${item.percent}%`, transitionDelay: `${index * 70}ms` }}
-                    />
+                  <p className="mt-2.5 text-xl font-bold tabular-nums text-text-title">{formatCurrency(item.balance)}</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    <div className="rounded-xl bg-surface-panel px-3 py-2">
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-text-muted">Masuk</p>
+                      <p className="mt-1 text-sm font-semibold text-success-base">{formatCurrency(item.income)}</p>
+                    </div>
+                    <div className="rounded-xl bg-surface-panel px-3 py-2">
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-text-muted">Keluar</p>
+                      <p className="mt-1 text-sm font-semibold text-primary-600">{formatCurrency(item.expense)}</p>
+                    </div>
+                    <div className="rounded-xl bg-surface-panel px-3 py-2">
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-text-muted">Net</p>
+                      <p className={cn('mt-1 text-sm font-semibold', item.net >= 0 ? 'text-success-base' : 'text-danger-base')}>
+                        {formatCurrency(item.net)}
+                      </p>
+                    </div>
                   </div>
                 </div>
               ))}

@@ -48,7 +48,7 @@ function BillsFundingPanel() {
     {
       key: 'source',
       label: 'Sumber',
-      render: (row) => row.source || '-',
+      render: (row) => row.metadata?.actor_label || row.source || '-',
     },
     {
       key: 'account',

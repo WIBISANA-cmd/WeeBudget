@@ -46,6 +46,7 @@ class FinanceSummaryService
         $savingBalance = $this->accountBalanceByPurpose($user, 'savings');
         $emergencyFundBalance = $this->accountBalanceByPurpose($user, 'emergency_fund');
         $accountBreakdown = $this->accountBreakdown($user);
+        $accountBalances = $this->accountBalances($user, $month, $periodEnd);
         $focusedBalances = $this->focusedAccountBalances($user);
         $expenseByNeedType = $this->expenseByNeedType($user, $month, $periodEnd);
         $planner = $this->budgetPlannerService->generate($user);
@@ -75,6 +76,7 @@ class FinanceSummaryService
             'saving_goal' => $this->balanceProgress('Tabungan', $savingBalance, max($planner['base_amount'] * 0.20, 1)),
             'emergency_fund' => $this->balanceProgress('Dana darurat', $emergencyFundBalance, max($planner['base_amount'] * 0.10, 1)),
             'account_breakdown' => $accountBreakdown,
+            'account_balances' => $accountBalances,
             'focused_balances' => $focusedBalances,
             'expense_by_need_type' => $expenseByNeedType,
             'budget_planner' => $planner,
@@ -174,6 +176,58 @@ class FinanceSummaryService
                 'account_count' => $wantAccounts->count(),
             ],
         ];
+    }
+
+    private function accountBalances(User $user, CarbonImmutable $start, CarbonImmutable $end): array
+    {
+        $purposeLabels = [
+            'daily_spending' => 'Harian',
+            'salary' => 'Gaji',
+            'savings' => 'Tabungan',
+            'couple_savings' => 'Tabungan Berdua',
+            'emergency_fund' => 'Dana Darurat',
+            'bills' => 'Tagihan',
+            'wishlist' => 'Wishlist',
+            'investment' => 'Investasi',
+            'other' => 'Lainnya',
+        ];
+
+        $accounts = FinancialAccount::query()
+            ->where('user_id', $user->id)
+            ->where('is_active', true)
+            ->orderByDesc('current_balance')
+            ->orderBy('name')
+            ->get(['id', 'name', 'purpose', 'current_balance']);
+
+        $totals = Transaction::query()
+            ->where('user_id', $user->id)
+            ->whereIn('account_id', $accounts->pluck('id'))
+            ->whereBetween('transaction_date', [$start, $end])
+            ->selectRaw("
+                account_id,
+                SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END) as income_total,
+                SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END) as expense_total
+            ")
+            ->groupBy('account_id')
+            ->get()
+            ->keyBy('account_id');
+
+        return $accounts->map(function (FinancialAccount $account) use ($purposeLabels, $totals) {
+            $accountTotals = $totals->get($account->id);
+            $income = (float) ($accountTotals->income_total ?? 0);
+            $expense = (float) ($accountTotals->expense_total ?? 0);
+
+            return [
+                'id' => $account->id,
+                'name' => $account->name,
+                'purpose' => $account->purpose,
+                'purpose_label' => $purposeLabels[$account->purpose] ?? 'Lainnya',
+                'balance' => round((float) $account->current_balance, 2),
+                'income' => round($income, 2),
+                'expense' => round($expense, 2),
+                'net' => round($income - $expense, 2),
+            ];
+        })->all();
     }
 
     private function expenseByNeedType(User $user, CarbonImmutable $start, CarbonImmutable $end): array

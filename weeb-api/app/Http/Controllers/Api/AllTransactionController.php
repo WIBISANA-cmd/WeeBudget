@@ -19,8 +19,15 @@ class AllTransactionController extends Controller
 {
     use RespondsWithApi;
 
-    public function index(Request $request, CoupleSavingsAccessService $coupleAccess): JsonResponse
+    public function index(Request $request, CoupleSavingsAccessService $coupleAccess, AccountBalanceService $balanceService): JsonResponse
     {
+        if ($request->input('transaction_type') === 'income' && $request->filled('account_purpose')) {
+            $balanceService->backfillMissingAllocationIncomeTransactions(
+                userId: (int) $request->user()->id,
+                purpose: (string) $request->input('account_purpose'),
+            );
+        }
+
         $userIds = $request->input('account_purpose') === 'couple_savings'
             ? $coupleAccess->accountOwnerIdsFor($request->user())
             : [(int) $request->user()->id];

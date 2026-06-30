@@ -76,8 +76,9 @@ function MobileSavingsList({ rows, partnerBySource, onAction }) {
             <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">{group.label}</p>
           </div>
           {group.rows.map((row, index) => {
-            const partner = partnerBySource[row.source];
-            const senderLabel = partner ? `${partner.label} (${partner.user.name})` : row.source || 'Tanpa penyetor';
+            const actorLabel = row.metadata?.actor_label || row.source;
+            const partner = partnerBySource[actorLabel];
+            const senderLabel = partner ? `${partner.label} (${partner.user.name})` : actorLabel || 'Tanpa penyetor';
             const typeLabel = row.entry_type === 'account_allocation' ? 'Alokasi Dana' : 'Setoran Manual';
             const accountLabel = row.account?.name ? ` • ${row.account.name}` : '';
 

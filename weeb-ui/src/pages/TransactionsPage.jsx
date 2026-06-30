@@ -10,7 +10,6 @@ import { cn } from '../lib/utils';
 
 const isIncome = (row) => row.transaction_type === 'income';
 const isAllocation = (row) => row.entry_type === 'account_allocation';
-const isCashflowTransaction = (row) => !isAllocation(row);
 const signedAmount = (row) => {
   if (isAllocation(row)) return formatCurrency(row.amount);
   return `${isIncome(row) ? '+' : '-'}${formatCurrency(row.amount)}`;
@@ -37,10 +36,6 @@ export default function TransactionsPage({ type }) {
     accountScoped: false,
     initialParams: { per_page: 30 },
     noCard: true,
-    filterItems: (items) => {
-      if (!type) return items;
-      return items.filter((row) => isCashflowTransaction(row));
-    },
     defaultValues: { ...configs.transactions.defaultValues, transaction_type: transactionType, need_type: type === 'income' ? '' : 'need', notes: undefined },
     columns: configs.transactions.columns.map((column) => (
       column.key === 'amount'
@@ -75,10 +70,10 @@ export default function TransactionsPage({ type }) {
       dateKey: (row) => row.transaction_date,
       groupSummary: (rows) => {
         const incomeTotal = rows
-          .filter((row) => row.transaction_type === 'income' && isCashflowTransaction(row))
+          .filter((row) => row.transaction_type === 'income' && !isAllocation(row))
           .reduce((total, row) => total + Number(row.amount || 0), 0);
         const expenseTotal = rows
-          .filter((row) => row.transaction_type === 'expense' && isCashflowTransaction(row))
+          .filter((row) => row.transaction_type === 'expense' && !isAllocation(row))
           .reduce((total, row) => total + Number(row.amount || 0), 0);
 
         return [
@@ -116,10 +111,10 @@ export default function TransactionsPage({ type }) {
       options={options}
       topContent={({ resource }) => {
         const incomeTotal = resource.items
-          .filter((row) => row.transaction_type === 'income' && isCashflowTransaction(row))
+          .filter((row) => row.transaction_type === 'income' && !isAllocation(row))
           .reduce((total, row) => total + Number(row.amount || 0), 0);
         const expenseTotal = resource.items
-          .filter((row) => row.transaction_type === 'expense' && isCashflowTransaction(row))
+          .filter((row) => row.transaction_type === 'expense' && !isAllocation(row))
           .reduce((total, row) => total + Number(row.amount || 0), 0);
 
         return (

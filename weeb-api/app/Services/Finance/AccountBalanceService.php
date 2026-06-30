@@ -129,27 +129,104 @@ class AccountBalanceService
 
             $this->applyEffect($outgoing);
 
-            $isCoupleSavingsDestination = $destinationAccount->purpose === 'couple_savings';
-            $incoming = null;
+            $incoming = Transaction::query()->create([
+                'user_id' => $userId,
+                'account_id' => $destinationAccount->id,
+                'transaction_type' => 'income',
+                'amount' => $amount,
+                'need_type' => $this->allocationNeedType($destinationAccount),
+                'transaction_date' => $date,
+                'description' => sprintf('Alokasi dari %s', $sourceAccount->name),
+                'notes' => $notes,
+                'source' => 'account_allocation',
+                'metadata' => [
+                    'direction' => 'in',
+                    'actor_label' => $actorLabel,
+                    'actor_user_id' => $userId,
+                    'counterpart_account_id' => $sourceAccount->id,
+                    'counterpart_account_name' => $sourceAccount->name,
+                    'counterpart_transaction_id' => $outgoing->id,
+                ],
+            ]);
 
-            if ($isCoupleSavingsDestination) {
+            $outgoing->metadata = [
+                ...($outgoing->metadata ?? []),
+                'counterpart_transaction_id' => $incoming->id,
+            ];
+            $outgoing->save();
+
+            $this->applyEffect($incoming);
+
+            return [
+                'source_account' => $sourceAccount->fresh(),
+                'destination_account' => $destinationAccount->fresh(),
+                'transactions' => [$outgoing, $incoming],
+            ];
+        });
+    }
+
+    public function backfillMissingAllocationIncomeTransactions(int $userId, ?string $purpose = null): void
+    {
+        $targetAccounts = FinancialAccount::query()
+            ->where('user_id', $userId)
+            ->when($purpose, fn ($query) => $query->where('purpose', $purpose))
+            ->get(['id', 'name', 'purpose'])
+            ->keyBy('id');
+
+        if ($targetAccounts->isEmpty()) {
+            return;
+        }
+
+        DB::transaction(function () use ($userId, $targetAccounts) {
+            $outgoingTransactions = Transaction::query()
+                ->with('account')
+                ->where('user_id', $userId)
+                ->where('transaction_type', 'expense')
+                ->where('source', 'account_allocation')
+                ->whereIn('metadata->counterpart_account_id', $targetAccounts->keys()->map(fn ($id) => (string) $id)->all())
+                ->latest('id')
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($outgoingTransactions as $outgoing) {
+                $destinationAccountId = (int) data_get($outgoing->metadata, 'counterpart_account_id');
+                $destinationAccount = $targetAccounts->get($destinationAccountId);
+
+                if (! $destinationAccount) {
+                    continue;
+                }
+
+                $existingIncoming = $this->findAllocationCounterpart($outgoing, $userId);
+                if ($existingIncoming) {
+                    if (! data_get($outgoing->metadata, 'counterpart_transaction_id')) {
+                        $outgoing->metadata = [
+                            ...($outgoing->metadata ?? []),
+                            'counterpart_transaction_id' => $existingIncoming->id,
+                        ];
+                        $outgoing->save();
+                    }
+
+                    continue;
+                }
+
                 $incoming = Transaction::query()->create([
                     'user_id' => $userId,
-                    'account_id' => $destinationAccount->id,
+                    'account_id' => $destinationAccountId,
                     'transaction_type' => 'income',
-                    'amount' => $amount,
+                    'amount' => $outgoing->amount,
                     'need_type' => $this->allocationNeedType($destinationAccount),
-                    'transaction_date' => $date,
-                    'description' => sprintf('Alokasi dari %s', $sourceAccount->name),
-                    'notes' => $notes,
-                    'source' => $actorLabel,
+                    'transaction_date' => $outgoing->transaction_date,
+                    'description' => sprintf('Alokasi dari %s', $outgoing->account?->name ?? data_get($outgoing->metadata, 'actor_label', 'rekening sumber')),
+                    'notes' => $outgoing->notes,
+                    'source' => 'account_allocation',
                     'metadata' => [
                         'direction' => 'in',
-                        'actor_label' => $actorLabel,
-                        'actor_user_id' => $userId,
-                        'counterpart_account_id' => $sourceAccount->id,
-                        'counterpart_account_name' => $sourceAccount->name,
+                        'actor_label' => data_get($outgoing->metadata, 'actor_label'),
+                        'actor_user_id' => data_get($outgoing->metadata, 'actor_user_id', $userId),
+                        'counterpart_account_id' => $outgoing->account_id,
+                        'counterpart_account_name' => $outgoing->account?->name,
                         'counterpart_transaction_id' => $outgoing->id,
+                        'backfilled' => true,
                     ],
                 ]);
 
@@ -158,22 +235,7 @@ class AccountBalanceService
                     'counterpart_transaction_id' => $incoming->id,
                 ];
                 $outgoing->save();
-
-                $this->applyEffect($incoming);
-            } else {
-                // Adjust destination account balance directly without creating an incoming transaction
-                $this->adjustAccountBalance(
-                    accountId: $destinationAccount->id,
-                    userId: $userId,
-                    amount: $amount,
-                );
             }
-
-            return [
-                'source_account' => $sourceAccount->fresh(),
-                'destination_account' => $destinationAccount->fresh(),
-                'transactions' => $incoming ? [$outgoing, $incoming] : [$outgoing],
-            ];
         });
     }
 

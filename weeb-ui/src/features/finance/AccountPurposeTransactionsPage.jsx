@@ -165,6 +165,23 @@ export default function AccountPurposeTransactionsPage({
     return accounts.find((account) => String(account.id) === String(selectedAccountId)) || accounts[0] || null;
   }, [accounts, selectedAccountId]);
 
+  useEffect(() => {
+    if (accounts.length === 0) {
+      return;
+    }
+
+    const hasSelectedAccount = accounts.some((account) => String(account.id) === String(selectedAccountId));
+    if (hasSelectedAccount) {
+      return;
+    }
+
+    const latestTransactionAccountId = resource.items.find((item) => (
+      accounts.some((account) => String(account.id) === String(item.account_id))
+    ))?.account_id;
+
+    setSelectedAccountId(latestTransactionAccountId || accounts[0]?.id || '');
+  }, [accounts, resource.items, selectedAccountId]);
+
   const totalBalance = useMemo(() => {
     return Number(selectedAccount?.current_balance || 0);
   }, [selectedAccount]);
@@ -277,6 +294,15 @@ export default function AccountPurposeTransactionsPage({
     { key: 'description', label: 'Kebutuhan', mobileTitle: true, render: (row) => getNeedLabel(row) },
     { key: 'account', label: 'Rekening', render: (row) => row.account?.name || '-' },
     { key: 'amount', label: 'Nominal', render: (row) => <span className={amountClass(row)}>{signedAmount(row)}</span> },
+    {
+      key: 'entry_type',
+      label: 'Tipe',
+      render: (row) => (
+        <StatusBadge value={row.entry_type === 'account_allocation' ? 'account_allocation' : 'income'}>
+          {row.entry_type === 'account_allocation' ? 'Alokasi Dana' : 'Setoran Manual'}
+        </StatusBadge>
+      ),
+    },
     { key: 'need_type', label: 'Jenis', render: () => <StatusBadge value={needType}>{typeLabel}</StatusBadge> },
   ];
 

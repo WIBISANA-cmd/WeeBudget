@@ -29,6 +29,14 @@ class TransactionResource extends JsonResource
             'notes' => $this->notes,
             'source' => $this->source,
             'entry_type' => $isAccountAllocation ? 'account_allocation' : 'manual',
+            'metadata' => $this->metadata ? [
+                'direction' => data_get($this->metadata, 'direction'),
+                'actor_label' => data_get($this->metadata, 'actor_label'),
+                'actor_user_id' => data_get($this->metadata, 'actor_user_id'),
+                'counterpart_account_id' => data_get($this->metadata, 'counterpart_account_id'),
+                'counterpart_account_name' => data_get($this->metadata, 'counterpart_account_name'),
+                'counterpart_transaction_id' => data_get($this->metadata, 'counterpart_transaction_id'),
+            ] : null,
             'links' => [
                 'bill_id' => $this->bill_id,
                 'saving_goal_id' => $this->saving_goal_id,
