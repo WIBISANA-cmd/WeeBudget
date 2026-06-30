@@ -71,7 +71,6 @@ export default function AccountsPage() {
   const [pageVersion, setPageVersion] = useState(0);
   const [plannerPreview, setPlannerPreview] = useState(null);
   const [plannerPreviewError, setPlannerPreviewError] = useState(null);
-  const [allocationPreviewAmount, setAllocationPreviewAmount] = useState('');
   const accountOptions = useAccountOptions({ includeInactive: true });
   const allAccounts = useMemo(() => accountOptions.accounts || [], [accountOptions.accounts]);
   const allocationOptions = useMemo(() => ({
@@ -110,30 +109,15 @@ export default function AccountsPage() {
 
   useEffect(() => {
     if (!isAllocationOpen) return;
-
-    const numericAmount = Number(allocationPreviewAmount || 0);
-
-    if (!numericAmount) {
-      queueMicrotask(() => {
-        loadPlannerPreview(0);
-      });
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      queueMicrotask(async () => {
-        await loadPlannerPreview(numericAmount);
-      });
-    }, 250);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [allocationPreviewAmount, isAllocationOpen]);
+    queueMicrotask(() => {
+      loadPlannerPreview(0);
+    });
+  }, [isAllocationOpen]);
 
   useEffect(() => {
     if (!isAllocationOpen) {
       setPlannerPreview(null);
       setPlannerPreviewError(null);
-      setAllocationPreviewAmount('');
     }
   }, [isAllocationOpen]);
 
@@ -158,9 +142,7 @@ export default function AccountsPage() {
     }
   };
 
-  const activePreviewBaseAmount = Number(allocationPreviewAmount || 0) > 0
-    ? Number(plannerPreview?.base_amount || 0)
-    : Number(plannerPreview?.saved_base_amount || 0);
+  const activePreviewBaseAmount = Number(plannerPreview?.saved_base_amount || 0);
 
   return (
     <div className="space-y-6">
@@ -217,9 +199,7 @@ export default function AccountsPage() {
                     Dana dasar {formatCurrency(activePreviewBaseAmount || 0)}
                   </p>
                   <p className="mt-1 text-xs text-text-muted">
-                    {Number(allocationPreviewAmount || 0) > 0
-                      ? 'Planner ini dihitung dari nominal alokasi yang kamu input di form, bukan dari total seluruh saldo rekening.'
-                      : 'Custom planner tersimpan sudah ditampilkan. Isi nominal alokasi untuk melihat nominal pembagian di tiap pos.'}
+                    Planner ini bersifat baca saja dan mengikuti custom planner terakhir yang kamu simpan di Budget Planner.
                   </p>
                 </div>
                 <div className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
@@ -235,11 +215,7 @@ export default function AccountsPage() {
                   <div key={item.key} className="rounded-2xl bg-surface-panel p-4 shadow-sm shadow-card-soft">
                     <p className="text-sm text-text-muted">{item.label}</p>
                     <p className="mt-1 text-lg font-semibold text-primary-600">
-                      {formatCurrency(
-                        Number(allocationPreviewAmount || 0) > 0
-                          ? item.amount
-                          : calculateAllocationAmount(activePreviewBaseAmount, item.percent)
-                      )}
+                      {formatCurrency(calculateAllocationAmount(activePreviewBaseAmount, item.percent))}
                     </p>
                     <p className="mt-1 text-xs text-text-muted">
                       {plannerPreview.has_custom_allocations ? 'Custom tersimpan' : 'Rekomendasi default'}: {item.percent}% dari dana dasar
@@ -265,7 +241,6 @@ export default function AccountsPage() {
             options={allocationOptions}
             isSaving={isSavingAllocation}
             submitLabel="Simpan alokasi"
-            onValuesChange={(values) => setAllocationPreviewAmount(values?.amount || '')}
             onSubmit={submitAllocation}
           />
         </Suspense>
