@@ -50,6 +50,7 @@ class BudgetPlannerService
 
         return [
             'base_amount' => round($baseAmount, 2),
+            'saved_base_amount' => round($this->savedBaseAmount($user), 2),
             'allocated_amount' => round($allocated, 2),
             'unallocated_amount' => round($baseAmount - $allocated, 2),
             'period' => $activePeriod ? $this->periodPayload($activePeriod) : null,
@@ -62,7 +63,7 @@ class BudgetPlannerService
         ];
     }
 
-    public function saveAllocations(User $user, array $allocations): array
+    public function saveAllocations(User $user, array $allocations, ?float $baseAmount = null): array
     {
         $profile = $user->profile()->firstOrCreate([], [
             'currency' => 'IDR',
@@ -85,6 +86,7 @@ class BudgetPlannerService
         }
 
         $profile->budget_planner_allocations = $normalized->all();
+        $profile->budget_planner_base_amount = $baseAmount !== null ? max($baseAmount, 0) : $profile->budget_planner_base_amount;
         $profile->save();
 
         return $this->generate($user->fresh('profile'));
@@ -190,6 +192,11 @@ class BudgetPlannerService
         }
 
         return 'Ritme cukup sehat. Sisihkan dulu dana darurat sebelum menaikkan budget keinginan.';
+    }
+
+    private function savedBaseAmount(User $user): float
+    {
+        return (float) ($user->profile?->budget_planner_base_amount ?? 0);
     }
 
     private function plansWithOverrides(User $user): array

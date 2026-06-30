@@ -28,7 +28,11 @@ class BudgetPlannerController extends Controller
     public function updateAllocations(UpdateBudgetPlannerAllocationsRequest $request, BudgetPlannerService $service): JsonResponse
     {
         return $this->success(
-            $service->saveAllocations($request->user(), $request->validated('allocations')),
+            $service->saveAllocations(
+                $request->user(),
+                $request->validated('allocations'),
+                $request->filled('base_amount') ? (float) $request->validated('base_amount') : null,
+            ),
             'Custom budget planner allocations saved.',
         );
     }

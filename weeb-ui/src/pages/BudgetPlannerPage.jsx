@@ -122,6 +122,7 @@ export default function BudgetPlannerPage() {
     setSaveMessage(null);
     try {
       await apiPut('/budget-planner/allocations', {
+        base_amount: parseAmount(baseAmount),
         allocations: customAllocationItems.map((item) => ({
           key: item.key,
           percent: item.appliedPercent,

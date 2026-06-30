@@ -14,6 +14,7 @@ import LoadingSkeleton from '../components/feedback/LoadingSkeleton';
 import { refreshPageQuickly } from '../lib/pageRefresh';
 
 const ResourceForm = lazy(() => import('../components/forms/ResourceForm'));
+const calculateAllocationAmount = (baseAmount, percent) => Math.floor((Number(baseAmount || 0) * Number(percent || 0)) / 100);
 
 const allocationSchema = z.object({
   source_account_id: z.coerce.number().min(1, 'Rekening sumber wajib dipilih'),
@@ -96,27 +97,32 @@ export default function AccountsPage() {
     };
   }, [allAccounts]);
 
+  const loadPlannerPreview = async (baseAmount = 0) => {
+    try {
+      const response = await apiGet('/budget-planner', { base_amount: baseAmount });
+      setPlannerPreview(response.data || null);
+      setPlannerPreviewError(null);
+    } catch (error) {
+      setPlannerPreview(null);
+      setPlannerPreviewError(error.response?.data?.message || 'Preview budget planner belum bisa dimuat.');
+    }
+  };
+
   useEffect(() => {
     if (!isAllocationOpen) return;
 
     const numericAmount = Number(allocationPreviewAmount || 0);
 
     if (!numericAmount) {
-      setPlannerPreview(null);
-      setPlannerPreviewError(null);
+      queueMicrotask(() => {
+        loadPlannerPreview(0);
+      });
       return;
     }
 
     const timeoutId = window.setTimeout(() => {
       queueMicrotask(async () => {
-        try {
-          const response = await apiGet('/budget-planner', { base_amount: numericAmount });
-          setPlannerPreview(response.data || null);
-          setPlannerPreviewError(null);
-        } catch (error) {
-          setPlannerPreview(null);
-          setPlannerPreviewError(error.response?.data?.message || 'Preview budget planner belum bisa dimuat.');
-        }
+        await loadPlannerPreview(numericAmount);
       });
     }, 250);
 
@@ -151,6 +157,10 @@ export default function AccountsPage() {
       setSavingAllocation(false);
     }
   };
+
+  const activePreviewBaseAmount = Number(allocationPreviewAmount || 0) > 0
+    ? Number(plannerPreview?.base_amount || 0)
+    : Number(plannerPreview?.saved_base_amount || 0);
 
   return (
     <div className="space-y-6">
@@ -203,12 +213,13 @@ export default function AccountsPage() {
             <CardContent className="space-y-3">
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
-                  <p className="text-sm text-text-muted">Acuan nominal dari Budget Planner</p>
-                  <p className="mt-1 text-lg font-semibold text-text-title">
-                    Dana dasar {formatCurrency(plannerPreview.base_amount || 0)}
+                  <p className="text-lg font-semibold text-text-title">
+                    Dana dasar {formatCurrency(activePreviewBaseAmount || 0)}
                   </p>
                   <p className="mt-1 text-xs text-text-muted">
-                    Planner ini dihitung dari nominal alokasi yang kamu input di form, bukan dari total seluruh saldo rekening.
+                    {Number(allocationPreviewAmount || 0) > 0
+                      ? 'Planner ini dihitung dari nominal alokasi yang kamu input di form, bukan dari total seluruh saldo rekening.'
+                      : 'Custom planner tersimpan sudah ditampilkan. Isi nominal alokasi untuk melihat nominal pembagian di tiap pos.'}
                   </p>
                 </div>
                 <div className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
@@ -223,7 +234,13 @@ export default function AccountsPage() {
                 {(plannerPreview.allocations || []).map((item) => (
                   <div key={item.key} className="rounded-2xl bg-surface-panel p-4 shadow-sm shadow-card-soft">
                     <p className="text-sm text-text-muted">{item.label}</p>
-                    <p className="mt-1 text-lg font-semibold text-primary-600">{formatCurrency(item.amount)}</p>
+                    <p className="mt-1 text-lg font-semibold text-primary-600">
+                      {formatCurrency(
+                        Number(allocationPreviewAmount || 0) > 0
+                          ? item.amount
+                          : calculateAllocationAmount(activePreviewBaseAmount, item.percent)
+                      )}
+                    </p>
                     <p className="mt-1 text-xs text-text-muted">
                       {plannerPreview.has_custom_allocations ? 'Custom tersimpan' : 'Rekomendasi default'}: {item.percent}% dari dana dasar
                     </p>
@@ -254,7 +271,7 @@ export default function AccountsPage() {
         </Suspense>
         {!plannerPreview && !plannerPreviewError && (
           <p className="mt-3 text-sm text-text-muted">
-            Masukkan nominal alokasi terlebih dahulu untuk melihat pembagian planner berdasarkan nominal tersebut.
+            Memuat konfigurasi budget planner...
           </p>
         )}
         {allAccounts.length < 2 && (

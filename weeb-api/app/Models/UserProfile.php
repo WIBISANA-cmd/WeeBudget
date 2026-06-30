@@ -22,6 +22,7 @@ class UserProfile extends Model
         'transaction_reminder_time',
         'transaction_reminder_last_sent_at',
         'budget_planner_allocations',
+        'budget_planner_base_amount',
         'onboarding_completed_at',
     ];
 
@@ -33,6 +34,7 @@ class UserProfile extends Model
             'transaction_reminder_enabled' => 'boolean',
             'transaction_reminder_last_sent_at' => 'datetime',
             'budget_planner_allocations' => 'array',
+            'budget_planner_base_amount' => 'decimal:2',
             'onboarding_completed_at' => 'date',
         ];
     }
