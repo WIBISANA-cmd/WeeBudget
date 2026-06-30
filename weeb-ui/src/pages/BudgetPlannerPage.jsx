@@ -81,7 +81,48 @@ export default function BudgetPlannerPage() {
   };
 
   useEffect(() => {
-    setLoading(false);
+    let isMounted = true;
+
+    queueMicrotask(async () => {
+      try {
+        const savedPlannerResponse = await apiGet('/budget-planner', { base_amount: 0 });
+        const savedBaseAmount = Number(savedPlannerResponse.data?.saved_base_amount || 0);
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (savedBaseAmount > 0) {
+          const formattedSavedBaseAmount = formatAmountInput(savedBaseAmount, { allowZero: true });
+          setBaseAmount(formattedSavedBaseAmount);
+
+          const response = await apiGet('/budget-planner', { base_amount: savedBaseAmount });
+
+          if (!isMounted) {
+            return;
+          }
+
+          setPlanner(response.data);
+          setPlannerInputError(null);
+          setError(null);
+          setLoading(false);
+          return;
+        }
+
+        setLoading(false);
+      } catch (err) {
+        if (!isMounted) {
+          return;
+        }
+
+        setLoading(false);
+        setError(err.response?.data?.message || 'Budget planner belum bisa dimuat.');
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (isLoading && !planner) return <LoadingSkeleton rows={6} />;
