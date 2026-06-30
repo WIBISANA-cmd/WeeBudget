@@ -42,6 +42,7 @@ export default function BudgetPlannerPage() {
   const [isSavingCustomAllocations, setSavingCustomAllocations] = useState(false);
   const [saveMessage, setSaveMessage] = useState(null);
   const [error, setError] = useState(null);
+  const [plannerInputError, setPlannerInputError] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -53,18 +54,25 @@ export default function BudgetPlannerPage() {
   }, []);
 
   const loadPlanner = async (amount = '') => {
+    const normalizedAmount = parseAmount(amount);
+    const hasManualAmount = String(amount).trim() !== '' && normalizedAmount > 0;
+
+    if (!hasManualAmount) {
+      setPlanner(null);
+      setPlannerInputError('Masukkan nominal dasar terlebih dahulu agar planner dihitung sesuai angka yang kamu input.');
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     setLoading(true);
     setError(null);
+    setPlannerInputError(null);
     setSaveMessage(null);
     try {
-      const numericAmount = parseAmount(amount);
-      const hasManualAmount = String(amount).trim() !== '';
-      const response = await apiGet('/budget-planner', hasManualAmount ? { base_amount: numericAmount } : {});
+      const response = await apiGet('/budget-planner', { base_amount: normalizedAmount });
       setPlanner(response.data);
       setCustomAllocations({});
-      if (amount === '') {
-        setBaseAmount(formatAmountInput(response.data.base_amount));
-      }
     } catch (err) {
       setError(err.response?.data?.message || 'Budget planner belum bisa dimuat.');
     } finally {
@@ -73,7 +81,7 @@ export default function BudgetPlannerPage() {
   };
 
   useEffect(() => {
-    queueMicrotask(() => loadPlanner(''));
+    setLoading(false);
   }, []);
 
   if (isLoading && !planner) return <LoadingSkeleton rows={6} />;
@@ -113,14 +121,15 @@ export default function BudgetPlannerPage() {
     setSavingCustomAllocations(true);
     setSaveMessage(null);
     try {
-      const response = await apiPut('/budget-planner/allocations', {
+      await apiPut('/budget-planner/allocations', {
         allocations: customAllocationItems.map((item) => ({
           key: item.key,
           percent: item.appliedPercent,
         })),
       });
 
-      setPlanner(response.data);
+      const refreshedPlanner = await apiGet('/budget-planner', { base_amount: parseAmount(baseAmount) });
+      setPlanner(refreshedPlanner.data);
       setCustomAllocations({});
       setSaveMessage({ type: 'success', text: 'Custom alokasi berhasil disimpan dan sekarang menjadi rekomendasi aktif.' });
     } catch (err) {
@@ -167,6 +176,17 @@ export default function BudgetPlannerPage() {
           </Button>
         </div>
       </header>
+
+      {plannerInputError && !planner && (
+        <Card className="border-primary-500/25 bg-primary-500/5">
+          <CardContent className="py-5">
+            <p className="text-sm font-medium text-primary-600">{plannerInputError}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {!planner ? null : (
+        <>
 
       <Card className={usesActivePeriod ? 'border-primary-500' : 'border-warning-base'}>
         <CardContent className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -345,13 +365,17 @@ export default function BudgetPlannerPage() {
           ))}
         </div>
       )}
+        </>
+      )}
 
-      <Card className="border-info-base">
-        <CardContent>
-          <p className="text-sm font-semibold text-info-base">Rekomendasi WeeB</p>
-          <p className="mt-2 text-text-body">{planner?.recommendation}</p>
-        </CardContent>
-      </Card>
+      {!planner ? null : (
+        <Card className="border-info-base">
+          <CardContent>
+            <p className="text-sm font-semibold text-info-base">Rekomendasi WeeB</p>
+            <p className="mt-2 text-text-body">{planner?.recommendation}</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -70,6 +70,7 @@ export default function AccountsPage() {
   const [pageVersion, setPageVersion] = useState(0);
   const [plannerPreview, setPlannerPreview] = useState(null);
   const [plannerPreviewError, setPlannerPreviewError] = useState(null);
+  const [allocationPreviewAmount, setAllocationPreviewAmount] = useState('');
   const accountOptions = useAccountOptions({ includeInactive: true });
   const allAccounts = useMemo(() => accountOptions.accounts || [], [accountOptions.accounts]);
   const allocationOptions = useMemo(() => ({
@@ -98,16 +99,36 @@ export default function AccountsPage() {
   useEffect(() => {
     if (!isAllocationOpen) return;
 
-    queueMicrotask(async () => {
-      try {
-        const response = await apiGet('/budget-planner');
-        setPlannerPreview(response.data || null);
-        setPlannerPreviewError(null);
-      } catch (error) {
-        setPlannerPreview(null);
-        setPlannerPreviewError(error.response?.data?.message || 'Preview budget planner belum bisa dimuat.');
-      }
-    });
+    const numericAmount = Number(allocationPreviewAmount || 0);
+
+    if (!numericAmount) {
+      setPlannerPreview(null);
+      setPlannerPreviewError(null);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      queueMicrotask(async () => {
+        try {
+          const response = await apiGet('/budget-planner', { base_amount: numericAmount });
+          setPlannerPreview(response.data || null);
+          setPlannerPreviewError(null);
+        } catch (error) {
+          setPlannerPreview(null);
+          setPlannerPreviewError(error.response?.data?.message || 'Preview budget planner belum bisa dimuat.');
+        }
+      });
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [allocationPreviewAmount, isAllocationOpen]);
+
+  useEffect(() => {
+    if (!isAllocationOpen) {
+      setPlannerPreview(null);
+      setPlannerPreviewError(null);
+      setAllocationPreviewAmount('');
+    }
   }, [isAllocationOpen]);
 
   const submitAllocation = async (values) => {
@@ -186,7 +207,7 @@ export default function AccountsPage() {
                   Dana dasar {formatCurrency(plannerPreview.base_amount || 0)}
                 </p>
                 <p className="mt-1 text-xs text-text-muted">
-                  Gunakan nominal ini sebagai referensi sebelum submit alokasi dana antar rekening.
+                  Planner ini dihitung dari nominal alokasi yang kamu input di form, bukan dari total seluruh saldo rekening.
                 </p>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
@@ -216,9 +237,15 @@ export default function AccountsPage() {
             options={allocationOptions}
             isSaving={isSavingAllocation}
             submitLabel="Simpan alokasi"
+            onValuesChange={(values) => setAllocationPreviewAmount(values?.amount || '')}
             onSubmit={submitAllocation}
           />
         </Suspense>
+        {!plannerPreview && !plannerPreviewError && (
+          <p className="mt-3 text-sm text-text-muted">
+            Masukkan nominal alokasi terlebih dahulu untuk melihat pembagian planner berdasarkan nominal tersebut.
+          </p>
+        )}
         {allAccounts.length < 2 && (
           <p className="mt-3 text-sm text-danger-base">
             Tambahkan minimal dua rekening aktif agar alokasi dana bisa dilakukan.

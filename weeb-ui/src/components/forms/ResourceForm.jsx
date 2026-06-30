@@ -691,6 +691,7 @@ export default function ResourceForm({
   defaultValues,
   options = {},
   onSubmit,
+  onValuesChange,
   isSaving,
   submitLabel = 'Simpan',
   isTransactionForm = false,
@@ -722,6 +723,10 @@ export default function ResourceForm({
   useEffect(() => {
     reset(defaultValues);
   }, [defaultValues, reset]);
+
+  useEffect(() => {
+    onValuesChange?.(watchedValues || {});
+  }, [onValuesChange, watchedValues]);
 
   if (isMobile && formLayout === 'categories') {
     return (
