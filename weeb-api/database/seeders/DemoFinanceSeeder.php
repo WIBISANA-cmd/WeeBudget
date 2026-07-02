@@ -45,8 +45,9 @@ class DemoFinanceSeeder extends Seeder
             ['Rekening tagihan', 'e_wallet', 'bills', 'E-wallet', 'Autodebit', 0, 150000, false, 'Cadangan kecil untuk internet, paket data, dan tagihan rutin.'],
         ];
 
+        $accountMap = [];
         foreach ($accounts as [$name, $type, $purpose, $institution, $identifier, $openingBalance, $currentBalance, $isDefault, $notes]) {
-            FinancialAccount::query()->updateOrCreate(
+            $acc = FinancialAccount::query()->updateOrCreate(
                 ['user_id' => $user->id, 'name' => $name],
                 [
                     'type' => $type,
@@ -60,6 +61,7 @@ class DemoFinanceSeeder extends Seeder
                     'notes' => $notes,
                 ],
             );
+            $accountMap[$purpose] = $acc->id;
         }
 
         FinancialPeriod::query()->updateOrCreate(
@@ -79,22 +81,23 @@ class DemoFinanceSeeder extends Seeder
         $category = fn (string $slug) => TransactionCategory::query()->where('slug', $slug)->firstOrFail()->id;
 
         $transactions = [
-            ['Gaji bulanan', 'income', 'gaji', 3200000, $month->addDays(0), null],
-            ['Lembur akhir pekan', 'income', 'lembur', 150000, $month->addDays(11), null],
-            ['Makan harian', 'expense', 'makan', 42000, $today->subDays(6), 'need'],
-            ['Transport kerja', 'expense', 'transport', 28000, $today->subDays(5), 'need'],
-            ['Kopi dan jajan', 'expense', 'jajan', 36000, $today->subDays(4), 'want'],
-            ['Belanja rumah', 'expense', 'belanja-rumah', 185000, $today->subDays(3), 'need'],
-            ['Makan siang', 'expense', 'makan', 52000, $today->subDays(2), 'need'],
-            ['Transport online', 'expense', 'transport', 61000, $today->subDays(1), 'need'],
-            ['Setoran dana darurat', 'expense', 'dana-darurat', 50000, $today, 'saving'],
+            ['Gaji bulanan', 'income', 'gaji', 3200000, $month->addDays(0), null, 'salary'],
+            ['Lembur akhir pekan', 'income', 'lembur', 150000, $month->addDays(11), null, 'daily_spending'],
+            ['Makan harian', 'expense', 'makan', 42000, $today->subDays(6), 'need', 'daily_spending'],
+            ['Transport kerja', 'expense', 'transport', 28000, $today->subDays(5), 'need', 'daily_spending'],
+            ['Kopi dan jajan', 'expense', 'jajan', 36000, $today->subDays(4), 'want', 'daily_spending'],
+            ['Belanja rumah', 'expense', 'belanja-rumah', 185000, $today->subDays(3), 'need', 'daily_spending'],
+            ['Makan siang', 'expense', 'makan', 52000, $today->subDays(2), 'need', 'daily_spending'],
+            ['Transport online', 'expense', 'transport', 61000, $today->subDays(1), 'need', 'daily_spending'],
+            ['Setoran dana darurat', 'expense', 'dana-darurat', 50000, $today, 'saving', 'daily_spending'],
         ];
 
-        foreach ($transactions as [$description, $type, $slug, $amount, $date, $needType]) {
+        foreach ($transactions as [$description, $type, $slug, $amount, $date, $needType, $accountPurpose]) {
             Transaction::query()->updateOrCreate(
                 ['user_id' => $user->id, 'description' => $description, 'transaction_date' => $date->toDateString()],
                 [
                     'category_id' => $category($slug),
+                    'account_id' => $accountMap[$accountPurpose] ?? null,
                     'transaction_type' => $type,
                     'amount' => $amount,
                     'need_type' => $needType,

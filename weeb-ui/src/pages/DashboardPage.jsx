@@ -125,9 +125,6 @@ export default function DashboardPage() {
             <Sparkles size={13} />
             {dashboard.period?.label}
           </span>
-          <h1 className="max-w-3xl text-[1.75rem] font-bold leading-tight text-text-title md:text-4xl">
-            Dashboard saldo dan pola belanja utama
-          </h1>
         </div>
         <div className={cn('dashboard-card-up rounded-2xl border px-5 py-3.5', status.cls)} style={{ animationDelay: '120ms' }}>
           <p className="text-[11px] font-bold uppercase tracking-widest">{status.label}</p>

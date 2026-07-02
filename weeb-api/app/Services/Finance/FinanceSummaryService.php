@@ -16,11 +16,14 @@ class FinanceSummaryService
         private readonly ExpenseStatisticService $expenseStatisticService,
         private readonly BudgetAlertService $budgetAlertService,
         private readonly BudgetPlannerService $budgetPlannerService,
+        private readonly AccountBalanceService $accountBalanceService,
     ) {
     }
 
     public function dashboard(User $user): array
     {
+        $this->accountBalanceService->backfillMissingAllocationIncomeTransactions((int) $user->id);
+
         $today = CarbonImmutable::today();
         $month = $today->startOfMonth();
         $nextMonth = $month->addMonthNoOverflow();
