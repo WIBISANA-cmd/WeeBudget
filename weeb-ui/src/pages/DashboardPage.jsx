@@ -117,6 +117,12 @@ export default function DashboardPage() {
     saldo: Number(item.balance || 0),
   }));
 
+  const kebutuhanAccount = accountBalances.find(acc => acc.name.toLowerCase() === 'kebutuhan');
+  const daysToPayday = Math.max(1, summary.days_to_payday || 1);
+  const dailySafeAmount = kebutuhanAccount
+    ? Math.floor(Number(kebutuhanAccount.balance || 0) / daysToPayday)
+    : summary.daily_safe_amount;
+
   return (
     <div className="dashboard-fade-in space-y-5 pb-4 md:pb-8">
       <section className="dashboard-card-up grid gap-4 xl:grid-cols-[1fr_auto] xl:items-end">
@@ -225,7 +231,7 @@ export default function DashboardPage() {
             <div className="rounded-2xl border border-primary-500/20 bg-primary-500/8 p-4">
               <p className="text-sm font-medium text-text-muted">Nominal aman harian</p>
               <p className="mt-2 text-3xl font-bold tracking-tight text-primary-600">
-                {formatCurrency(summary.daily_safe_amount)}
+                {formatCurrency(dailySafeAmount)}
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
