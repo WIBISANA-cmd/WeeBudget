@@ -216,3 +216,16 @@
     transform: translateY(0);
   }
 }
+
+@keyframes neon-pulse-purple {
+  0%, 100% {
+    box-shadow: 0 0 8px 1px rgba(139, 92, 246, 0.4), 0 0 16px 2px rgba(139, 92, 246, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 20px 5px rgba(139, 92, 246, 0.8), 0 0 32px 10px rgba(139, 92, 246, 0.35);
+  }
+}
+
+.animate-neon-pulse-purple {
+  animation: neon-pulse-purple 4s infinite ease-in-out;
+}

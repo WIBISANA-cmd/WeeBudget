@@ -46,4 +46,14 @@ return [
         'api_key' => env('EMAS_API_KEY'),
     ],
 
+    'ai' => [
+        'api_key' => env('API_KEY_AI'),
+        'base_url' => env('BASE_URL_AI', 'https://ai.sumopod.com/v1'),
+        'model' => env('MODEL_AI', 'MiniMax-M2.7-highspeed'),
+    ],
+
+    'elevenlabs' => [
+        'api_key' => env('ELEVENLABS_API_KEY'),
+    ],
+
 ];

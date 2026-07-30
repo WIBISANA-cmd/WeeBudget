@@ -1,5 +1,6 @@
 import { ArrowDownUp, CircleDollarSign, Pencil, PiggyBank, ShieldAlert, Sparkles, Tag, Trash2 } from 'lucide-react';
 import Button from '../ui/Button';
+import { formatCurrency, formatDate } from '../../lib/formatters';
 
 const mobilePriorityKeys = [
   'amount',
@@ -224,30 +225,116 @@ export default function DataTable({ columns, rows, onEdit, onDelete, canEditRow,
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle bg-surface-panel">
-              {rows.map((row) => (
-                <tr key={row.id} className="ui-hover-surface duration-200">
-                  {columns.map((column) => (
-                    <td
-                      key={column.key}
-                      className="px-5 py-4 align-top text-sm leading-6 text-text-body"
-                    >
-                      {column.render ? column.render(row) : row[column.key] ?? '-'}
-                    </td>
-                  ))}
-                  {(onEdit || onDelete) && (
-                    <td className="whitespace-nowrap px-5 py-4 text-right align-top">
-                      {((onEdit && (!canEditRow || canEditRow(row))) || (onDelete && (!canDeleteRow || canDeleteRow(row)))) ? (
-                        <div className="flex justify-end gap-2">
-                          {onEdit && (!canEditRow || canEditRow(row)) && <Button size="sm" variant="secondary" onClick={() => onEdit(row)}>Edit</Button>}
-                          {onDelete && (!canDeleteRow || canDeleteRow(row)) && <Button size="sm" variant="danger" onClick={() => onDelete(row)}>Hapus</Button>}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-text-muted">-</span>
+              {(() => {
+                const isTransactions = rows.length > 0 &&
+                  rows.some(row => 'transaction_date' in row && 'transaction_type' in row);
+
+                if (!isTransactions) {
+                  return rows.map((row) => (
+                    <tr key={row.id} className="ui-hover-surface duration-200">
+                      {columns.map((column) => (
+                        <td
+                          key={column.key}
+                          className="px-5 py-4 align-top text-sm leading-6 text-text-body"
+                        >
+                          {column.render ? column.render(row) : row[column.key] ?? '-'}
+                        </td>
+                      ))}
+                      {(onEdit || onDelete) && (
+                        <td className="whitespace-nowrap px-5 py-4 text-right align-top">
+                          {((onEdit && (!canEditRow || canEditRow(row))) || (onDelete && (!canDeleteRow || canDeleteRow(row)))) ? (
+                            <div className="flex justify-end gap-2">
+                              {onEdit && (!canEditRow || canEditRow(row)) && <Button size="sm" variant="secondary" onClick={() => onEdit(row)}>Edit</Button>}
+                              {onDelete && (!canDeleteRow || canDeleteRow(row)) && <Button size="sm" variant="danger" onClick={() => onDelete(row)}>Hapus</Button>}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-text-muted">-</span>
+                          )}
+                        </td>
                       )}
-                    </td>
-                  )}
-                </tr>
-              ))}
+                    </tr>
+                  ));
+                }
+
+                // Group transactions by date
+                const groupsMap = new Map();
+                rows.forEach((row) => {
+                  const date = row.transaction_date || 'Tanpa Tanggal';
+                  if (!groupsMap.has(date)) {
+                    groupsMap.set(date, []);
+                  }
+                  groupsMap.get(date).push(row);
+                });
+
+                const content = [];
+                for (const [date, groupRows] of groupsMap.entries()) {
+                  // Render transactions for this date
+                  groupRows.forEach((row) => {
+                    content.push(
+                      <tr key={row.id} className="ui-hover-surface duration-200">
+                        {columns.map((column) => (
+                          <td
+                            key={column.key}
+                            className="px-5 py-4 align-top text-sm leading-6 text-text-body"
+                          >
+                            {column.render ? column.render(row) : row[column.key] ?? '-'}
+                          </td>
+                        ))}
+                        {(onEdit || onDelete) && (
+                          <td className="whitespace-nowrap px-5 py-4 text-right align-top">
+                            {((onEdit && (!canEditRow || canEditRow(row))) || (onDelete && (!canDeleteRow || canDeleteRow(row)))) ? (
+                              <div className="flex justify-end gap-2">
+                                {onEdit && (!canEditRow || canEditRow(row)) && <Button size="sm" variant="secondary" onClick={() => onEdit(row)}>Edit</Button>}
+                                {onDelete && (!canDeleteRow || canDeleteRow(row)) && <Button size="sm" variant="danger" onClick={() => onDelete(row)}>Hapus</Button>}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-text-muted">-</span>
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  });
+
+                  // Calculate daily totals
+                  let dailyIncome = 0;
+                  let dailyExpense = 0;
+                  groupRows.forEach((r) => {
+                    const amt = Number(r.amount || 0);
+                    if (r.transaction_type === 'income') {
+                      dailyIncome += amt;
+                    } else if (r.transaction_type === 'expense') {
+                      dailyExpense += amt;
+                    }
+                  });
+
+                  // Summary row for this date
+                  const totalCols = columns.length + ((onEdit || onDelete) ? 1 : 0);
+                  content.push(
+                    <tr key={`summary-${date}`} className="bg-surface-100/30 font-medium border-b border-border-subtle">
+                      <td colSpan={totalCols} className="px-5 py-3 text-sm text-text-muted">
+                        <div className="flex items-center gap-6 justify-end">
+                          <span className="text-xs uppercase tracking-wide text-text-muted">Ringkasan {formatDate(date)}:</span>
+                          {dailyIncome > 0 && (
+                            <span className="text-success-base font-semibold">
+                              Total Pemasukan: {formatCurrency(dailyIncome)}
+                            </span>
+                          )}
+                          {dailyExpense > 0 && (
+                            <span className="text-danger-base font-semibold">
+                              Total Pengeluaran: {formatCurrency(dailyExpense)}
+                            </span>
+                          )}
+                          {dailyIncome === 0 && dailyExpense === 0 && (
+                            <span>-</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+                return content;
+              })()}
             </tbody>
           </table>
         </div>

@@ -5,8 +5,8 @@ export async function apiGet(url, params) {
   return response.data;
 }
 
-export async function apiPost(url, payload) {
-  const response = await apiClient.post(url, payload);
+export async function apiPost(url, payload, config) {
+  const response = await apiClient.post(url, payload, config);
   return response.data;
 }
 

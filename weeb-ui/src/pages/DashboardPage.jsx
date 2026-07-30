@@ -1,14 +1,17 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Bar, BarChart, CartesianGrid,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import {
-  AlertTriangle, RefreshCw, Sparkles,
+  AlertTriangle, RefreshCw, Sparkles, Plus, Mic,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { useDashboard } from '../hooks/useDashboard';
 import { cn } from '../lib/utils';
 import { compactCurrency, formatCurrency, formatDate } from '../lib/formatters';
+import VoiceTransactionModal from '../components/VoiceTransactionModal';
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -75,20 +78,37 @@ function ErrorState({ message, onRetry }) {
   );
 }
 
-function EmptyDashboard() {
+function EmptyDashboard({ onAddManual, onAddVoice }) {
   return (
     <div className="dashboard-fade-in space-y-6">
       <header>
         <h1 className="text-2xl font-bold text-text-title md:text-3xl">Dashboard WeeB</h1>
       </header>
-      <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-primary-500/20 bg-primary-500/5 p-8 text-center">
+      <div className="flex min-h-[300px] flex-col items-center justify-center rounded-3xl border border-dashed border-primary-500/20 bg-primary-500/5 p-8 text-center">
         <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-500/10">
           <Sparkles className="text-primary-600" size={26} />
         </span>
         <p className="text-lg font-semibold text-text-title">Belum ada data keuangan</p>
         <p className="mt-2 max-w-sm text-sm leading-6 text-text-muted">
-          Mulai dari menu Rekening, lalu catat pemasukan atau setoran tabungan pertama.
+          Mulai catat transaksi pertama Anda secara manual atau gunakan AI suara di bawah ini.
         </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <button
+            onClick={onAddManual}
+            className="flex items-center gap-2 rounded-2xl border border-border-subtle bg-surface-panel px-5 py-2.5 text-sm font-semibold text-text-title shadow-sm hover:border-primary-500/50 hover:bg-primary-500/5 duration-200 active:scale-[0.98]"
+          >
+            <Plus size={16} className="text-primary-500" />
+            <span>Tambah Transaksi</span>
+          </button>
+          <button
+            onClick={onAddVoice}
+            className="flex items-center gap-2 rounded-2xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white duration-200 active:scale-[0.98] animate-neon-pulse-purple hover:bg-violet-700"
+          >
+            <Mic size={16} className="text-violet-200" />
+            <span>Catat via Suara AI</span>
+            <Sparkles size={12} className="text-violet-200 animate-pulse" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -98,11 +118,28 @@ function EmptyDashboard() {
 /*  Main Dashboard                                                     */
 /* ------------------------------------------------------------------ */
 export default function DashboardPage() {
+  const navigate = useNavigate();
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const { dashboard, isLoading, error, refetch } = useDashboard();
 
   if (isLoading) return <LoadingDashboard />;
   if (error) return <ErrorState message={error} onRetry={refetch} />;
-  if (!dashboard || dashboard.is_empty) return <EmptyDashboard />;
+
+  const handleAddManual = () => navigate('/transactions', { state: { openCreate: true } });
+  const handleAddVoice = () => setVoiceModalOpen(true);
+
+  if (!dashboard || dashboard.is_empty) {
+    return (
+      <>
+        <EmptyDashboard onAddManual={handleAddManual} onAddVoice={handleAddVoice} />
+        <VoiceTransactionModal
+          open={voiceModalOpen}
+          onClose={() => setVoiceModalOpen(false)}
+          onSuccess={refetch}
+        />
+      </>
+    );
+  }
 
   const summary = dashboard.summary;
   const status = STATUS_MAP[dashboard.status] ?? STATUS_MAP.watch;
@@ -136,6 +173,24 @@ export default function DashboardPage() {
           <p className="text-[11px] font-bold uppercase tracking-widest">{status.label}</p>
           <p className="mt-0.5 text-sm font-semibold">{status.desc}</p>
         </div>
+      </section>
+
+      <section className="dashboard-card-up grid gap-3 grid-cols-2 sm:flex sm:items-center sm:gap-3" style={{ animationDelay: '150ms' }}>
+        <button
+          onClick={handleAddManual}
+          className="ui-hover-surface flex items-center justify-center gap-2 rounded-2xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm font-semibold text-text-title shadow-sm duration-200 active:scale-[0.98] hover:border-primary-500/50 hover:bg-primary-500/5 sm:py-2.5"
+        >
+          <Plus size={16} className="text-primary-500" />
+          <span>Tambah Transaksi</span>
+        </button>
+        <button
+          onClick={handleAddVoice}
+          className="flex items-center justify-center gap-2 rounded-2xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white duration-200 active:scale-[0.98] animate-neon-pulse-purple hover:bg-violet-700 sm:py-2.5"
+        >
+          <Mic size={16} className="text-violet-200" />
+          <span>Catat via Suara AI</span>
+          <Sparkles size={12} className="text-violet-200 animate-pulse" />
+        </button>
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
@@ -330,6 +385,12 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </section>
+
+      <VoiceTransactionModal
+        open={voiceModalOpen}
+        onClose={() => setVoiceModalOpen(false)}
+        onSuccess={refetch}
+      />
     </div>
   );
 }

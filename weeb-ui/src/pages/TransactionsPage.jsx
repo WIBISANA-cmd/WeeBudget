@@ -1,10 +1,13 @@
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
+import { Mic, Sparkles } from 'lucide-react';
 import CrudResourcePage from '../features/shared/CrudResourcePage';
 import { configs } from '../features/shared/crudConfigs';
 import { useAccountOptions } from '../hooks/useAccountOptions';
 import { useCategoryOptions } from '../hooks/useCategoryOptions';
 import { Card, CardContent } from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import VoiceTransactionModal from '../components/VoiceTransactionModal';
 import { formatCurrency, formatDate } from '../lib/formatters';
 import { cn } from '../lib/utils';
 
@@ -24,10 +27,12 @@ const transactionTypeTabs = [
 ];
 
 export default function TransactionsPage({ type }) {
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const categoryOptions = useCategoryOptions();
   const accountOptions = useAccountOptions();
   const options = { ...categoryOptions, ...accountOptions };
   const transactionType = type || 'expense';
+
   const config = {
     ...configs.transactions,
     title: type === 'income' ? 'Pemasukan' : type === 'expense' ? 'Pengeluaran' : 'Transaksi',
@@ -106,55 +111,75 @@ export default function TransactionsPage({ type }) {
   };
 
   return (
-    <CrudResourcePage
-      config={config}
-      options={options}
-      topContent={({ resource }) => {
-        const incomeTotal = resource.items
-          .filter((row) => row.transaction_type === 'income' && !isAllocation(row))
-          .reduce((total, row) => total + Number(row.amount || 0), 0);
-        const expenseTotal = resource.items
-          .filter((row) => row.transaction_type === 'expense' && !isAllocation(row))
-          .reduce((total, row) => total + Number(row.amount || 0), 0);
+    <>
+      <CrudResourcePage
+        config={config}
+        options={options}
+        topContent={({ resource }) => {
+          const incomeTotal = resource.items
+            .filter((row) => row.transaction_type === 'income' && !isAllocation(row))
+            .reduce((total, row) => total + Number(row.amount || 0), 0);
+          const expenseTotal = resource.items
+            .filter((row) => row.transaction_type === 'expense' && !isAllocation(row))
+            .reduce((total, row) => total + Number(row.amount || 0), 0);
 
-        return (
-          <div className="space-y-4">
-            <div className="rounded-[24px] border border-border-subtle bg-gradient-to-br from-surface-panel via-surface-panel to-surface-100/70 p-3 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.45)] md:rounded-[28px] md:p-4">
-              <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap">
-                {transactionTypeTabs.map((tab) => (
-                  <NavLink
-                    key={tab.to}
-                    to={tab.to}
-                    className={({ isActive }) => cn(
-                      'flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-semibold transition-colors',
-                      isActive
-                        ? 'bg-primary-500 text-white shadow-sm shadow-primary-500/20'
-                        : 'bg-surface-panel text-text-body hover:border-primary-500 hover:text-primary-600'
-                    )}
-                  >
-                    {tab.label}
-                  </NavLink>
-                ))}
+          return (
+            <div className="space-y-4">
+              <div className="flex flex-col gap-3 rounded-[24px] border border-border-subtle bg-gradient-to-br from-surface-panel via-surface-panel to-surface-100/70 p-3 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.45)] md:flex-row md:items-center md:justify-between md:rounded-[28px] md:p-4">
+                <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap">
+                  {transactionTypeTabs.map((tab) => (
+                    <NavLink
+                      key={tab.to}
+                      to={tab.to}
+                      className={({ isActive }) => cn(
+                        'flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-semibold transition-colors',
+                        isActive
+                          ? 'bg-primary-500 text-white shadow-sm shadow-primary-500/20'
+                          : 'bg-surface-panel text-text-body hover:border-primary-500 hover:text-primary-600'
+                      )}
+                    >
+                      {tab.label}
+                    </NavLink>
+                  ))}
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={() => setVoiceModalOpen(true)}
+                  className="gap-2 rounded-2xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white animate-neon-pulse-purple hover:bg-violet-700"
+                >
+                  <Mic size={18} className="text-violet-200" />
+                  <span>Catat via Suara AI</span>
+                  <Sparkles size={14} className="text-violet-200 animate-pulse" />
+                </Button>
+              </div>
+
+              <div className="hidden gap-4 md:grid xl:grid-cols-2">
+                <Card className="border-success-base/20 bg-gradient-to-br from-success-base/8 via-surface-panel to-surface-panel">
+                  <CardContent className="space-y-2">
+                    <p className="text-sm font-medium text-text-muted">Total pemasukan periode saat ini</p>
+                    <p className="text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(incomeTotal)}</p>
+                  </CardContent>
+                </Card>
+                <Card className="border-danger-base/20 bg-gradient-to-br from-danger-base/8 via-surface-panel to-surface-panel">
+                  <CardContent className="space-y-2">
+                    <p className="text-sm font-medium text-text-muted">Total pengeluaran periode saat ini</p>
+                    <p className="text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(expenseTotal)}</p>
+                  </CardContent>
+                </Card>
               </div>
             </div>
+          );
+        }}
+      />
 
-            <div className="hidden gap-4 md:grid xl:grid-cols-2">
-              <Card className="border-success-base/20 bg-gradient-to-br from-success-base/8 via-surface-panel to-surface-panel">
-                <CardContent className="space-y-2">
-                  <p className="text-sm font-medium text-text-muted">Total pemasukan periode saat ini</p>
-                  <p className="text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(incomeTotal)}</p>
-                </CardContent>
-              </Card>
-              <Card className="border-danger-base/20 bg-gradient-to-br from-danger-base/8 via-surface-panel to-surface-panel">
-                <CardContent className="space-y-2">
-                  <p className="text-sm font-medium text-text-muted">Total pengeluaran periode saat ini</p>
-                  <p className="text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(expenseTotal)}</p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        );
-      }}
-    />
+      <VoiceTransactionModal
+        open={voiceModalOpen}
+        onClose={() => setVoiceModalOpen(false)}
+        onSuccess={() => {
+          window.location.reload();
+        }}
+      />
+    </>
   );
 }

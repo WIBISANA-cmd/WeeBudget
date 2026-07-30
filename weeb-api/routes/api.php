@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\PushNotificationController;
 use App\Http\Controllers\Api\RecurringTransactionController;
 use App\Http\Controllers\Api\SavingGoalController;
 use App\Http\Controllers\Api\UserManagementController;
+use App\Http\Controllers\Api\VoiceTransactionController;
 use App\Http\Controllers\Api\WishlistController;
 use App\Http\Middleware\UseDefaultUser;
 use Illuminate\Support\Facades\Route;
@@ -76,6 +77,8 @@ Route::middleware(UseDefaultUser::class)->group(function () {
     Route::apiResource('accounts', FinancialAccountController::class);
     Route::post('/account-allocations', [AccountAllocationController::class, 'store'])->name('account-allocations.store');
     Route::apiResource('periods', FinancialPeriodController::class)->parameters(['periods' => 'period']);
+    Route::post('/transactions/voice-parse', [VoiceTransactionController::class, 'parse'])->middleware('throttle:20,1')->name('transactions.voice-parse');
+    Route::post('/transactions/voice-transcribe-audio', [VoiceTransactionController::class, 'transcribeAudio'])->middleware('throttle:20,1')->name('transactions.voice-transcribe-audio');
     Route::apiResource('transactions', AllTransactionController::class);
     Route::apiResource('incomes', IncomeController::class)->parameters(['incomes' => 'transaction']);
     Route::apiResource('expenses', ExpenseController::class)->parameters(['expenses' => 'transaction']);
