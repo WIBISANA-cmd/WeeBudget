@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Mic, Sparkles } from 'lucide-react';
 import CrudResourcePage from '../features/shared/CrudResourcePage';
+import TransactionFilters from '../features/finance/TransactionFilters';
 import { configs } from '../features/shared/crudConfigs';
 import { useAccountOptions } from '../hooks/useAccountOptions';
 import { useCategoryOptions } from '../hooks/useCategoryOptions';
@@ -154,16 +155,23 @@ export default function TransactionsPage({ type }) {
                 </Button>
               </div>
 
+              <TransactionFilters
+                resource={resource}
+                categories={options.categories || []}
+                accounts={options.accounts || []}
+                type={type}
+              />
+
               <div className="hidden gap-4 md:grid xl:grid-cols-2">
                 <Card className="border-success-base/20 bg-gradient-to-br from-success-base/8 via-surface-panel to-surface-panel">
                   <CardContent className="space-y-2">
-                    <p className="text-sm font-medium text-text-muted">Total pemasukan periode saat ini</p>
+                    <p className="text-sm font-medium text-text-muted">Total pemasukan sesuai filter</p>
                     <p className="text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(incomeTotal)}</p>
                   </CardContent>
                 </Card>
                 <Card className="border-danger-base/20 bg-gradient-to-br from-danger-base/8 via-surface-panel to-surface-panel">
                   <CardContent className="space-y-2">
-                    <p className="text-sm font-medium text-text-muted">Total pengeluaran periode saat ini</p>
+                    <p className="text-sm font-medium text-text-muted">Total pengeluaran sesuai filter</p>
                     <p className="text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(expenseTotal)}</p>
                   </CardContent>
                 </Card>

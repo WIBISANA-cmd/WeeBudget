@@ -136,6 +136,12 @@ export default function CoupleSavingsPage() {
     per_page: 30,
   });
 
+  const expenses = useCrudResource('/transactions', {
+    transaction_type: 'expense',
+    account_purpose: 'couple_savings',
+    per_page: 30,
+  });
+
   const [visibleDatesCount, setVisibleDatesCount] = useState(3);
 
   const uniqueDates = useMemo(() => {
@@ -387,6 +393,19 @@ export default function CoupleSavingsPage() {
     { key: 'amount', label: 'Nominal', render: (row) => formatCurrency(row.amount) },
   ];
 
+  const expenseColumns = [
+    { key: 'transaction_date', label: 'Tanggal', render: (row) => formatDate(row.transaction_date) },
+    { key: 'description', label: 'Deskripsi', mobileTitle: true, render: (row) => row.description || '-' },
+    { key: 'category', label: 'Kategori', render: (row) => row.category?.name || '-' },
+    { key: 'account', label: 'Sumber rekening', render: (row) => row.account?.name || '-' },
+    { key: 'amount', label: 'Nominal', render: (row) => <span className="font-semibold text-danger-base">-{formatCurrency(row.amount)}</span> },
+  ];
+
+  const totalExpense = useMemo(
+    () => expenses.items.reduce((total, item) => total + Number(item.amount || 0), 0),
+    [expenses.items],
+  );
+
   const openCreate = () => {
     setEditing(null);
     setFormOpen(true);
@@ -512,6 +531,34 @@ export default function CoupleSavingsPage() {
               </CardContent>
             </Card>
           </div>
+
+          <section className="space-y-3">
+            <div className="flex flex-wrap items-end justify-between gap-2 px-1">
+              <div>
+                <h2 className="text-xl font-bold text-text-title">Riwayat Pengeluaran</h2>
+                <p className="mt-1 text-sm text-text-muted">Pengeluaran yang memakai rekening Tabungan berdua sebagai sumber dana.</p>
+              </div>
+              <p className="text-lg font-semibold text-danger-base">-{formatCurrency(totalExpense)}</p>
+            </div>
+            {expenses.isLoading ? (
+              <LoadingSkeleton rows={4} />
+            ) : expenses.error ? (
+              <ErrorState message={expenses.error} onRetry={expenses.load} />
+            ) : expenses.items.length === 0 ? (
+              <EmptyState title="Belum ada pengeluaran" description="Transaksi pengeluaran dengan sumber rekening Tabungan berdua akan tampil di sini." />
+            ) : (
+              <>
+                <DataTable columns={expenseColumns} rows={expenses.items} />
+                {expenses.meta && expenses.meta.current_page < expenses.meta.last_page && (
+                  <div className="flex justify-center pt-1">
+                    <Button variant="secondary" onClick={expenses.loadNextPage} isLoading={expenses.isIncrementing}>
+                      Muat lebih banyak
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
         </>
       )}
 

@@ -41,7 +41,11 @@ class TransactionController extends Controller
             ->where('transaction_type', $this->type)
             ->when($request->filled('account_purpose'), fn ($q) => $q->whereHas('account', fn ($account) => $account->where('purpose', $request->account_purpose)))
             ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->category_id))
+            ->when($request->filled('account_id'), fn ($q) => $q->where('account_id', $request->account_id))
             ->when($request->filled('need_type'), fn ($q) => $q->where('need_type', $request->need_type))
+            ->when($request->filled('search'), fn ($q) => $q->where(fn ($inner) => $inner
+                ->where('description', 'like', '%'.$request->search.'%')
+                ->orWhere('notes', 'like', '%'.$request->search.'%')))
             ->when($request->filled('date_from'), fn ($q) => $q->whereDate('transaction_date', '>=', $request->date_from))
             ->when($request->filled('date_to'), fn ($q) => $q->whereDate('transaction_date', '<=', $request->date_to))
             ->latest('transaction_date')
