@@ -19,11 +19,18 @@ class CategoryController extends Controller
     public function index(Request $request): JsonResponse
     {
         $isAdmin = ($request->user()->role ?? 'user') === 'admin';
+        $forkedSourceIds = $isAdmin ? [] : TransactionCategory::query()
+            ->where('user_id', $request->user()->id)
+            ->whereNotNull('source_category_id')
+            ->pluck('source_category_id')
+            ->all();
+
         $query = TransactionCategory::query()
             ->with('account:id,name')
             ->when(
                 ! $isAdmin,
-                fn ($query) => $query->where(fn ($q) => $q->where('user_id', $request->user()->id)->orWhereNull('user_id'))
+                fn ($query) => $query->where(fn ($q) => $q->where('user_id', $request->user()->id)
+                    ->orWhere(fn ($q2) => $q2->whereNull('user_id')->whereNotIn('id', $forkedSourceIds)))
             )
             ->when($request->filled('transaction_type'), fn ($q) => $q->whereIn('transaction_type', [$request->transaction_type, 'both']))
             ->when($request->filled('need_type'), fn ($q) => $q->where('need_type', $request->need_type))
@@ -59,9 +66,33 @@ class CategoryController extends Controller
 
     public function update(UpdateCategoryRequest $request, int $category): JsonResponse
     {
-        $model = $this->findCategory($request, $category, customOnly: true);
+        $model = $this->findCategory($request, $category);
         $data = $request->validated();
-        if (($request->user()->role ?? 'user') === 'admin' || $model->user_id === null) {
+        $isAdmin = ($request->user()->role ?? 'user') === 'admin';
+
+        // Kategori global (bawaan/shared) tidak boleh diubah langsung oleh user biasa.
+        // Editannya disimpan sebagai kategori pribadi (fork) milik user tersebut saja.
+        if (! $isAdmin && $model->user_id === null) {
+            $fork = TransactionCategory::query()
+                ->where('user_id', $request->user()->id)
+                ->where('source_category_id', $model->id)
+                ->first();
+
+            $forkData = array_merge($model->only(['color', 'sort_order']), $data, [
+                'user_id' => $request->user()->id,
+                'source_category_id' => $model->id,
+                'is_default' => false,
+            ]);
+            $forkData['slug'] = $forkData['slug'] ?? Str::slug($forkData['name'] ?? $model->name);
+
+            $result = $fork
+                ? tap($fork)->update($forkData)
+                : TransactionCategory::query()->create($forkData);
+
+            return $this->success(new CategoryResource($result->fresh()->load('account:id,name')), 'Category updated.');
+        }
+
+        if ($isAdmin || $model->user_id === null) {
             $data['account_id'] = null;
         }
         $data['slug'] = $data['slug'] ?? (isset($data['name']) ? Str::slug($data['name']) : $model->slug);

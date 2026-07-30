@@ -15,6 +15,8 @@ class CategoryResource extends JsonResource
         $isShared = $this->user_id === null && ! $this->is_default;
         $canManage = ($isAdmin && $this->user_id === null)
             || (int) $this->user_id === (int) $request->user()?->id;
+        // Kategori global boleh diedit siapa saja (hasilnya jadi fork pribadi), tapi tidak boleh dihapus.
+        $canEdit = $canManage || $this->user_id === null;
 
         return [
             'id' => $this->id,
@@ -33,6 +35,7 @@ class CategoryResource extends JsonResource
             'is_default' => $this->is_default,
             'is_shared' => $isShared,
             'can_manage' => $canManage,
+            'can_edit' => $canEdit,
             'sort_order' => $this->sort_order,
         ];
     }

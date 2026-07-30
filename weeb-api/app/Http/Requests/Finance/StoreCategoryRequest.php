@@ -35,7 +35,7 @@ class StoreCategoryRequest extends FormRequest
                     $transactionType = $this->input('transaction_type');
                     $categoryContext = $this->categoryContext();
                     $targetUserId = $categoryContext
-                        ? $categoryContext->user_id
+                        ? ($categoryContext->user_id ?? ($isAdmin ? null : $userId))
                         : ($isAdmin ? null : $userId);
 
                     if (! $userId || ! $transactionType || ! is_string($value)) {

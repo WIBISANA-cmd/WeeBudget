@@ -14,17 +14,24 @@ class VoiceTransactionParser
 {
     public function parse(User $user, string $transcript): array
     {
+        $forkedSourceIds = TransactionCategory::query()
+            ->where('user_id', $user->id)
+            ->whereNotNull('source_category_id')
+            ->pluck('source_category_id')
+            ->all();
+
         $categories = TransactionCategory::query()
-            ->where(function ($query) use ($user) {
-                $query->whereNull('user_id')
-                    ->orWhere('user_id', $user->id);
+            ->where(function ($query) use ($user, $forkedSourceIds) {
+                $query->where('user_id', $user->id)
+                    ->orWhere(fn ($q) => $q->whereNull('user_id')->whereNotIn('id', $forkedSourceIds));
             })
-            ->get(['id', 'name', 'transaction_type', 'need_type'])
+            ->get(['id', 'name', 'transaction_type', 'need_type', 'account_id'])
             ->map(fn ($cat) => [
                 'id' => $cat->id,
                 'name' => $cat->name,
                 'transaction_type' => $cat->transaction_type,
                 'need_type' => $cat->need_type,
+                'account_id' => $cat->account_id,
             ])
             ->values()
             ->toArray();
@@ -121,11 +128,17 @@ class VoiceTransactionParser
                 ? (int) $item['category_id']
                 : null;
 
+            $matchedCategory = $catId ? collect($categories)->firstWhere('id', $catId) : null;
+
             $accId = isset($item['account_id']) && in_array((int) $item['account_id'], $validAccountIds, true)
                 ? (int) $item['account_id']
                 : $defaultAccountId;
 
-            $matchedCategory = $catId ? collect($categories)->firstWhere('id', $catId) : null;
+            // Rekening yang sudah diset pada kategori (Sumber Rekening/Rekening Tujuan) selalu jadi acuan utama.
+            if ($matchedCategory && in_array((int) ($matchedCategory['account_id'] ?? 0), $validAccountIds, true)) {
+                $accId = (int) $matchedCategory['account_id'];
+            }
+
             $needType = $item['need_type'] ?? ($matchedCategory['need_type'] ?? null);
             if (! in_array($needType, ['need', 'want', 'saving', 'debt'], true)) {
                 $needType = $item['transaction_type'] === 'expense' ? 'need' : null;

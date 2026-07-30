@@ -233,7 +233,7 @@ export const configs = {
       { key: 'scope', label: 'Cakupan', render: (row) => row.is_default ? 'Bawaan' : row.is_shared ? 'Global' : 'Pribadi' },
       { key: 'is_default', label: 'Default', render: (row) => row.is_default ? 'Ya' : 'Tidak' },
     ],
-    canEdit: (row) => row?.can_manage === true,
+    canEdit: (row) => row?.can_edit === true,
     canDelete: (row) => row?.can_manage === true,
   },
   transactions: {
