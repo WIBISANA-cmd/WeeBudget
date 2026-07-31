@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
-import { HeartHandshake, Pencil, Plus, Settings, Trash2, UserCircle, Users, Wallet } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
+import { HeartHandshake, Pencil, Plus, Settings, Trash2, Wallet } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import DataTable from '../components/data/DataTable';
 import EmptyState from '../components/feedback/EmptyState';
@@ -32,7 +32,7 @@ const settingSchema = z.object({
   path: ['partner_two_user_id'],
 });
 
-function MobileSavingsList({ rows, partnerBySource, onAction }) {
+function MobileSavingsList({ rows, depositorLabel, onAction }) {
   const [pressTimer, setPressTimer] = useState(null);
   const groupedRows = useMemo(() => {
     return rows.reduce((groups, row) => {
@@ -76,9 +76,7 @@ function MobileSavingsList({ rows, partnerBySource, onAction }) {
             <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">{group.label}</p>
           </div>
           {group.rows.map((row, index) => {
-            const actorLabel = row.metadata?.actor_label || row.source;
-            const partner = partnerBySource[actorLabel];
-            const senderLabel = partner ? `${partner.label} (${partner.user.name})` : actorLabel || 'Tanpa penyetor';
+            const senderLabel = depositorLabel(row);
             const typeLabel = row.entry_type === 'account_allocation' ? 'Alokasi Dana' : 'Setoran Manual';
             const accountLabel = row.account?.name ? ` • ${row.account.name}` : '';
 
@@ -256,36 +254,22 @@ export default function CoupleSavingsPage() {
   const partnerOne = setting?.partner_one;
   const partnerTwo = setting?.partner_two;
 
-  const partnerBySource = useMemo(() => {
+  const partnerLabelByUserId = useMemo(() => {
     const pairs = {};
-    if (partnerOne?.email) pairs[partnerOne.email] = { label: 'Pasangan 1', user: partnerOne };
-    if (partnerTwo?.email) pairs[partnerTwo.email] = { label: 'Pasangan 2', user: partnerTwo };
+    if (partnerOne?.id) pairs[String(partnerOne.id)] = 'Pasangan 1';
+    if (partnerTwo?.id) pairs[String(partnerTwo.id)] = 'Pasangan 2';
 
     return pairs;
   }, [partnerOne, partnerTwo]);
 
-  const contributorTotals = useMemo(() => {
-    return resource.items.reduce((summary, item) => {
-      const source = item.source || 'Tanpa penyetor';
-      const partner = partnerBySource[source];
-      const key = partner?.label || source;
-      const name = partner?.user?.name || source;
-      const email = partner?.user?.email || source;
+  // The depositor is whoever recorded the row — true for manual setoran and for allocation entries
+  // alike. `source`/`actor_label` are only fallbacks for rows saved before the API sent `user`.
+  const depositorLabel = (row) => {
+    const name = row.user?.name || row.metadata?.actor_label || row.source || 'Tanpa penyetor';
+    const partnerLabel = partnerLabelByUserId[String(row.user_id)];
 
-      summary[key] = {
-        source: key,
-        name,
-        email,
-        total: (summary[key]?.total || 0) + Number(item.amount || 0),
-      };
-
-      return summary;
-    }, {});
-  }, [partnerBySource, resource.items]);
-
-  const contributors = useMemo(() => Object.values(contributorTotals)
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 2), [contributorTotals]);
+    return partnerLabel ? `${partnerLabel} - ${name}` : name;
+  };
 
   const currentSource = user?.email || user?.name || 'Pengguna lokal';
 
@@ -377,10 +361,9 @@ export default function CoupleSavingsPage() {
         {row.entry_type === 'account_allocation' ? 'Alokasi Dana' : 'Setoran Manual'}
       </StatusBadge>
     ) },
-    { key: 'source', label: 'Penyetor', render: (row) => {
-      const partner = partnerBySource[row.source];
-      return <StatusBadge value="income">{partner ? `${partner.label} - ${partner.user.name}` : row.source || '-'}</StatusBadge>;
-    } },
+    { key: 'source', label: 'Penyetor', render: (row) => (
+      <StatusBadge value="income">{depositorLabel(row)}</StatusBadge>
+    ) },
     { key: 'account', label: 'Rekening sumber saldo', render: (row) => row.account?.name || '-' },
     { key: 'description', label: 'Deskripsi', mobileTitle: true, render: (row) => (
       <div className="space-y-1">
@@ -503,7 +486,7 @@ export default function CoupleSavingsPage() {
               ) : resource.items.length === 0 ? (
                 <EmptyState title="Belum ada setoran" description="Catat setoran pertama dari salah satu pasangan." action={<Button onClick={openCreate}>Tambah setoran</Button>} />
               ) : (
-                <MobileSavingsList rows={renderedItems} partnerBySource={partnerBySource} onAction={setActionTarget} />
+                <MobileSavingsList rows={renderedItems} depositorLabel={depositorLabel} onAction={setActionTarget} />
               )}
               {resource.isIncrementing && (
                 <div className="mt-4 flex justify-center py-2">

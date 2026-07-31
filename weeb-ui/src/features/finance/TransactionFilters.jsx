@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { RotateCcw, Search, SlidersHorizontal, X } from 'lucide-react';
+import { RotateCcw, Search, SlidersHorizontal, Wallet, X } from 'lucide-react';
 import SelectBox from '../../components/ui/SelectBox';
 import { needTypeOptions } from '../shared/crudConfigs';
 import { buildTransactionParams, countActiveFilters, emptyFilters, periodOptions } from './transactionFilterParams';
+import { formatCurrency } from '../../lib/formatters';
 import { cn } from '../../lib/utils';
 
 const dateInputClass = 'w-full rounded-xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm text-text-title shadow-sm shadow-card-soft focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20';
@@ -38,6 +39,14 @@ export default function TransactionFilters({ resource, categories = [], accounts
 
   const activeCount = countActiveFilters(filters);
   const update = (patch) => setFilters((current) => ({ ...current, ...patch }));
+
+  const selectedAccount = useMemo(
+    () => accounts.find((account) => String(account.value) === String(filters.account_id)) || null,
+    [accounts, filters.account_id],
+  );
+  const remainingBalance = selectedAccount
+    ? Number(selectedAccount.balance || 0)
+    : accounts.reduce((total, account) => total + Number(account.balance || 0), 0);
 
   return (
     <div className="rounded-[24px] border border-border-subtle bg-gradient-to-br from-surface-panel via-surface-panel to-surface-100/70 p-3 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.45)] md:rounded-[28px] md:p-4">
@@ -97,6 +106,18 @@ export default function TransactionFilters({ resource, categories = [], accounts
             </button>
           )}
         </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-100/70 px-3 py-2.5">
+        <span className="flex min-w-0 items-center gap-2 text-sm text-text-muted">
+          <Wallet size={16} className="shrink-0 text-primary-600" />
+          <span className="truncate">
+            Sisa saldo {selectedAccount ? selectedAccount.label.split(' - ')[0] : 'semua rekening'}
+          </span>
+        </span>
+        <span className={cn('text-base font-semibold', remainingBalance < 0 ? 'text-danger-base' : 'text-text-title')}>
+          {formatCurrency(remainingBalance)}
+        </span>
       </div>
 
       {isOpen && (

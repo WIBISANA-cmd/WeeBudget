@@ -33,8 +33,15 @@ class AllTransactionController extends Controller
             : [(int) $request->user()->id];
 
         $query = Transaction::query()
-            ->with(['category', 'account'])
+            ->with(['category', 'account', 'user'])
             ->whereIn('user_id', $userIds)
+            // An allocation is stored as a pair (expense out / income in) to keep both balances right.
+            // Unless the view is scoped to one account — where the account filter already matches a
+            // single leg — only the outgoing leg is listed, so an allocation shows up exactly once.
+            ->when(! $request->filled('account_purpose') && ! $request->filled('account_id'), fn ($q) => $q->where(fn ($inner) => $inner
+                ->where('source', '!=', 'account_allocation')
+                ->orWhereNull('source')
+                ->orWhere('transaction_type', '!=', 'income')))
             ->when($request->filled('transaction_type'), fn ($q) => $q->where('transaction_type', $request->transaction_type))
             ->when($request->filled('need_type'), fn ($q) => $q->where('need_type', $request->need_type))
             ->when($request->filled('account_purpose'), fn ($q) => $q->whereHas('account', fn ($account) => $account->where('purpose', $request->account_purpose)))

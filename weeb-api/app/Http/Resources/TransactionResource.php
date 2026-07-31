@@ -16,6 +16,12 @@ class TransactionResource extends JsonResource
         return [
             'id' => $this->id,
             'user_id' => $this->user_id,
+            // Who recorded the transaction — the couple savings page shows this as the depositor.
+            'user' => $this->whenLoaded('user', fn () => [
+                'id' => $this->user->id,
+                'name' => $this->user->name,
+                'email' => $this->user->email,
+            ]),
             'account_id' => $this->account_id,
             'account' => $this->whenLoaded('account', fn () => new FinancialAccountResource($this->account)),
             'category_id' => $this->category_id,

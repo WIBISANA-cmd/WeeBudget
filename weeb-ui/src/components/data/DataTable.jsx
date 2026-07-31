@@ -300,6 +300,8 @@ export default function DataTable({ columns, rows, onEdit, onDelete, canEditRow,
                   let dailyIncome = 0;
                   let dailyExpense = 0;
                   groupRows.forEach((r) => {
+                    // Allocations only move money between own accounts — neither income nor expense.
+                    if (r.entry_type === 'account_allocation') return;
                     const amt = Number(r.amount || 0);
                     if (r.transaction_type === 'income') {
                       dailyIncome += amt;

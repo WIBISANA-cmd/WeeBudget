@@ -36,9 +36,14 @@ class TransactionController extends Controller
             : [(int) $request->user()->id];
 
         $query = Transaction::query()
-            ->with(['category', 'account'])
+            ->with(['category', 'account', 'user'])
             ->whereIn('user_id', $userIds)
             ->where('transaction_type', $this->type)
+            // Moving money between own accounts is neither income nor expense, so it stays out of
+            // these lists entirely. Purpose-scoped views still need it and keep it.
+            ->when(! $request->filled('account_purpose'), fn ($q) => $q->where(fn ($inner) => $inner
+                ->whereNull('source')
+                ->orWhere('source', '!=', 'account_allocation')))
             ->when($request->filled('account_purpose'), fn ($q) => $q->whereHas('account', fn ($account) => $account->where('purpose', $request->account_purpose)))
             ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->category_id))
             ->when($request->filled('account_id'), fn ($q) => $q->where('account_id', $request->account_id))

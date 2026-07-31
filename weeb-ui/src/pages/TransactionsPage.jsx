@@ -8,6 +8,7 @@ import { useAccountOptions } from '../hooks/useAccountOptions';
 import { useCategoryOptions } from '../hooks/useCategoryOptions';
 import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import StatusBadge from '../components/feedback/StatusBadge';
 import VoiceTransactionModal from '../components/VoiceTransactionModal';
 import { formatCurrency, formatDate } from '../lib/formatters';
 import { cn } from '../lib/utils';
@@ -21,6 +22,18 @@ const signedAmount = (row) => {
 const amountClass = (row) => {
   if (isAllocation(row)) return 'text-primary-600';
   return isIncome(row) ? 'text-success-base' : 'text-danger-base';
+};
+/** Allocation rows are listed once, so the label has to name both sides of the move. */
+const allocationLabel = (row) => {
+  const self = row.account?.name || 'Rekening ini';
+  const other = row.metadata?.counterpart_account_name || 'rekening lain';
+  const [from, to] = row.metadata?.direction === 'in' ? [other, self] : [self, other];
+
+  return `Alokasi dana: ${from} → ${to}`;
+};
+const rowDescription = (row) => {
+  if (isAllocation(row)) return allocationLabel(row);
+  return row.description || row.category?.name || '-';
 };
 const transactionTypeTabs = [
   { label: 'Pemasukan', to: '/transactions/income' },
@@ -43,11 +56,28 @@ export default function TransactionsPage({ type }) {
     initialParams: { per_page: 30 },
     noCard: true,
     defaultValues: { ...configs.transactions.defaultValues, transaction_type: transactionType, need_type: type === 'income' ? '' : 'need', notes: undefined },
-    columns: configs.transactions.columns.map((column) => (
-      column.key === 'amount'
-        ? { ...column, render: (row) => <span className={amountClass(row)}>{signedAmount(row)}</span> }
-        : column
-    )),
+    columns: configs.transactions.columns.map((column) => {
+      if (column.key === 'amount') {
+        return { ...column, render: (row) => <span className={amountClass(row)}>{signedAmount(row)}</span> };
+      }
+
+      if (column.key === 'description') {
+        return { ...column, render: rowDescription };
+      }
+
+      if (column.key === 'transaction_type') {
+        return {
+          ...column,
+          render: (row) => (
+            <StatusBadge value={isAllocation(row) ? 'account_allocation' : row.transaction_type}>
+              {isAllocation(row) ? 'Alokasi Dana' : (isIncome(row) ? 'Pemasukan' : 'Pengeluaran')}
+            </StatusBadge>
+          ),
+        };
+      }
+
+      return column;
+    }),
     fields: [
       ...(type ? [] : [{ name: 'transaction_type', label: 'Tipe', type: 'tabs', options: [{ value: 'income', label: 'Pemasukan' }, { value: 'expense', label: 'Pengeluaran' }], clearFieldsOnChange: ['category_id'] }]),
       { name: 'account_id', label: 'Sumber Rekening', type: 'select', optionsKey: 'accounts', placeholder: 'Pilih rekening sumber transaksi' },
@@ -67,7 +97,7 @@ export default function TransactionsPage({ type }) {
       { name: 'description', label: 'Deskripsi / Keterangan', full: true, placeholder: 'Contoh: Belanja mingguan, transfer dari freelance' },
     ],
     mobileColumns: {
-      title: (row) => row.description || row.category?.name || '-',
+      title: rowDescription,
       titleLabel: 'Deskripsi',
       numberLabel: 'No',
       amountLabel: 'Nominal',
@@ -90,6 +120,7 @@ export default function TransactionsPage({ type }) {
     },
     detailRows: [
       { label: 'Tanggal', render: (row) => formatDate(row.transaction_date) },
+      { label: 'Keterangan', render: rowDescription },
       { label: 'Rekening', render: (row) => row.account?.name || '-' },
       { label: 'Kategori', render: (row) => row.category?.name || '-' },
       { label: 'Tipe', render: (row) => isAllocation(row) ? 'Alokasi Dana' : (row.transaction_type === 'income' ? 'Pemasukan' : 'Pengeluaran') },
