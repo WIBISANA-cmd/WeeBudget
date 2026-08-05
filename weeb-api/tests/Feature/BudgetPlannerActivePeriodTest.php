@@ -65,17 +65,42 @@ class BudgetPlannerActivePeriodTest extends TestCase
             ->keyBy('key');
 
         $this->assertSame(50, $allocations['needs']['percent']);
+        $this->assertSame(50, $allocations['needs']['recommended_percent']);
         $this->assertSame(500000.0, $allocations['needs']['amount']);
         $this->assertSame(20, $allocations['savings']['percent']);
+        $this->assertSame(20, $allocations['savings']['recommended_percent']);
         $this->assertSame(200000.0, $allocations['savings']['amount']);
         $this->assertSame(5, $allocations['couple_savings']['percent']);
+        $this->assertSame(5, $allocations['couple_savings']['recommended_percent']);
         $this->assertSame(50000.0, $allocations['couple_savings']['amount']);
         $this->assertSame(15, $allocations['emergency_fund']['percent']);
+        $this->assertSame(15, $allocations['emergency_fund']['recommended_percent']);
         $this->assertSame(150000.0, $allocations['emergency_fund']['amount']);
         $this->assertSame(10, $allocations['wants']['percent']);
+        $this->assertSame(10, $allocations['wants']['recommended_percent']);
         $this->assertSame(100000.0, $allocations['wants']['amount']);
         $this->assertSame(1000000.0, $planner['allocated_amount']);
         $this->assertSame(0.0, $planner['unallocated_amount']);
+    }
+
+    public function test_budget_planner_retains_recommended_percent_when_custom_allocations_exist(): void
+    {
+        $user = User::factory()->create();
+        $user->profile()->create([
+            'budget_planner_allocations' => [
+                ['key' => 'needs', 'percent' => 60],
+                ['key' => 'savings', 'percent' => 15],
+                ['key' => 'couple_savings', 'percent' => 5],
+                ['key' => 'emergency_fund', 'percent' => 10],
+                ['key' => 'wants', 'percent' => 10],
+            ],
+        ]);
+
+        $planner = app(BudgetPlannerService::class)->generate($user, 1000000);
+        $allocations = collect($planner['allocations'])->keyBy('key');
+
+        $this->assertSame(60.0, $allocations['needs']['percent']);
+        $this->assertSame(50, $allocations['needs']['recommended_percent']);
     }
 
     public function test_budget_planner_uses_full_active_period_days_when_today_is_outside_period(): void

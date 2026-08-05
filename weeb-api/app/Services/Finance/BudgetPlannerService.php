@@ -209,6 +209,7 @@ class BudgetPlannerService
 
             return [
                 ...$plan,
+                'recommended_percent' => $plan['percent'],
                 'percent' => $overridePercent !== null ? (float) $overridePercent : $plan['percent'],
             ];
         })->all();

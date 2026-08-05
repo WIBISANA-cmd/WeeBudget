@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw, Wallet } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import ErrorState from '../components/feedback/ErrorState';
@@ -153,6 +153,14 @@ export default function BudgetPlannerPage() {
   const customNeedsAmount = customAllocationItems.find((item) => item.key === 'needs')?.appliedAmount || 0;
   const customDailySafe = Math.floor(customNeedsAmount / Math.max(planner?.days_until_payday || 1, 1));
 
+  const handleResetPercentage = () => {
+    const resetAllocations = {};
+    (planner?.allocations || []).forEach((item) => {
+      resetAllocations[item.key] = String(item.recommended_percent ?? item.percent ?? '');
+    });
+    setCustomAllocations(resetAllocations);
+  };
+
   const saveCustomAllocations = async () => {
     if (!isPercentageBalanced) {
       setSaveMessage({ type: 'error', text: 'Custom alokasi belum bisa disimpan karena total persentase harus tepat 100%.' });
@@ -276,8 +284,8 @@ export default function BudgetPlannerPage() {
             <span className="text-xs text-text-muted ml-1.5">({totalCustomPercentage}%)</span>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="secondary" onClick={() => setCustomAllocations({})}>
-              Reset
+            <Button size="sm" variant="secondary" onClick={handleResetPercentage}>
+              Reset persentase
             </Button>
             <Button size="sm" onClick={saveCustomAllocations} isLoading={isSavingCustomAllocations} disabled={!isPercentageBalanced}>
               Simpan
@@ -291,8 +299,8 @@ export default function BudgetPlannerPage() {
               <CardTitle>Custom alokasi dana</CardTitle>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" onClick={() => setCustomAllocations({})}>
-                Kosongkan input
+              <Button variant="secondary" onClick={handleResetPercentage}>
+                Reset persentase
               </Button>
               <Button onClick={saveCustomAllocations} isLoading={isSavingCustomAllocations} disabled={!isPercentageBalanced}>
                 Simpan custom alokasi

@@ -57,7 +57,7 @@ export default function Modal({ title, description, open, onClose, children, foo
           {children}
         </div>
         {footer && (
-          <div className="border-t border-border-subtle px-4 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:px-6 md:py-4">
+          <div className="shrink-0 border-t border-border-subtle bg-surface-panel px-4 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:px-6 md:py-4">
             {footer}
           </div>
         )}

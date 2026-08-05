@@ -210,6 +210,46 @@ export default function VoiceTransactionModal({ open, onClose, onSuccess }) {
     || (audioBlob && !inputText.trim() && 'Rekaman siap dikirim. AI akan mentranskripsi saat diekstrak.')
     || (supported ? 'Ketuk untuk bicara, atau langsung ketik di bawah' : 'Ketuk untuk merekam, atau langsung ketik di bawah');
 
+  // Aksi utama hidup di footer Modal (di luar area scroll) supaya tidak pernah
+  // tertimpa bottom-nav / browser chrome di mobile.
+  const footer = {
+    idle: (
+      <Button
+        variant="primary"
+        disabled={(!inputText.trim() && !audioBlob) || busy || countdown > 0}
+        onClick={handleParse}
+        className="w-full gap-2 rounded-2xl py-3.5 text-sm font-bold shadow-md bg-linear-to-r from-amber-500 to-primary-600"
+      >
+        {countdown > 0 ? (
+          <>
+            <Timer size={18} className="animate-spin text-amber-200" />
+            <span>Tunggu {countdown}s</span>
+          </>
+        ) : (
+          <>
+            <Sparkles size={18} className="text-amber-200" />
+            <span>Ekstrak Mutasi via AI</span>
+          </>
+        )}
+      </Button>
+    ),
+    review: (
+      <Button
+        variant="primary"
+        disabled={drafts.length === 0}
+        onClick={handleConfirmSave}
+        className="w-full gap-2 rounded-2xl py-3.5 text-sm font-bold shadow-md bg-linear-to-r from-success-base to-primary-600"
+      >
+        Simpan {drafts.length} Transaksi <ArrowRight size={16} />
+      </Button>
+    ),
+    done: (
+      <Button variant="primary" onClick={onClose} className="w-full rounded-2xl py-3.5 font-bold shadow-md">
+        Selesai & Kembali ke Dashboard
+      </Button>
+    ),
+  }[step];
+
   return (
     <Modal
       open={open}
@@ -217,6 +257,7 @@ export default function VoiceTransactionModal({ open, onClose, onSuccess }) {
       fullScreenOnMobile
       title="Catat dengan Suara"
       description="Sebutkan atau ketik transaksi Anda dalam kalimat biasa, AI akan mengekstrak otomatis."
+      footer={footer}
     >
       <div className="space-y-5">
         {/* Error Alert */}
@@ -319,25 +360,6 @@ export default function VoiceTransactionModal({ open, onClose, onSuccess }) {
                 ))}
               </div>
             )}
-
-            <Button
-              variant="primary"
-              disabled={(!inputText.trim() && !audioBlob) || busy || countdown > 0}
-              onClick={handleParse}
-              className="w-full gap-2 rounded-2xl py-3.5 text-sm font-bold shadow-md bg-linear-to-r from-amber-500 to-primary-600"
-            >
-              {countdown > 0 ? (
-                <>
-                  <Timer size={18} className="animate-spin text-amber-200" />
-                  <span>Tunggu {countdown}s</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles size={18} className="text-amber-200" />
-                  <span>Ekstrak Mutasi via AI</span>
-                </>
-              )}
-            </Button>
           </div>
         )}
 
@@ -515,24 +537,13 @@ export default function VoiceTransactionModal({ open, onClose, onSuccess }) {
               })}
             </div>
 
-            <div className="space-y-3 pt-1">
-              <button
-                type="button"
-                onClick={handleAddDraftCard}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border-subtle bg-surface-100/50 py-3 text-xs font-bold text-text-muted transition-colors hover:bg-surface-100"
-              >
-                <Plus size={15} /> Tambah Transaksi Manual
-              </button>
-
-              <Button
-                variant="primary"
-                disabled={drafts.length === 0}
-                onClick={handleConfirmSave}
-                className="w-full gap-2 rounded-2xl py-3.5 text-sm font-bold shadow-md bg-linear-to-r from-success-base to-primary-600"
-              >
-                Simpan {drafts.length} Transaksi <ArrowRight size={16} />
-              </Button>
-            </div>
+            <button
+              type="button"
+              onClick={handleAddDraftCard}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border-subtle bg-surface-100/50 py-3 text-xs font-bold text-text-muted transition-colors hover:bg-surface-100"
+            >
+              <Plus size={15} /> Tambah Transaksi Manual
+            </button>
           </div>
         )}
 
@@ -593,10 +604,6 @@ export default function VoiceTransactionModal({ open, onClose, onSuccess }) {
                 </div>
               </div>
             )}
-
-            <Button variant="primary" onClick={onClose} className="w-full rounded-2xl py-3.5 font-bold shadow-md">
-              Selesai & Kembali ke Dashboard
-            </Button>
           </div>
         )}
       </div>
