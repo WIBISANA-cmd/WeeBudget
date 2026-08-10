@@ -1,11 +1,23 @@
+import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import Button from '../ui/Button';
 import { cn } from '../../lib/utils';
 
 export default function Modal({ title, description, open, onClose, children, footer, fullScreenOnMobile }) {
-  if (!open) return null;
+  // Kunci scroll latar selama modal terbuka.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [open]);
 
-  return (
+  if (!open || typeof document === 'undefined') return null;
+
+  // Portal ke <body>: modal dipanggil dari dalam <main> yang punya stacking
+  // context sendiri, sehingga z-index-nya kalah dari bottom-nav yang fixed.
+  return createPortal(
     <div className={cn(
       "fixed inset-0 z-[200] flex bg-slate-950/45 p-0 backdrop-blur-sm md:items-center md:justify-center md:p-4",
       fullScreenOnMobile ? "items-stretch md:items-center md:justify-center" : "items-end justify-center"
@@ -13,7 +25,7 @@ export default function Modal({ title, description, open, onClose, children, foo
       <div className={cn(
         "relative z-[201] overflow-hidden border border-border-subtle bg-surface-panel shadow-card",
         fullScreenOnMobile
-          ? "flex h-[100dvh] w-full max-h-[100dvh] flex-col rounded-none border-none md:h-auto md:w-full md:max-w-3xl md:max-h-[90vh] md:rounded-[28px] md:border md:border-border-subtle"
+          ? "flex h-full w-full max-h-full flex-col rounded-none border-none md:h-auto md:w-full md:max-w-3xl md:max-h-[90vh] md:rounded-[28px] md:border md:border-border-subtle"
           : "w-full max-h-[92dvh] rounded-t-[28px] md:max-w-2xl md:rounded-[28px]"
       )}>
         {!fullScreenOnMobile && (
@@ -62,7 +74,8 @@ export default function Modal({ title, description, open, onClose, children, foo
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
