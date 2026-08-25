@@ -1,81 +1,27 @@
 import { useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ArrowRightLeft, PieChart, Target, X, BellRing, Repeat, FileText, Lightbulb, HeartHandshake, Settings, ListChecks, Calculator, CalendarRange, Landmark, Users, ChevronDown, WalletCards, ShieldCheck, ChartNoAxesCombined, SlidersHorizontal } from 'lucide-react';
+import { X, ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { useCurrentUser } from '../../hooks/useCurrentUser';
-
-const menuGroups = [
-  {
-    key: 'main',
-    label: 'Utama',
-    icon: LayoutDashboard,
-    items: [
-      { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    ],
-  },
-  {
-    key: 'finance',
-    label: 'Kelola Keuangan',
-    icon: WalletCards,
-    items: [
-      { icon: ArrowRightLeft, label: 'Transaksi', path: '/transactions' },
-      { icon: Landmark, label: 'Rekening', path: '/accounts' },
-      { icon: Calculator, label: 'Planner', path: '/budget-planner' },
-    ],
-  },
-  {
-    key: 'goals',
-    label: 'Tujuan & Proteksi',
-    icon: ShieldCheck,
-    items: [
-      { icon: Target, label: 'Tabungan', path: '/savings' },
-      { icon: HeartHandshake, label: 'Tabungan Berdua', path: '/couple-savings' },
-      { icon: HeartHandshake, label: 'Dana Darurat', path: '/emergency-fund' },
-      { icon: ListChecks, label: 'Wishlist', path: '/wishlist' },
-    ],
-  },
-  {
-    key: 'schedule',
-    label: 'Jadwal',
-    icon: BellRing,
-    items: [
-      { icon: BellRing, label: 'Tagihan', path: '/bills' },
-      { icon: Repeat, label: 'Rutin', path: '/recurring-transactions' },
-    ],
-  },
-  {
-    key: 'insights',
-    label: 'Analitik',
-    icon: ChartNoAxesCombined,
-    items: [
-      { icon: FileText, label: 'Laporan', path: '/reports' },
-      { icon: Lightbulb, label: 'Insight', path: '/insights' },
-    ],
-  },
-];
+import { useAdminMenus } from '../../hooks/useAdminMenus';
+import DynamicIcon from '../../components/dynamic/DynamicIcon';
 
 function isPathActive(pathname, path) {
-  return pathname === path || pathname.startsWith(`${path}/`);
+  return pathname === path || (path !== '/dashboard' && pathname.startsWith(`${path}/`));
 }
 
 export default function Sidebar({ isOpen, close }) {
   const { pathname } = useLocation();
-  const { user } = useCurrentUser();
-  const isPersonalMode = (user?.profile?.account_mode || 'couple') === 'personal';
-  const visibleMenuGroups = useMemo(() => menuGroups
-    .map((group) => ({
-      ...group,
-      items: group.items.filter((item) => !(isPersonalMode && item.path === '/couple-savings')),
-    }))
-    .filter((group) => group.items.length > 0), [isPersonalMode]);
+  const { menuGroups } = useAdminMenus();
+
   const activeGroupKeys = useMemo(
-    () => visibleMenuGroups
+    () => menuGroups
       .filter((group) => group.items.some((item) => isPathActive(pathname, item.path)))
       .map((group) => group.key),
-    [pathname, visibleMenuGroups]
+    [pathname, menuGroups]
   );
+
   const [openGroups, setOpenGroups] = useState(() => (
-    visibleMenuGroups.reduce((groups, group) => ({
+    menuGroups.reduce((groups, group) => ({
       ...groups,
       [group.key]: group.items.some((item) => isPathActive(pathname, item.path)),
     }), {})
@@ -103,13 +49,13 @@ export default function Sidebar({ isOpen, close }) {
           <div>
             <img src="/logo-app.png" alt="WeeBudget" width="144" height="48" className="h-11 w-auto object-contain md:h-12" />
           </div>
-          <button onClick={close} className="ui-hover-surface ui-hover-icon rounded-2xl p-2.5 text-text-muted md:hidden">
+          <button onClick={close} className="ui-hover-surface ui-hover-icon rounded-2xl p-2.5 text-text-muted md:hidden" aria-label="Tutup menu">
             <X size={24} />
           </button>
         </div>
 
         <nav className="flex-1 space-y-3 overflow-y-auto px-4 py-5 md:px-4 md:py-6">
-          {visibleMenuGroups.map((group) => {
+          {menuGroups.map((group) => {
             const isOpenGroup = openGroups[group.key] || activeGroupKeys.includes(group.key);
             const isActiveGroup = activeGroupKeys.includes(group.key);
             const singleItem = group.items.length === 1 ? group.items[0] : null;
@@ -129,10 +75,14 @@ export default function Sidebar({ isOpen, close }) {
                 >
                   {({ isActive }) => (
                     <>
-                      <singleItem.icon size={19} className={cn(
-                        "shrink-0 transition-colors",
-                        isActive ? "text-primary-600" : "text-text-muted group-hover:text-primary-600"
-                      )} />
+                      <DynamicIcon
+                        name={singleItem.iconName}
+                        size={19}
+                        className={cn(
+                          "shrink-0 transition-colors",
+                          isActive ? "text-primary-600" : "text-text-muted group-hover:text-primary-600"
+                        )}
+                      />
                       <span className="min-w-0 truncate">{singleItem.label}</span>
                     </>
                   )}
@@ -153,7 +103,11 @@ export default function Sidebar({ isOpen, close }) {
                       : "ui-hover-surface text-text-muted hover:text-text-title"
                   )}
                 >
-                  <group.icon size={19} className={cn("shrink-0 transition-colors", isActiveGroup ? "text-primary-600" : "text-text-muted")} />
+                  <DynamicIcon
+                    name={group.iconName}
+                    size={19}
+                    className={cn("shrink-0 transition-colors", isActiveGroup ? "text-primary-600" : "text-text-muted")}
+                  />
                   <span className="min-w-0 flex-1 truncate">{group.label}</span>
                   <ChevronDown size={17} className={cn("shrink-0 transition-transform duration-200", isOpenGroup && "rotate-180")} />
                 </button>
@@ -174,10 +128,14 @@ export default function Sidebar({ isOpen, close }) {
                       >
                         {({ isActive }) => (
                           <>
-                            <item.icon size={18} className={cn(
-                              "shrink-0 transition-colors",
-                              isActive ? "text-primary-600" : "text-text-muted group-hover:text-primary-600"
-                            )} />
+                            <DynamicIcon
+                              name={item.iconName}
+                              size={18}
+                              className={cn(
+                                "shrink-0 transition-colors",
+                                isActive ? "text-primary-600" : "text-text-muted group-hover:text-primary-600"
+                              )}
+                            />
                             <span className="min-w-0 truncate">{item.label}</span>
                           </>
                         )}

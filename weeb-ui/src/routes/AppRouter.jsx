@@ -24,8 +24,12 @@ const InsightsPage = lazy(lazyWithRetry(() => import('../pages/InsightsPage'), '
 const WishlistPage = lazy(lazyWithRetry(() => import('../pages/WishlistPage'), 'WishlistPage'));
 const ProfilePage = lazy(lazyWithRetry(() => import('../pages/ProfilePage'), 'ProfilePage'));
 const UsersPage = lazy(lazyWithRetry(() => import('../pages/UsersPage'), 'UsersPage'));
+const DynamicSchemaBuilderPage = lazy(lazyWithRetry(() => import('../pages/admin/DynamicSchemaBuilderPage'), 'DynamicSchemaBuilderPage'));
+const DynamicCrudRuntimePage = lazy(lazyWithRetry(() => import('../pages/admin/DynamicCrudRuntimePage'), 'DynamicCrudRuntimePage'));
+const MenuSettingsPage = lazy(lazyWithRetry(() => import('../pages/admin/MenuSettingsPage'), 'MenuSettingsPage'));
 const LoginPage = lazy(lazyWithRetry(() => import('../pages/LoginPage'), 'LoginPage'));
 const RegisterPage = lazy(lazyWithRetry(() => import('../pages/RegisterPage'), 'RegisterPage'));
+const ForgotPasswordPage = lazy(lazyWithRetry(() => import('../pages/ForgotPasswordPage'), 'ForgotPasswordPage'));
 const GoogleCallbackPage = lazy(lazyWithRetry(() => import('../pages/GoogleCallbackPage'), 'GoogleCallbackPage'));
 const NotFoundPage = lazy(lazyWithRetry(() => import('../pages/NotFoundPage'), 'NotFoundPage'));
 
@@ -82,6 +86,7 @@ export default function AppRouter() {
           <Route path="/" element={<HomeRedirect />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
           <Route element={<RequireAuth />}>
             <Route path="/onboarding" element={<OnboardingPage />} />
@@ -108,6 +113,9 @@ export default function AppRouter() {
                 <Route path="/wishlist" element={<WishlistPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/users" element={<UsersPage />} />
+                <Route path="/admin/data" element={<DynamicSchemaBuilderPage />} />
+                <Route path="/admin/data/:slug" element={<DynamicCrudRuntimePage />} />
+                <Route path="/admin/menu" element={<MenuSettingsPage />} />
               </Route>
             </Route>
           </Route>

@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 const titles = {
   '/': 'WeeBudget - Smart Personal Finance',
   '/login': 'Masuk - WeeBudget',
+  '/forgot-password': 'Lupa Password - WeeBudget',
   '/dashboard': 'Dashboard - WeeBudget',
   '/onboarding': 'Setup Awal - WeeBudget',
   '/transactions': 'Transaksi - WeeBudget',

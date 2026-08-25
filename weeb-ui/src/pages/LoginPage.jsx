@@ -82,9 +82,9 @@ export default function LoginPage() {
           required
         />
         <div className="flex justify-end">
-          <button type="button" className="text-xs text-blue-400 transition-colors hover:text-blue-300">
+          <Link to="/forgot-password" className="text-xs text-blue-400 transition-colors hover:text-blue-300">
             Lupa password?
-          </button>
+          </Link>
         </div>
       </div>
     </AuthShell>

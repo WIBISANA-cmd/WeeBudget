@@ -92,21 +92,25 @@ export default function AuthShell({
                 </button>
               </form>
 
-              <div className="my-6 flex items-center gap-4">
-                <div className="h-px flex-1 bg-white/10" />
-                <span className="text-xs font-medium text-slate-500">ATAU</span>
-                <div className="h-px flex-1 bg-white/10" />
-              </div>
+              {onGoogle && (
+                <>
+                <div className="my-6 flex items-center gap-4">
+                  <div className="h-px flex-1 bg-white/10" />
+                  <span className="text-xs font-medium text-slate-500">ATAU</span>
+                  <div className="h-px flex-1 bg-white/10" />
+                </div>
 
-              <button
-                type="button"
-                onClick={onGoogle}
-                disabled={googleLoading}
-                className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 font-medium text-white transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <Globe className="h-5 w-5 text-blue-400" />
-                {googleLoading ? 'Menghubungkan...' : 'Lanjutkan dengan Google'}
-              </button>
+                <button
+                  type="button"
+                  onClick={onGoogle}
+                  disabled={googleLoading}
+                  className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 font-medium text-white transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Globe className="h-5 w-5 text-blue-400" />
+                  {googleLoading ? 'Menghubungkan...' : 'Lanjutkan dengan Google'}
+                </button>
+                </>
+              )}
 
               <div className="mt-8 text-center text-sm text-slate-400">{footer}</div>
             </div>

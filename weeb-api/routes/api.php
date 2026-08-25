@@ -38,6 +38,8 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->
 Route::post('/auth/google/exchange', [GoogleAuthController::class, 'exchange'])->middleware('throttle:20,1')->name('auth.google.exchange');
 Route::post('/auth/login', [PasswordAuthController::class, 'login'])->middleware('throttle:10,1')->name('auth.login');
 Route::post('/auth/register', [PasswordAuthController::class, 'register'])->middleware('throttle:5,1')->name('auth.register');
+Route::post('/auth/forgot-password', [PasswordAuthController::class, 'forgotPassword'])->middleware('throttle:5,1')->name('auth.forgot-password');
+Route::post('/auth/reset-password', [PasswordAuthController::class, 'resetPassword'])->middleware('throttle:10,1')->name('auth.reset-password');
 
 Route::middleware(UseDefaultUser::class)->group(function () {
     Route::get('/auth/me', [GoogleAuthController::class, 'me'])->name('auth.me');
@@ -91,4 +93,35 @@ Route::middleware(UseDefaultUser::class)->group(function () {
     Route::apiResource('recurring-transactions', RecurringTransactionController::class)->parameters(['recurring-transactions' => 'recurringTransaction']);
     Route::apiResource('wishlists', WishlistController::class);
     Route::apiResource('wishlist', WishlistController::class)->parameters(['wishlist' => 'wishlist'])->except(['show']);
+
+    // Dynamic Schema, Dynamic Data CRUD, & Menu Management (Admin Only)
+    Route::prefix('admin')->middleware(\App\Http\Middleware\EnsureAdminUser::class)->group(function () {
+        Route::prefix('schema')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Admin\DynamicSchemaController::class, 'index']);
+            Route::post('/', [\App\Http\Controllers\Api\Admin\DynamicSchemaController::class, 'store']);
+            Route::get('/_introspect', [\App\Http\Controllers\Api\Admin\DynamicSchemaController::class, 'introspectSchemas']);
+            Route::get('/_introspect/{schema}', [\App\Http\Controllers\Api\Admin\DynamicSchemaController::class, 'introspectTables']);
+            Route::get('/_introspect/{schema}/{table}', [\App\Http\Controllers\Api\Admin\DynamicSchemaController::class, 'introspectColumns']);
+            Route::get('/{slug}', [\App\Http\Controllers\Api\Admin\DynamicSchemaController::class, 'show']);
+            Route::put('/{slug}', [\App\Http\Controllers\Api\Admin\DynamicSchemaController::class, 'update']);
+            Route::delete('/{slug}', [\App\Http\Controllers\Api\Admin\DynamicSchemaController::class, 'destroy']);
+            Route::post('/{slug}/fields', [\App\Http\Controllers\Api\Admin\DynamicSchemaController::class, 'storeField']);
+            Route::put('/{slug}/fields/{id}', [\App\Http\Controllers\Api\Admin\DynamicSchemaController::class, 'updateField']);
+            Route::delete('/{slug}/fields/{id}', [\App\Http\Controllers\Api\Admin\DynamicSchemaController::class, 'destroyField']);
+        });
+
+        Route::prefix('dynamic/{slug}')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Admin\DynamicDataController::class, 'index']);
+            Route::post('/', [\App\Http\Controllers\Api\Admin\DynamicDataController::class, 'store']);
+            Route::post('/import', [\App\Http\Controllers\Api\Admin\DynamicDataController::class, 'import']);
+            Route::get('/{id}', [\App\Http\Controllers\Api\Admin\DynamicDataController::class, 'show']);
+            Route::put('/{id}', [\App\Http\Controllers\Api\Admin\DynamicDataController::class, 'update']);
+            Route::delete('/{id}', [\App\Http\Controllers\Api\Admin\DynamicDataController::class, 'destroy']);
+        });
+
+        Route::prefix('menu')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Admin\DynamicMenuController::class, 'index']);
+            Route::put('/', [\App\Http\Controllers\Api\Admin\DynamicMenuController::class, 'update']);
+        });
+    });
 });

@@ -249,13 +249,31 @@ export default function Navbar({ toggleSidebar }) {
                     <PieChart size={18} className="text-text-muted" />
                     Kategori
                   </button>
-                  <button
-                    onClick={() => { setProfileOpen(false); navigate('/users'); }}
-                    className="ui-hover-surface flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body hover:text-text-title"
-                  >
-                    <Users size={18} className="text-text-muted" />
-                    User
-                  </button>
+                  {user?.role === 'admin' && (
+                    <>
+                      <button
+                        onClick={() => { setProfileOpen(false); navigate('/users'); }}
+                        className="ui-hover-surface flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body hover:text-text-title"
+                      >
+                        <Users size={18} className="text-text-muted" />
+                        Kelola User
+                      </button>
+                      <button
+                        onClick={() => { setProfileOpen(false); navigate('/admin/data'); }}
+                        className="ui-hover-surface flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body hover:text-text-title"
+                      >
+                        <Settings size={18} className="text-text-muted" />
+                        Skema Dinamis
+                      </button>
+                      <button
+                        onClick={() => { setProfileOpen(false); navigate('/admin/menu'); }}
+                        className="ui-hover-surface flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body hover:text-text-title"
+                      >
+                        <CalendarRange size={18} className="text-text-muted" />
+                        Pengaturan Menu
+                      </button>
+                    </>
+                  )}
                 </div>
                 <div className="mt-2 border-t border-border-subtle pt-2">
                   <button
