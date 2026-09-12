@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
 import { Eye, Pencil, Plus, Trash2, Wallet } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import DataTable from '../../components/data/DataTable';
 import EmptyState from '../../components/feedback/EmptyState';
@@ -13,7 +13,6 @@ import { apiGet } from '../../api/http';
 import { formatCurrency, formatDate } from '../../lib/formatters';
 import { useCrudResource } from '../../hooks/useCrudResource';
 import { useCategoryOptions } from '../../hooks/useCategoryOptions';
-import { refreshPageQuickly } from '../../lib/pageRefresh';
 import { lazyWithRetry } from '../../lib/lazyWithRetry';
 
 const ResourceForm = lazy(lazyWithRetry(() => import('../../components/forms/ResourceForm'), 'ResourceForm'));
@@ -261,8 +260,6 @@ export default function AccountPurposeTransactionsPage({
     if (result.ok) {
       setFormOpen(false);
       setEditing(null);
-      await loadAccounts();
-      refreshPageQuickly();
     } else {
       alert(result.message);
     }
@@ -311,7 +308,6 @@ export default function AccountPurposeTransactionsPage({
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-text-title md:text-3xl">{title}</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">{description}</p>
         </div>
         <Button onClick={openCreate} disabled={accounts.length === 0}>
           <Plus size={18} className="mr-2" />
@@ -388,7 +384,6 @@ export default function AccountPurposeTransactionsPage({
         open={isFormOpen}
         onClose={() => setFormOpen(false)}
         title={editing ? `Edit transaksi ${title}` : createLabel}
-        description={`Catat nominal masuk ke rekening ${title}.`}
         fullScreenOnMobile={true}
       >
         <Suspense fallback={<LoadingSkeleton rows={4} />}>
@@ -408,7 +403,6 @@ export default function AccountPurposeTransactionsPage({
         open={Boolean(detailTarget)}
         onClose={() => setDetailTarget(null)}
         title="Detail transaksi"
-        description={detailTarget ? getNeedLabel(detailTarget) : ''}
       >
         {detailTarget && (
           <div className="space-y-3 text-sm">
@@ -424,7 +418,6 @@ export default function AccountPurposeTransactionsPage({
         open={Boolean(actionTarget)}
         onClose={() => setActionTarget(null)}
         title="Aksi transaksi"
-        description={actionTarget ? getNeedLabel(actionTarget) : ''}
       >
         <div className="grid gap-3">
           <Button variant="secondary" onClick={() => openDetail(actionTarget)}><Eye size={18} className="mr-2" />Detail</Button>
@@ -436,7 +429,6 @@ export default function AccountPurposeTransactionsPage({
       <ConfirmDialog
         open={Boolean(deleting)}
         title="Hapus transaksi?"
-        description="Saldo rekening akan disesuaikan kembali setelah transaksi dihapus."
         onCancel={() => setDeleting(null)}
         onConfirm={confirmDelete}
       />

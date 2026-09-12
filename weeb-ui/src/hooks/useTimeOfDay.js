@@ -3,20 +3,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 /**
  * Time-of-day periods with their hour boundaries, theme, and sky image.
  *
- * | Period   | Range          | Theme | Sky           |
- * |----------|----------------|-------|---------------|
- * | morning  | 06:00 – 11:59  | light | sunrise       |
- * | afternoon| 12:00 – 15:59  | light | bright blue   |
- * | evening  | 16:00 – 18:29  | light | sunset orange |
- * | night    | 18:30 – 05:59  | dark  | starry night  |
+ * | Period   | Range          | Theme |
+ * |----------|----------------|-------|
+ * | morning  | 06:00 – 11:59  | light |
+ * | afternoon| 12:00 – 15:59  | light |
+ * | evening  | 16:00 – 18:29  | light |
+ * | night    | 18:30 – 05:59  | dark  |
  */
-
-const SKY_IMAGES = {
-  morning: '/sky/morning.jpg',
-  afternoon: '/sky/afternoon.jpg',
-  evening: '/sky/evening.jpg',
-  night: '/sky/night.jpg',
-};
 
 /**
  * Resolve the current time-of-day period from the device clock.
@@ -43,7 +36,6 @@ function resolvePeriod() {
  *
  * - `period`     — 'morning' | 'afternoon' | 'evening' | 'night'
  * - `theme`      — 'light' | 'dark'
- * - `skyImage`   — public path to the sky background image
  * - `greeting`   — Indonesian greeting string
  *
  * Recalculates every 60 s to stay in sync while the tab is open,
@@ -76,7 +68,6 @@ export function useTimeOfDay() {
 
   return useMemo(() => {
     const theme = period === 'night' ? 'dark' : 'light';
-    const skyImage = SKY_IMAGES[period];
 
     const greetings = {
       morning: 'Selamat pagi',
@@ -85,6 +76,6 @@ export function useTimeOfDay() {
       night: 'Selamat malam',
     };
 
-    return { period, theme, skyImage, greeting: greetings[period] };
+    return { period, theme, greeting: greetings[period] };
   }, [period]);
 }

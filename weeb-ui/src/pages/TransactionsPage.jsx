@@ -147,6 +147,18 @@ export default function TransactionsPage({ type }) {
       <CrudResourcePage
         config={config}
         options={options}
+        headerActions={(
+          <Button
+            type="button"
+            onClick={() => setVoiceModalOpen(true)}
+            className="gap-2 whitespace-nowrap bg-violet-600 px-4 text-sm animate-neon-pulse-purple hover:bg-violet-700"
+          >
+            <Mic size={18} className="text-violet-200" />
+            <span className="md:hidden">Suara AI</span>
+            <span className="hidden md:inline">Catat via Suara AI</span>
+            <Sparkles size={14} className="text-violet-200 animate-pulse" />
+          </Button>
+        )}
         topContent={({ resource }) => {
           const incomeTotal = resource.items
             .filter((row) => row.transaction_type === 'income' && !isAllocation(row))
@@ -157,33 +169,21 @@ export default function TransactionsPage({ type }) {
 
           return (
             <div className="space-y-4">
-              <div className="flex flex-col gap-3 rounded-[24px] border border-border-subtle bg-gradient-to-br from-surface-panel via-surface-panel to-surface-100/70 p-3 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.45)] md:flex-row md:items-center md:justify-between md:rounded-[28px] md:p-4">
-                <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap">
-                  {transactionTypeTabs.map((tab) => (
-                    <NavLink
-                      key={tab.to}
-                      to={tab.to}
-                      className={({ isActive }) => cn(
-                        'flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-semibold transition-colors',
-                        isActive
-                          ? 'bg-primary-500 text-white shadow-sm shadow-primary-500/20'
-                          : 'bg-surface-panel text-text-body hover:border-primary-500 hover:text-primary-600'
-                      )}
-                    >
-                      {tab.label}
-                    </NavLink>
-                  ))}
-                </div>
-
-                <Button
-                  type="button"
-                  onClick={() => setVoiceModalOpen(true)}
-                  className="gap-2 rounded-2xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white animate-neon-pulse-purple hover:bg-violet-700"
-                >
-                  <Mic size={18} className="text-violet-200" />
-                  <span>Catat via Suara AI</span>
-                  <Sparkles size={14} className="text-violet-200 animate-pulse" />
-                </Button>
+              <div className="grid grid-cols-2 gap-2 rounded-[24px] border border-border-subtle bg-gradient-to-br from-surface-panel via-surface-panel to-surface-100/70 p-3 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.45)] md:flex md:flex-wrap md:rounded-[28px] md:p-4">
+                {transactionTypeTabs.map((tab) => (
+                  <NavLink
+                    key={tab.to}
+                    to={tab.to}
+                    className={({ isActive }) => cn(
+                      'flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-semibold transition-colors',
+                      isActive
+                        ? 'bg-primary-500 text-white shadow-sm shadow-primary-500/20'
+                        : 'bg-surface-panel text-text-body hover:border-primary-500 hover:text-primary-600'
+                    )}
+                  >
+                    {tab.label}
+                  </NavLink>
+                ))}
               </div>
 
               <TransactionFilters
@@ -212,13 +212,7 @@ export default function TransactionsPage({ type }) {
         }}
       />
 
-      <VoiceTransactionModal
-        open={voiceModalOpen}
-        onClose={() => setVoiceModalOpen(false)}
-        onSuccess={() => {
-          window.location.reload();
-        }}
-      />
+      <VoiceTransactionModal open={voiceModalOpen} onClose={() => setVoiceModalOpen(false)} />
     </>
   );
 }

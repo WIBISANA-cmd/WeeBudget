@@ -177,13 +177,22 @@ class AccountBalanceService
             return;
         }
 
-        DB::transaction(function () use ($userId, $targetAccounts) {
+        $counterpartAccountIds = $targetAccounts->keys()->map(fn ($id) => (string) $id)->all();
+
+        // This runs on every dashboard read. Once repaired, every allocation already points at a live
+        // counterpart and the locked loop below changes nothing, yet it cost one row-locking query per
+        // allocation. Prove that steady state with two plain reads; lock only when there is work to do.
+        if (! $this->hasAllocationsToRepair($userId, $counterpartAccountIds)) {
+            return;
+        }
+
+        DB::transaction(function () use ($userId, $targetAccounts, $counterpartAccountIds) {
             $outgoingTransactions = Transaction::query()
                 ->with('account')
                 ->where('user_id', $userId)
                 ->where('transaction_type', 'expense')
                 ->where('source', 'account_allocation')
-                ->whereIn('metadata->counterpart_account_id', $targetAccounts->keys()->map(fn ($id) => (string) $id)->all())
+                ->whereIn('metadata->counterpart_account_id', $counterpartAccountIds)
                 ->latest('id')
                 ->lockForUpdate()
                 ->get();
@@ -237,6 +246,43 @@ class AccountBalanceService
                 $outgoing->save();
             }
         });
+    }
+
+    /**
+     * False only when the backfill loop would skip every outgoing allocation: each one carries an
+     * actor_user_id and a counterpart_transaction_id that resolves to another live transaction of
+     * this user — exactly the case where findAllocationCounterpart() finds it and nothing is saved.
+     */
+    private function hasAllocationsToRepair(int $userId, array $counterpartAccountIds): bool
+    {
+        $outgoingTransactions = Transaction::query()
+            ->where('user_id', $userId)
+            ->where('transaction_type', 'expense')
+            ->where('source', 'account_allocation')
+            ->whereIn('metadata->counterpart_account_id', $counterpartAccountIds)
+            ->get(['id', 'metadata']);
+
+        $counterpartIds = [];
+        foreach ($outgoingTransactions as $outgoing) {
+            $counterpartId = (int) data_get($outgoing->metadata, 'counterpart_transaction_id');
+
+            if (empty(data_get($outgoing->metadata, 'actor_user_id')) || $counterpartId === 0 || $counterpartId === (int) $outgoing->id) {
+                return true;
+            }
+
+            $counterpartIds[$counterpartId] = true;
+        }
+
+        if ($counterpartIds === []) {
+            return false;
+        }
+
+        $liveCounterparts = Transaction::query()
+            ->where('user_id', $userId)
+            ->whereKey(array_keys($counterpartIds))
+            ->count();
+
+        return $liveCounterparts !== count($counterpartIds);
     }
 
     public function applyEffect(Transaction $transaction): void

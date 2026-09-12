@@ -27,7 +27,9 @@ class BudgetPlannerService
 
     public function generate(User $user, ?float $baseAmount = null): array
     {
-        $baseAmount ??= $this->availableBalance($user);
+        // No amount asked for: the saved one is what the planner page wants, so it gets the
+        // full plan in one request instead of one to read the saved amount and one to use it.
+        $baseAmount ??= $this->savedBaseAmount($user) ?: $this->availableBalance($user);
         $baseAmount = max($baseAmount, 0);
 
         $plans = $this->plansWithOverrides($user);

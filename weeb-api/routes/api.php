@@ -66,6 +66,7 @@ Route::middleware(UseDefaultUser::class)->group(function () {
     Route::get('/reports/monthly', [MonthlyReportController::class, 'index'])->name('reports.monthly.index');
     Route::get('/reports/monthly/current', [MonthlyReportController::class, 'show'])->name('reports.monthly.show');
     Route::get('/reports/category-breakdown', [DashboardController::class, 'categoryBreakdown'])->name('reports.category-breakdown');
+    Route::get('/reports/category-breakdown/transactions', [DashboardController::class, 'categoryBreakdownTransactions'])->name('reports.category-breakdown.transactions');
     Route::get('/statistics/expenses/categories', [ExpenseStatisticController::class, 'byCategory'])->name('statistics.expenses.categories');
     Route::get('/budget-alerts', BudgetAlertController::class)->name('budget-alerts');
     Route::get('/budget-planner', BudgetPlannerController::class)->name('budget-planner');

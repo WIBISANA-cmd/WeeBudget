@@ -87,7 +87,7 @@ export default function ForgotPasswordPage() {
       footer={(
         <>
           Ingat passwordmu?{' '}
-          <Link to="/login" className="font-medium text-blue-400 transition-colors hover:text-blue-300">
+          <Link to="/login" className="font-medium text-primary-600 transition-colors hover:text-primary-500">
             Kembali ke login
           </Link>
         </>
@@ -108,7 +108,7 @@ export default function ForgotPasswordPage() {
       {step === 'otp' && (
         <>
           {notice && (
-            <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-200">
+            <div className="rounded-xl border border-primary-500/25 bg-primary-500/10 px-4 py-3 text-sm text-primary-600">
               {notice}
             </div>
           )}
@@ -155,7 +155,7 @@ export default function ForgotPasswordPage() {
             <button
               type="button"
               onClick={() => { setStep('email'); setError(''); setNotice(''); }}
-              className="text-slate-400 transition-colors hover:text-slate-200"
+              className="text-text-muted transition-colors hover:text-text-title"
             >
               Ganti email
             </button>
@@ -163,7 +163,7 @@ export default function ForgotPasswordPage() {
               type="button"
               onClick={resendOtp}
               disabled={isLoading}
-              className="text-blue-400 transition-colors hover:text-blue-300 disabled:opacity-50"
+              className="text-primary-600 transition-colors hover:text-primary-500 disabled:opacity-50"
             >
               Kirim ulang kode
             </button>

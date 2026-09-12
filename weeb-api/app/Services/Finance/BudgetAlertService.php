@@ -25,13 +25,18 @@ class BudgetAlertService
         $start = $month->startOfMonth();
         $end = $start->addMonthNoOverflow();
 
-        $alerts = $budget->categories->map(function ($budgetCategory) use ($user, $start, $end) {
-            $spent = (float) Transaction::query()
-                ->where('user_id', $user->id)
-                ->where('transaction_type', 'expense')
-                ->where('category_id', $budgetCategory->category_id)
-                ->whereBetween('transaction_date', [$start, $end->subDay()])
-                ->sum('amount');
+        // One grouped query instead of one per budget category (category_id is non-null on budget rows).
+        $spentByCategory = Transaction::query()
+            ->where('user_id', $user->id)
+            ->where('transaction_type', 'expense')
+            ->whereIn('category_id', $budget->categories->pluck('category_id'))
+            ->whereBetween('transaction_date', [$start, $end->subDay()])
+            ->groupBy('category_id')
+            ->selectRaw('category_id, sum(amount) as total')
+            ->pluck('total', 'category_id');
+
+        $alerts = $budget->categories->map(function ($budgetCategory) use ($spentByCategory) {
+            $spent = (float) ($spentByCategory[$budgetCategory->category_id] ?? 0);
 
             $allocated = (float) $budgetCategory->allocated_amount;
             $percent = $allocated > 0 ? round(($spent / $allocated) * 100, 2) : 0;

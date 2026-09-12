@@ -1,0 +1,14 @@
+{
+  "name": "weeb-project",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WeeBudget - Personal Finance Application",
+  "type": "module",
+  "scripts": {
+    "dev": "node dev.js",
+    "dev:api": "cd weeb-api && php artisan serve --port=8000",
+    "dev:ui": "npm --prefix weeb-ui run dev",
+    "build": "npm --prefix weeb-ui run build",
+    "build:ui": "npm --prefix weeb-ui run build"
+  }
+}

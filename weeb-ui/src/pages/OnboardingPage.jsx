@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import ResourceForm from '../components/forms/ResourceForm';
 import ErrorState from '../components/feedback/ErrorState';
 import { apiPost } from '../api/http';
+import { forgetCurrentUser } from '../hooks/useCurrentUser';
 
 const schema = z.object({
   account_mode: z.enum(['personal', 'couple']),
@@ -31,6 +32,7 @@ export default function OnboardingPage() {
     };
     try {
       await apiPost('/onboarding', fullPayload);
+      forgetCurrentUser(); // onboarding_completed_at just changed; the route guard must refetch
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Onboarding belum bisa disimpan.');

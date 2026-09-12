@@ -7,6 +7,7 @@ use App\Models\FinancialAccount;
 use App\Models\Transaction;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 
 class FinanceSummaryService
 {
@@ -29,30 +30,40 @@ class FinanceSummaryService
         $nextMonth = $month->addMonthNoOverflow();
         $periodEnd = $nextMonth->subDay();
 
-        $income = $this->sumTransactions($user, 'income', $month, $periodEnd);
-        $expense = $this->sumTransactions($user, 'expense', $month, $periodEnd);
-        $activeAccountCount = FinancialAccount::query()
+        // Every account and month figure below is derived from these two fetches. Each query is a
+        // database round trip, and this endpoint used to spend ~70 of them re-asking the same things.
+        $accounts = FinancialAccount::query()
             ->where('user_id', $user->id)
             ->where('is_active', true)
-            ->count();
-        $balance = $activeAccountCount > 0
-            ? (float) FinancialAccount::query()
-                ->where('user_id', $user->id)
-                ->where('is_active', true)
-                ->sum('current_balance')
-            : $income - $expense;
+            ->get(['id', 'name', 'purpose', 'current_balance']);
+        // ponytail: the month is summed in PHP; fine at hundreds of rows a month, move sums to SQL at thousands.
+        $monthTransactions = Transaction::query()
+            ->where('user_id', $user->id)
+            ->whereBetween('transaction_date', [$month, $periodEnd])
+            ->get(['account_id', 'transaction_date', 'transaction_type', 'need_type', 'amount']);
 
-        $payday = $this->paydaySimulationService->simulate($user, $today);
-        $health = $this->healthScoreService->calculate($user, $month);
+        $expenses = $monthTransactions->where('transaction_type', 'expense');
+        $income = (float) $monthTransactions->where('transaction_type', 'income')->sum('amount');
+        $expense = (float) $expenses->sum('amount');
+        // Only defined when there are active accounts: that is the case every balance helper sums them.
+        $accountsTotal = $accounts->isNotEmpty() ? (float) $accounts->sum('current_balance') : null;
+        $balance = $accountsTotal ?? $income - $expense;
+
+        $payday = $this->paydaySimulationService->simulate($user, $today, $accountsTotal);
+        $health = $this->healthScoreService->calculate($user, $month, $payday, [
+            'income' => $income,
+            'expense' => $expense,
+            'wants' => (float) $expenses->where('need_type', 'want')->sum('amount'),
+        ]);
         $topCategories = $this->topCategories($user, $month, $expense);
         $budgetAlerts = $this->budgetAlertService->overspending($user, $month);
-        $savingBalance = $this->accountBalanceByPurpose($user, 'savings');
-        $emergencyFundBalance = $this->accountBalanceByPurpose($user, 'emergency_fund');
-        $accountBreakdown = $this->accountBreakdown($user);
-        $accountBalances = $this->accountBalances($user, $month, $periodEnd);
-        $focusedBalances = $this->focusedAccountBalances($user);
-        $expenseByNeedType = $this->expenseByNeedType($user, $month, $periodEnd);
-        $planner = $this->budgetPlannerService->generate($user);
+        $savingBalance = $this->accountBalanceByPurpose($accounts, 'savings');
+        $emergencyFundBalance = $this->accountBalanceByPurpose($accounts, 'emergency_fund');
+        $accountBreakdown = $this->accountBreakdown($accounts);
+        $accountBalances = $this->accountBalances($accounts, $monthTransactions);
+        $focusedBalances = $this->focusedAccountBalances($accounts);
+        $expenseByNeedType = $this->expenseByNeedType($expenses);
+        $planner = $this->budgetPlannerService->generate($user, $accountsTotal);
         $hasAnyData = $balance > 0 || $income > 0 || $expense > 0 || $savingBalance > 0 || $emergencyFundBalance > 0;
 
         return [
@@ -86,7 +97,7 @@ class FinanceSummaryService
             'recent_transactions' => $this->recentTransactions($user),
             'upcoming_bills' => $this->upcomingBills($user, $today),
             'top_categories' => $topCategories,
-            'cashflow' => $this->weeklyCashflow($user, $month, $periodEnd),
+            'cashflow' => $this->weeklyCashflow($monthTransactions),
             'daily_trend' => $this->dailyTrend($user, $today),
             'budget_warnings' => $budgetAlerts['alerts'],
             'insights' => $this->insights($payday, $budgetAlerts['alerts'], $topCategories),
@@ -94,13 +105,9 @@ class FinanceSummaryService
         ];
     }
 
-    private function accountBalanceByPurpose(User $user, string $purpose): float
+    private function accountBalanceByPurpose(Collection $accounts, string $purpose): float
     {
-        return (float) FinancialAccount::query()
-            ->where('user_id', $user->id)
-            ->where('is_active', true)
-            ->where('purpose', $purpose)
-            ->sum('current_balance');
+        return (float) $accounts->where('purpose', $purpose)->sum('current_balance');
     }
 
     private function balanceProgress(string $name, float $current, float $target): array
@@ -113,7 +120,7 @@ class FinanceSummaryService
         ];
     }
 
-    private function accountBreakdown(User $user): array
+    private function accountBreakdown(Collection $accounts): array
     {
         $labels = [
             'daily_spending' => 'Harian',
@@ -127,29 +134,21 @@ class FinanceSummaryService
             'other' => 'Lainnya',
         ];
 
-        return FinancialAccount::query()
-            ->where('user_id', $user->id)
-            ->where('is_active', true)
-            ->selectRaw('purpose, sum(current_balance) as total, count(*) as account_count')
+        return $accounts
             ->groupBy('purpose')
-            ->orderByDesc('total')
-            ->get()
-            ->map(fn ($row) => [
-                'purpose' => $row->purpose,
-                'label' => $labels[$row->purpose] ?? $row->purpose,
-                'total' => round((float) $row->total, 2),
-                'account_count' => (int) $row->account_count,
+            ->map(fn (Collection $group, $purpose) => [
+                'purpose' => $purpose,
+                'label' => $labels[$purpose] ?? $purpose,
+                'total' => round((float) $group->sum('current_balance'), 2),
+                'account_count' => $group->count(),
             ])
+            ->sortByDesc('total')
+            ->values()
             ->all();
     }
 
-    private function focusedAccountBalances(User $user): array
+    private function focusedAccountBalances(Collection $accounts): array
     {
-        $accounts = FinancialAccount::query()
-            ->where('user_id', $user->id)
-            ->where('is_active', true)
-            ->get(['id', 'name', 'purpose', 'current_balance']);
-
         $needAccounts = $accounts->filter(function (FinancialAccount $account) {
             $name = mb_strtolower((string) $account->name);
 
@@ -181,7 +180,7 @@ class FinanceSummaryService
         ];
     }
 
-    private function accountBalances(User $user, CarbonImmutable $start, CarbonImmutable $end): array
+    private function accountBalances(Collection $accounts, Collection $monthTransactions): array
     {
         $purposeLabels = [
             'daily_spending' => 'Harian',
@@ -195,30 +194,12 @@ class FinanceSummaryService
             'other' => 'Lainnya',
         ];
 
-        $accounts = FinancialAccount::query()
-            ->where('user_id', $user->id)
-            ->where('is_active', true)
-            ->orderByDesc('current_balance')
-            ->orderBy('name')
-            ->get(['id', 'name', 'purpose', 'current_balance']);
+        $totals = $monthTransactions->groupBy('account_id');
 
-        $totals = Transaction::query()
-            ->where('user_id', $user->id)
-            ->whereIn('account_id', $accounts->pluck('id'))
-            ->whereBetween('transaction_date', [$start, $end])
-            ->selectRaw("
-                account_id,
-                SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END) as income_total,
-                SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END) as expense_total
-            ")
-            ->groupBy('account_id')
-            ->get()
-            ->keyBy('account_id');
-
-        return $accounts->map(function (FinancialAccount $account) use ($purposeLabels, $totals) {
-            $accountTotals = $totals->get($account->id);
-            $income = (float) ($accountTotals->income_total ?? 0);
-            $expense = (float) ($accountTotals->expense_total ?? 0);
+        return $accounts->sortBy([['current_balance', 'desc'], ['name', 'asc']])->values()->map(function (FinancialAccount $account) use ($purposeLabels, $totals) {
+            $accountTransactions = $totals->get($account->id, new Collection());
+            $income = (float) $accountTransactions->where('transaction_type', 'income')->sum('amount');
+            $expense = (float) $accountTransactions->where('transaction_type', 'expense')->sum('amount');
 
             return [
                 'id' => $account->id,
@@ -233,26 +214,18 @@ class FinanceSummaryService
         })->all();
     }
 
-    private function expenseByNeedType(User $user, CarbonImmutable $start, CarbonImmutable $end): array
+    private function expenseByNeedType(Collection $expenses): array
     {
-        $totals = Transaction::query()
-            ->where('user_id', $user->id)
-            ->where('transaction_type', 'expense')
-            ->whereBetween('transaction_date', [$start, $end])
-            ->selectRaw('need_type, sum(amount) as total')
-            ->groupBy('need_type')
-            ->pluck('total', 'need_type');
-
         return [
             [
                 'key' => 'need',
                 'label' => 'Kebutuhan',
-                'amount' => round((float) ($totals['need'] ?? 0), 2),
+                'amount' => round((float) $expenses->where('need_type', 'need')->sum('amount'), 2),
             ],
             [
                 'key' => 'want',
                 'label' => 'Keinginan',
-                'amount' => round((float) ($totals['want'] ?? 0), 2),
+                'amount' => round((float) $expenses->where('need_type', 'want')->sum('amount'), 2),
             ],
         ];
     }
@@ -276,15 +249,6 @@ class FinanceSummaryService
                 'account_name' => $transaction->account?->name,
             ])
             ->all();
-    }
-
-    private function sumTransactions(User $user, string $type, CarbonImmutable $start, CarbonImmutable $end): float
-    {
-        return (float) Transaction::query()
-            ->where('user_id', $user->id)
-            ->where('transaction_type', $type)
-            ->whereBetween('transaction_date', [$start, $end])
-            ->sum('amount');
     }
 
     private function upcomingBills(User $user, CarbonImmutable $today): array
@@ -328,13 +292,8 @@ class FinanceSummaryService
             ->all();
     }
 
-    private function weeklyCashflow(User $user, CarbonImmutable $start, CarbonImmutable $end): array
+    private function weeklyCashflow(Collection $transactions): array
     {
-        $transactions = Transaction::query()
-            ->where('user_id', $user->id)
-            ->whereBetween('transaction_date', [$start, $end])
-            ->get(['transaction_date', 'transaction_type', 'amount']);
-
         return collect(range(1, 5))->map(function (int $week) use ($transactions) {
             $weekTransactions = $transactions->filter(fn (Transaction $transaction) => (int) ceil($transaction->transaction_date->day / 7) === $week);
 

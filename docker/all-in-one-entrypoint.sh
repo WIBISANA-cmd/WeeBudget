@@ -24,6 +24,8 @@ if [ -n "${WEEB_ADMIN_EMAIL:-}" ] && [ -n "${WEEB_ADMIN_PASSWORD:-}" ]; then
 fi
 
 php artisan schedule:work &
-php artisan serve --host=127.0.0.1 --port=8000 &
+# artisan serve is single-process by default: one slow request stalls every user.
+# ponytail: php-fpm (or Octane) is the real fix once traffic outgrows a handful of workers.
+PHP_CLI_SERVER_WORKERS="${PHP_CLI_SERVER_WORKERS:-4}" php artisan serve --no-reload --host=127.0.0.1 --port=8000 &
 
 exec nginx -g "daemon off;"

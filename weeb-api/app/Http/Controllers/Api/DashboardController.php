@@ -49,9 +49,39 @@ class DashboardController extends Controller
 
     public function categoryBreakdown(ExpenseStatisticService $service): JsonResponse
     {
-        $month = CarbonImmutable::parse(request('month', now()->toDateString()))->startOfMonth();
+        [$start, $end] = $this->breakdownRange();
 
-        return $this->success($service->byCategory(request()->user(), $month), 'Category breakdown loaded.');
+        return $this->success($service->byCategory(request()->user(), $start, $end), 'Category breakdown loaded.');
+    }
+
+    /** The transactions behind one slice of the breakdown; no category_id means 'Tanpa kategori'. */
+    public function categoryBreakdownTransactions(ExpenseStatisticService $service): JsonResponse
+    {
+        $categoryId = request()->validate(['category_id' => ['nullable', 'integer']])['category_id'] ?? null;
+        [$start, $end] = $this->breakdownRange();
+
+        return $this->success(
+            $service->transactionsInCategory(request()->user(), $start, $end, $categoryId ? (int) $categoryId : null),
+            'Category transactions loaded.',
+        );
+    }
+
+    /** @return array{0: CarbonImmutable, 1: ?CarbonImmutable} */
+    private function breakdownRange(): array
+    {
+        $validated = request()->validate([
+            'month' => ['nullable', 'date'],
+            'start' => ['nullable', 'date'],
+            'end' => ['nullable', 'date'],
+        ]);
+
+        // start/end is the reports range; month (or nothing) keeps the whole-month behaviour.
+        return [
+            isset($validated['start'])
+                ? CarbonImmutable::parse($validated['start'])
+                : CarbonImmutable::parse($validated['month'] ?? now()->toDateString())->startOfMonth(),
+            isset($validated['end']) ? CarbonImmutable::parse($validated['end']) : null,
+        ];
     }
 
     public function budgetWarnings(BudgetAlertService $service): JsonResponse

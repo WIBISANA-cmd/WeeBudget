@@ -8,6 +8,7 @@ import {
   AlertTriangle, RefreshCw, Sparkles, Plus, Mic,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
+import { Shimmer } from '../components/feedback/LoadingSkeleton';
 import { useDashboard } from '../hooks/useDashboard';
 import { cn } from '../lib/utils';
 import { compactCurrency, formatCurrency, formatDate } from '../lib/formatters';
@@ -35,23 +36,19 @@ const TOOLTIP_STYLE = {
 /* ------------------------------------------------------------------ */
 /*  Skeleton / Error / Empty                                           */
 /* ------------------------------------------------------------------ */
-function SkeletonBlock({ className }) {
-  return <div className={cn('animate-pulse rounded-2xl bg-surface-100', className)} />;
-}
-
 function LoadingDashboard() {
   return (
     <div className="dashboard-fade-in space-y-5">
-      <SkeletonBlock className="h-44" />
+      <Shimmer className="h-44" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <SkeletonBlock className="h-28" />
-        <SkeletonBlock className="h-28" />
-        <SkeletonBlock className="h-28" />
-        <SkeletonBlock className="h-28" />
+        <Shimmer className="h-28" />
+        <Shimmer className="h-28" />
+        <Shimmer className="h-28" />
+        <Shimmer className="h-28" />
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
-        <SkeletonBlock className="h-80" />
-        <SkeletonBlock className="h-80" />
+        <Shimmer className="h-80" />
+        <Shimmer className="h-80" />
       </div>
     </div>
   );
@@ -135,7 +132,6 @@ export default function DashboardPage() {
         <VoiceTransactionModal
           open={voiceModalOpen}
           onClose={() => setVoiceModalOpen(false)}
-          onSuccess={refetch}
         />
       </>
     );
@@ -389,7 +385,6 @@ export default function DashboardPage() {
       <VoiceTransactionModal
         open={voiceModalOpen}
         onClose={() => setVoiceModalOpen(false)}
-        onSuccess={refetch}
       />
     </div>
   );

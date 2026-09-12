@@ -53,7 +53,7 @@ export default function LoginPage() {
       footer={(
         <>
           Belum punya akun?{' '}
-          <Link to="/register" className="font-medium text-blue-400 transition-colors hover:text-blue-300">
+          <Link to="/register" className="font-medium text-primary-600 transition-colors hover:text-primary-500">
             Daftar di sini
           </Link>
         </>
@@ -82,7 +82,7 @@ export default function LoginPage() {
           required
         />
         <div className="flex justify-end">
-          <Link to="/forgot-password" className="text-xs text-blue-400 transition-colors hover:text-blue-300">
+          <Link to="/forgot-password" className="text-xs text-primary-600 transition-colors hover:text-primary-500">
             Lupa password?
           </Link>
         </div>

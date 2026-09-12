@@ -11,7 +11,6 @@ import Modal from '../components/forms/Modal';
 import { Card, CardContent } from '../components/ui/Card';
 import { formatCurrency } from '../lib/formatters';
 import LoadingSkeleton from '../components/feedback/LoadingSkeleton';
-import { refreshPageQuickly } from '../lib/pageRefresh';
 
 const ResourceForm = lazy(() => import('../components/forms/ResourceForm'));
 const calculateAllocationAmount = (baseAmount, percent) => Math.floor((Number(baseAmount || 0) * Number(percent || 0)) / 100);
@@ -128,10 +127,8 @@ export default function AccountsPage() {
         ...values,
         notes: values.notes || null,
       });
-      await accountOptions.reloadAccounts?.();
       setAllocationOpen(false);
       setPageVersion((current) => current + 1);
-      refreshPageQuickly();
     } catch (error) {
       const message = error.response?.data?.errors
         ? Object.values(error.response.data.errors).flat()[0]
@@ -157,18 +154,7 @@ export default function AccountsPage() {
                 <p className="text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(totalTrackedBalance)}</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="space-y-2">
-                <p className="text-sm font-medium text-text-muted">Rekening aktif</p>
-                <p className="text-3xl font-semibold tracking-tight text-text-title">{allAccounts.length}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="space-y-2">
-                <p className="text-sm font-medium text-text-muted">Pos uang terpakai</p>
-                <p className="text-3xl font-semibold tracking-tight text-text-title">{purposeCount}</p>
-              </CardContent>
-            </Card>
+            
           </div>
         )}
         headerActions={(
@@ -187,7 +173,6 @@ export default function AccountsPage() {
         open={isAllocationOpen}
         onClose={() => setAllocationOpen(false)}
         title="Alokasi Dana"
-        description="Pindahkan nominal dari satu rekening ke rekening lain tanpa mengubah saldo secara manual."
         fullScreenOnMobile={true}
       >
         {plannerPreview && (
@@ -197,9 +182,6 @@ export default function AccountsPage() {
                 <div>
                   <p className="text-lg font-semibold text-text-title">
                     Dana dasar {formatCurrency(activePreviewBaseAmount || 0)}
-                  </p>
-                  <p className="mt-1 text-xs text-text-muted">
-                    Planner ini bersifat baca saja dan mengikuti custom planner terakhir yang kamu simpan di Budget Planner.
                   </p>
                 </div>
                 <div className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${

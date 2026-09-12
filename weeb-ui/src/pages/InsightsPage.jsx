@@ -1,31 +1,16 @@
-import { useEffect, useState } from 'react';
 import { AlertTriangle, Lightbulb, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
-import LoadingSkeleton from '../components/feedback/LoadingSkeleton';
+import { Shimmer } from '../components/feedback/LoadingSkeleton';
 import ErrorState from '../components/feedback/ErrorState';
 import StatusBadge from '../components/feedback/StatusBadge';
-import { apiGet } from '../api/http';
+import { useDashboard } from '../hooks/useDashboard';
 import { formatCurrency } from '../lib/formatters';
 
 export default function InsightsPage() {
-  const [data, setData] = useState(null);
-  const [isLoading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Same payload as /dashboard/insights, minus a second full dashboard computation on the server.
+  // Arriving from Home renders from the dashboard cache with no request at all.
+  const { dashboard: data, isLoading, error } = useDashboard();
 
-  useEffect(() => {
-    queueMicrotask(async () => {
-      try {
-        const response = await apiGet('/dashboard/insights');
-        setData(response.data);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Insight belum bisa dimuat.');
-      } finally {
-        setLoading(false);
-      }
-    });
-  }, []);
-
-  if (isLoading) return <LoadingSkeleton rows={5} />;
   if (error) return <ErrorState message={error} />;
 
   return (
@@ -40,6 +25,8 @@ export default function InsightsPage() {
           <CardDescription>Skor sederhana berdasarkan ritme uang bulan ini.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          {isLoading ? <Shimmer className="h-20 w-full" /> : (
+          <>
           <div>
             <p className="text-5xl font-bold text-primary-600">{data?.health_score?.score}</p>
             <StatusBadge value="safe">{data?.health_score?.label}</StatusBadge>
@@ -50,9 +37,16 @@ export default function InsightsPage() {
             <span>Dana darurat: {formatCurrency(data?.health_score?.components?.emergency_fund)}</span>
             <span>Status gajian: {data?.health_score?.components?.payday_status}</span>
           </div>
+          </>
+          )}
         </CardContent>
       </Card>
       <div className="grid gap-4 lg:grid-cols-2">
+        {isLoading && [0, 1].map((index) => (
+          <Card key={index}>
+            <CardContent><Shimmer className="h-12 w-full" /></CardContent>
+          </Card>
+        ))}
         {(data?.insights || []).map((insight) => (
           <Card key={insight} className="border-primary-500">
             <CardContent className="flex gap-3">

@@ -97,6 +97,14 @@ return [
             'prefix_indexes' => true,
             'search_path' => env('DB_SCHEMA'),
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Opening a pgsql connection to a remote host costs 0.5-1.9s, paid on every request.
+            // DB_PERSISTENT=true keeps one open per PHP worker instead.
+            // Emulated prepares send one round trip per query instead of parse+bind+execute.
+            // On a remote pgsql host (~50ms RTT) that is 222ms -> 85ms per query.
+            'options' => [
+                PDO::ATTR_PERSISTENT => (bool) env('DB_PERSISTENT', false),
+                PDO::ATTR_EMULATE_PREPARES => (bool) env('DB_EMULATE_PREPARES', true),
+            ],
         ],
 
         'sqlsrv' => [

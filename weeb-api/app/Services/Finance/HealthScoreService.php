@@ -14,18 +14,19 @@ class HealthScoreService
     {
     }
 
-    public function calculate(User $user, ?CarbonImmutable $month = null): array
+    public function calculate(User $user, ?CarbonImmutable $month = null, ?array $simulation = null, ?array $totals = null): array
     {
         $month ??= CarbonImmutable::today()->startOfMonth();
         $start = $month->startOfMonth();
         $end = $month->addMonthNoOverflow()->startOfMonth();
 
-        $income = (float) Transaction::query()->where('user_id', $user->id)->where('transaction_type', 'income')->whereBetween('transaction_date', [$start, $end->subDay()])->sum('amount');
-        $expense = (float) Transaction::query()->where('user_id', $user->id)->where('transaction_type', 'expense')->whereBetween('transaction_date', [$start, $end->subDay()])->sum('amount');
-        $wants = (float) Transaction::query()->where('user_id', $user->id)->where('transaction_type', 'expense')->where('need_type', 'want')->whereBetween('transaction_date', [$start, $end->subDay()])->sum('amount');
+        // The dashboard passes figures it already holds; each recompute is a database round trip.
+        $income = $totals['income'] ?? (float) Transaction::query()->where('user_id', $user->id)->where('transaction_type', 'income')->whereBetween('transaction_date', [$start, $end->subDay()])->sum('amount');
+        $expense = $totals['expense'] ?? (float) Transaction::query()->where('user_id', $user->id)->where('transaction_type', 'expense')->whereBetween('transaction_date', [$start, $end->subDay()])->sum('amount');
+        $wants = $totals['wants'] ?? (float) Transaction::query()->where('user_id', $user->id)->where('transaction_type', 'expense')->where('need_type', 'want')->whereBetween('transaction_date', [$start, $end->subDay()])->sum('amount');
         $emergencyFund = (float) SavingGoal::query()->where('user_id', $user->id)->where('type', 'emergency_fund')->where('status', 'active')->sum('current_amount');
         $activeBills = Bill::query()->where('user_id', $user->id)->where('status', 'active')->count();
-        $simulation = $this->paydaySimulationService->simulate($user);
+        $simulation ??= $this->paydaySimulationService->simulate($user);
 
         $score = 50;
         $score += $simulation['status'] === 'safe' ? 20 : ($simulation['status'] === 'watch' ? 10 : -15);

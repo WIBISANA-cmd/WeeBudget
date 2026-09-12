@@ -10,7 +10,7 @@ import LoadingSkeleton from '../../components/feedback/LoadingSkeleton';
 import Modal, { ConfirmDialog } from '../../components/forms/Modal';
 import { useCrudResource } from '../../hooks/useCrudResource';
 import { formatCurrency, formatDate } from '../../lib/formatters';
-import { refreshPageQuickly } from '../../lib/pageRefresh';
+import { cn } from '../../lib/utils';
 import { lazyWithRetry } from '../../lib/lazyWithRetry';
 
 const ResourceForm = lazy(lazyWithRetry(() => import('../../components/forms/ResourceForm'), 'ResourceForm'));
@@ -24,7 +24,8 @@ function MobileResourceList({ rows, columns, onAction }) {
       if (existing) {
         existing.rows.push(row);
       } else {
-        groups.push({ key, label: key === 'Tanpa tanggal' ? key : formatDate(key), rows: [row] });
+        // Undated resources (accounts) opt out of grouping with dateKey: () => '' — no header.
+        groups.push({ key, label: !key ? '' : key === 'Tanpa tanggal' ? key : formatDate(key), rows: [row] });
       }
       return groups;
     }, []);
@@ -55,8 +56,8 @@ function MobileResourceList({ rows, columns, onAction }) {
       </div>
       {groupedRows.map((group) => (
         <div key={group.key} className="space-y-2">
-          <div className="space-y-1 px-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">{group.label}</p>
+          <div className={cn('space-y-1 px-1', !group.label && !columns.groupSummary && 'hidden')}>
+            {group.label && <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">{group.label}</p>}
             {columns.groupSummary && (
               <div className="flex flex-wrap gap-2 text-xs text-text-muted">
                 {columns.groupSummary(group.rows).map((item) => (
@@ -284,7 +285,6 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
     if (result.ok) {
       setFormOpen(false);
       setEditing(null);
-      refreshPageQuickly();
     } else {
       alert(result.message);
     }
@@ -294,7 +294,6 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
     if (!deleting) return;
     const result = await resource.remove(deleting.id);
     if (result?.ok) {
-      await options.reloadAccounts?.();
       setDeleting(null);
       return;
     }
@@ -309,7 +308,7 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
           <h1 className="text-2xl font-bold text-text-title md:text-3xl">{config.title}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">{config.description}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 md:justify-end">
+        <div className="flex flex-wrap items-center gap-2 *:flex-1 md:*:flex-none md:justify-end">
           {headerActions}
           <Button onClick={openCreate}>
             <Plus size={18} className="mr-2" />

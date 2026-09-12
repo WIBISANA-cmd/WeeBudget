@@ -87,21 +87,17 @@ WeeB/
 
 ### 💻 Pengembangan Lokal (Tanpa Docker)
 
-#### Backend (weeb-api)
-```bash
-cd weeb-api
-composer install
-cp .env.example .env
-php artisan key:generate
-php artisan migrate --seed
-php artisan serve
-```
+Cukup jalankan satu perintah dari direktori utama project:
 
-#### Frontend (weeb-ui)
 ```bash
-cd weeb-ui
-npm install
 npm run dev
 ```
+
+Perintah di atas akan otomatis menjalankan:
+- **Backend (Laravel)** di `http://localhost:8000`
+- **Frontend (Vite + React)** di `http://localhost:5173`
+- Tekan `Ctrl + C` untuk menghentikan kedua server sekaligus.
+
+*(Catatan: Pastikan dependensi backend dan frontend sudah terinstall sebelumnya via `composer install` di `weeb-api` dan `npm install` di `weeb-ui`)*
 
 **Dibuat dengan ❤️ untuk membantu pejuang finansial.**

@@ -68,7 +68,7 @@ export default function RegisterPage() {
       footer={(
         <>
           Sudah punya akun?{' '}
-          <Link to="/login" className="font-medium text-blue-400 transition-colors hover:text-blue-300">
+          <Link to="/login" className="font-medium text-primary-600 transition-colors hover:text-primary-500">
             Masuk di sini
           </Link>
         </>

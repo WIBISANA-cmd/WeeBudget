@@ -1,5 +1,5 @@
 import './Navbar.css';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bell,
@@ -7,10 +7,6 @@ import {
   Clock,
   LogOut,
   Menu,
-  Moon,
-  Sun,
-  Sunrise,
-  Sunset,
   Settings,
   CalendarRange,
   PieChart,
@@ -24,37 +20,12 @@ import ThemeToggle from '../ui/ThemeToggle';
 import UserAvatar from '../ui/UserAvatar';
 
 /* ------------------------------------------------------------------ */
-/*  Sky image preloader – avoids a blank flash on first period change  */
-/* ------------------------------------------------------------------ */
-const SKY_PATHS = ['/sky/morning.jpg', '/sky/afternoon.jpg', '/sky/evening.jpg', '/sky/night.jpg'];
-
-let _preloaded = false;
-function preloadSkyImages() {
-  if (_preloaded) return;
-  _preloaded = true;
-  SKY_PATHS.forEach((src) => {
-    const img = new Image();
-    img.src = src;
-  });
-}
-
-/* ------------------------------------------------------------------ */
-/*  Period → icon mapping                                             */
-/* ------------------------------------------------------------------ */
-const PERIOD_ICON = {
-  morning: Sunrise,
-  afternoon: Sun,
-  evening: Sunset,
-  night: Moon,
-};
-
-/* ------------------------------------------------------------------ */
 /*  Navbar component                                                  */
 /* ------------------------------------------------------------------ */
 export default function Navbar({ toggleSidebar }) {
   const navigate = useNavigate();
   const { user } = useCurrentUser();
-  const { period, skyImage, greeting } = useTimeOfDay();
+  const { period, greeting } = useTimeOfDay();
 
   const [isProfileOpen, setProfileOpen] = useState(false);
   const profileMenuRef = useRef(null);
@@ -66,9 +37,6 @@ export default function Navbar({ toggleSidebar }) {
     const id = setInterval(() => setClock(formatTime(new Date())), 1_000);
     return () => clearInterval(id);
   }, []);
-
-  /* Preload all sky images on mount */
-  useEffect(preloadSkyImages, []);
 
   /* Profile dropdown outside-click / escape */
   useEffect(() => {
@@ -87,8 +55,6 @@ export default function Navbar({ toggleSidebar }) {
     };
   }, [isProfileOpen]);
 
-  const PeriodIcon = PERIOD_ICON[period];
-
   const logout = async () => {
     try {
       await apiPost('/auth/logout');
@@ -100,49 +66,12 @@ export default function Navbar({ toggleSidebar }) {
     navigate('/login');
   };
 
-  /* ---------------------------------------------------------------- */
-  /* Gradient overlay that ensures text contrast on every sky image    */
-  /* ---------------------------------------------------------------- */
-  const overlayGradient = useMemo(() => {
-    const overlays = {
-      morning:
-        'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
-      afternoon:
-        'linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.15) 100%)',
-      evening:
-        'linear-gradient(135deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.25) 100%)',
-      night:
-        'linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 100%)',
-    };
-    return overlays[period];
-  }, [period]);
-
   return (
     <nav
       id="navbar-dynamic"
-      className="navbar-sky-wrapper sticky top-0 z-[100]"
+      className="navbar-bar sticky top-0 z-[100]"
       aria-label="Main navigation"
     >
-      {/* ---- Sky background layer (crossfade via CSS opacity) ---- */}
-      {SKY_PATHS.map((src) => (
-        <div
-          key={src}
-          className={cn(
-            'navbar-sky-bg',
-            src === skyImage && 'navbar-sky-bg--active',
-          )}
-          style={{ backgroundImage: `url(${src})` }}
-          aria-hidden="true"
-        />
-      ))}
-
-      {/* ---- Gradient overlay + glassmorphism ---- */}
-      <div
-        className="navbar-glass-overlay"
-        style={{ background: overlayGradient }}
-        aria-hidden="true"
-      />
-
       {/* ---- Content ---- */}
       <div className="navbar-content">
         <div className="flex items-center gap-3">
@@ -158,7 +87,6 @@ export default function Navbar({ toggleSidebar }) {
           {/* Greeting + clock */}
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <PeriodIcon size={20} className="navbar-period-icon" />
               <p className="navbar-greeting">{greeting}</p>
             </div>
             <div className="flex items-center gap-1.5 mt-0.5">
@@ -201,7 +129,7 @@ export default function Navbar({ toggleSidebar }) {
                 alt={user?.name || 'User avatar'}
                 size={40}
                 priority
-                imageClassName="rounded-2xl border border-white/30"
+                imageClassName="rounded-2xl border border-border-subtle"
                 fallbackClassName="bg-transparent"
                 className="h-10 w-10"
               />

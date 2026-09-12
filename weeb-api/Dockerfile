@@ -47,4 +47,7 @@ RUN chmod +x /usr/local/bin/weeb-entrypoint \
 EXPOSE 8000
 
 ENTRYPOINT ["weeb-entrypoint"]
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+# artisan serve is single-process by default: one slow request stalls every user.
+# Workers need --no-reload. ponytail: php-fpm (or Octane) once traffic outgrows a few workers.
+ENV PHP_CLI_SERVER_WORKERS=4
+CMD ["php", "artisan", "serve", "--no-reload", "--host=0.0.0.0", "--port=8000"]

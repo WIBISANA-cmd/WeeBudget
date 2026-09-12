@@ -11,7 +11,6 @@ import StatusBadge from '../components/feedback/StatusBadge';
 import { configs } from '../features/shared/crudConfigs';
 import { useCrudResource } from '../hooks/useCrudResource';
 import { formatDate } from '../lib/formatters';
-import { refreshPageQuickly } from '../lib/pageRefresh';
 
 const ResourceForm = lazy(() => import('../components/forms/ResourceForm'));
 
@@ -75,7 +74,6 @@ export default function PeriodsPage() {
     if (result.ok) {
       setFormOpen(false);
       setEditing(null);
-      refreshPageQuickly();
     } else {
       alert(result.message);
     }

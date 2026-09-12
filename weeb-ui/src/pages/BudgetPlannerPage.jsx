@@ -85,28 +85,20 @@ export default function BudgetPlannerPage() {
 
     queueMicrotask(async () => {
       try {
-        const savedPlannerResponse = await apiGet('/budget-planner', { base_amount: 0 });
-        const savedBaseAmount = Number(savedPlannerResponse.data?.saved_base_amount || 0);
+        // No base_amount: the server falls back to the saved one, so the planner arrives in one
+        // round trip instead of asking for the saved amount and then asking again with it.
+        const response = await apiGet('/budget-planner');
 
         if (!isMounted) {
           return;
         }
 
+        const savedBaseAmount = Number(response.data?.saved_base_amount || 0);
         if (savedBaseAmount > 0) {
-          const formattedSavedBaseAmount = formatAmountInput(savedBaseAmount, { allowZero: true });
-          setBaseAmount(formattedSavedBaseAmount);
-
-          const response = await apiGet('/budget-planner', { base_amount: savedBaseAmount });
-
-          if (!isMounted) {
-            return;
-          }
-
+          setBaseAmount(formatAmountInput(savedBaseAmount, { allowZero: true }));
           setPlanner(response.data);
           setPlannerInputError(null);
           setError(null);
-          setLoading(false);
-          return;
         }
 
         setLoading(false);
@@ -249,6 +241,11 @@ export default function BudgetPlannerPage() {
                 ? `${formatDate(activePeriod?.start_date)} - ${formatDate(activePeriod?.end_date)}`
                 : 'Budget Planner memakai fallback tanggal gajian profil. Aktifkan satu periode di menu Manajemen Periode agar hitungan mengikuti periode bulanan.'}
             </p>
+            {usesActivePeriod && (
+              <p className="mt-1 text-sm text-text-muted">
+                {`${formatDate(activePeriod?.start_date)} - ${formatDate(activePeriod?.end_date)}`}
+              </p>
+            )}
           </div>
           <div className="rounded-xl bg-surface-100 px-4 py-3 text-sm font-semibold text-primary-600 shadow-sm shadow-card-soft">
             {usesActivePeriod ? 'Mengikuti Manajemen Periode' : 'Fallback profil'}

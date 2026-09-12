@@ -21,7 +21,7 @@ class MonthlyReportService
         $baseQuery = Transaction::query()
             ->where('user_id', $user->id)
             ->whereBetween('transaction_date', [$start, $end->subDay()])
-            ->where(fn ($query) => $query->whereNull('source')->orWhere('source', '!=', 'account_allocation'));
+            ->countedInReports();
 
         $income = (float) (clone $baseQuery)
             ->where('transaction_type', 'income')

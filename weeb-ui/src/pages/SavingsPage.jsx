@@ -11,6 +11,8 @@ export default function SavingsPage() {
   const tabs = [
     { id: 'cash', label: 'CASH', helper: 'Tabungan rekening yang sudah berjalan saat ini.' },
     { id: 'gold', label: 'EMAS', helper: 'Pantau tabungan emas berdasarkan gramasi dan histori harga.' },
+    { id: 'cash', label: 'CASH' },
+    { id: 'gold', label: 'EMAS' },
   ];
 
   return (

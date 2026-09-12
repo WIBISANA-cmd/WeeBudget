@@ -10,23 +10,26 @@ use Carbon\CarbonImmutable;
 
 class PaydaySimulationService
 {
-    public function simulate(User $user, ?CarbonImmutable $today = null): array
+    public function simulate(User $user, ?CarbonImmutable $today = null, ?float $availableBalance = null): array
     {
         $today ??= CarbonImmutable::today();
         $profile = $user->profile()->first();
         $nextPayday = $this->nextPayday($profile?->payday_day, $today);
         $daysLeft = max($today->diffInDays($nextPayday), 1);
 
-        $activeAccountCount = FinancialAccount::query()
-            ->where('user_id', $user->id)
-            ->where('is_active', true)
-            ->count();
-        $availableBalance = $activeAccountCount > 0
-            ? (float) FinancialAccount::query()
+        // Callers that already summed the active accounts pass the total and skip two round trips.
+        if ($availableBalance === null) {
+            $activeAccountCount = FinancialAccount::query()
                 ->where('user_id', $user->id)
                 ->where('is_active', true)
-                ->sum('current_balance')
-            : $this->estimatedBalanceFromTransactions($user, $today);
+                ->count();
+            $availableBalance = $activeAccountCount > 0
+                ? (float) FinancialAccount::query()
+                    ->where('user_id', $user->id)
+                    ->where('is_active', true)
+                    ->sum('current_balance')
+                : $this->estimatedBalanceFromTransactions($user, $today);
+        }
 
         $upcomingBills = (float) Bill::query()
             ->where('user_id', $user->id)

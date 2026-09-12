@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiGet } from '../api/http';
+import { cachedGet } from '../api/http';
 
 export function useCategoryOptions() {
   const [options, setOptions] = useState({ categories: [], expenseCategories: [] });
@@ -7,7 +7,7 @@ export function useCategoryOptions() {
   useEffect(() => {
     queueMicrotask(async () => {
       try {
-        const response = await apiGet('/categories', { per_page: 100 });
+        const response = await cachedGet('/categories', { per_page: 100 });
         const categories = (response.data || []).map((category) => ({
           value: category.id,
           label: category.name,

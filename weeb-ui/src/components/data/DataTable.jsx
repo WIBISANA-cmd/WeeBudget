@@ -70,49 +70,7 @@ function CategoryIcon({ row }) {
 export default function DataTable({ columns, rows, onEdit, onDelete, canEditRow, canDeleteRow, mobileLayout }) {
   return (
     <>
-      {mobileLayout === 'accounts' ? (
-        <div className="divide-y divide-border-subtle rounded-3xl border border-border-subtle bg-surface-panel shadow-sm shadow-card-soft md:hidden">
-          {rows.map((row, index) => (
-            <div
-              key={row.id}
-              className="ui-hover-surface flex items-center justify-between gap-4 p-4"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-100 text-xs font-semibold text-text-muted">
-                  {index + 1}
-                </span>
-                <span className="truncate text-base font-semibold text-text-title">
-                  {row.name}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {onEdit && (!canEditRow || canEditRow(row)) && (
-                  <button
-                    type="button"
-                    onClick={() => onEdit(row)}
-                    className="ui-hover-surface ui-hover-panel ui-hover-icon flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-border-subtle bg-surface-panel text-text-body duration-200 active:scale-95"
-                    aria-label="Edit"
-                    title="Edit"
-                  >
-                    <Pencil size={16} />
-                  </button>
-                )}
-                {onDelete && (!canDeleteRow || canDeleteRow(row)) && (
-                  <button
-                    type="button"
-                    onClick={() => onDelete(row)}
-                    className="ui-hover-surface flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-border-subtle bg-surface-panel text-danger-base duration-200 hover:border-danger-base hover:bg-danger-base/10 active:scale-95"
-                    aria-label="Hapus"
-                    title="Hapus"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : mobileLayout === 'categories' ? (
+      {mobileLayout === 'categories' ? (
         <div className="divide-y divide-border-subtle rounded-3xl border border-border-subtle bg-surface-panel shadow-sm shadow-card-soft md:hidden">
           {rows.map((row, index) => (
             <div

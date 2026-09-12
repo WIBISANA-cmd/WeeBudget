@@ -94,7 +94,25 @@ export const configs = {
     createLabel: 'Tambah rekening',
     emptyTitle: 'Belum ada rekening',
     emptyDescription: 'Buat rekening utama dulu, lalu pisahkan pos tabungan atau dana darurat agar uang aman tidak ikut terpakai.',
-    mobileLayout: 'accounts',
+    // Mobile shows only no / nama / saldo; edit-delete-detail live behind a long press.
+    mobileColumns: {
+      dateKey: () => '',
+      numberLabel: 'No',
+      titleLabel: 'Nama Rekening',
+      amountLabel: 'Saldo',
+      title: (row) => row.name,
+      amount: (row) => formatCurrency(row.current_balance),
+      amountClass: (row) => (row.is_active ? 'text-primary-600' : 'text-text-muted'),
+    },
+    detailRows: [
+      { label: 'Nama rekening', render: (row) => row.name || '-' },
+      { label: 'Saldo', render: (row) => formatCurrency(row.current_balance) },
+      { label: 'Tipe', render: (row) => accountTypeOptions.find((item) => item.value === row.type)?.label || row.type },
+      { label: 'Klasifikasi', render: (row) => accountPurposeOptions.find((item) => item.value === row.purpose)?.label || row.purpose },
+      { label: 'Institusi', render: (row) => row.institution_name || '-' },
+      { label: 'Utama', render: (row) => (row.is_default ? 'Ya' : 'Tidak') },
+      { label: 'Status', render: (row) => (row.is_active ? 'Aktif' : 'Nonaktif') },
+    ],
     schema: z.object({
       name: requiredText,
       type: z.enum(['cash', 'bank', 'digital_bank', 'e_wallet', 'other']),

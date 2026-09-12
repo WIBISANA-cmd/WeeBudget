@@ -2,9 +2,10 @@ import { z } from 'zod';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
 import ResourceForm from '../components/forms/ResourceForm';
-import LoadingSkeleton from '../components/feedback/LoadingSkeleton';
+import { Shimmer } from '../components/feedback/LoadingSkeleton';
 import ErrorState from '../components/feedback/ErrorState';
 import { apiGet, apiPut } from '../api/http';
+import { forgetCurrentUser } from '../hooks/useCurrentUser';
 import { ensureTransactionReminderSubscription, removeTransactionReminderSubscription } from '../lib/pushNotifications';
 
 const schema = z.object({
@@ -56,6 +57,7 @@ export default function ProfilePage() {
         await removeTransactionReminderSubscription();
       }
 
+      forgetCurrentUser(); // account mode may have changed; don't boot from the cached user
       window.location.reload();
     } catch (err) {
       setError(err.response?.data?.message || 'Profil belum bisa disimpan.');
@@ -63,8 +65,6 @@ export default function ProfilePage() {
       setSaving(false);
     }
   };
-
-  if (isLoading) return <LoadingSkeleton rows={4} />;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -79,6 +79,14 @@ export default function ProfilePage() {
           <CardDescription>Ubah gaji, tanggal gajian, dan target aman harian.</CardDescription>
         </CardHeader>
         <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">
+              <Shimmer className="h-12" />
+              <Shimmer className="h-12" />
+              <Shimmer className="h-12" />
+              <Shimmer className="h-12" />
+            </div>
+          ) : (
           <ResourceForm
             schema={schema}
             isSaving={isSaving}
@@ -116,6 +124,7 @@ export default function ProfilePage() {
             ]}
             onSubmit={submit}
           />
+          )}
         </CardContent>
       </Card>
     </div>
