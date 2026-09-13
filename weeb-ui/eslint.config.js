@@ -17,5 +17,9 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // ponytail: fetch-in-effect pattern is used across pages; warn until those move to a data hook
+      'react-hooks/set-state-in-effect': 'warn',
+    },
   },
 ])

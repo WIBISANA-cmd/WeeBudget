@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Sliders, ArrowUpDown, Lock, Check, Eye, EyeOff, Save, 
-  RotateCcw, Sparkles, Database, Layers, ArrowUp, ArrowDown 
+import {
+  Lock, Check, Eye, EyeOff, Save,
+  Database, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
-import StatusBadge from '../../components/feedback/StatusBadge';
 import EmptyState from '../../components/feedback/EmptyState';
 import ErrorState from '../../components/feedback/ErrorState';
 import LoadingSkeleton from '../../components/feedback/LoadingSkeleton';

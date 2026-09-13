@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  Plus, Search, Download, Upload, FileSpreadsheet, Pencil, Trash2, 
-  RefreshCw, Filter, ArrowUpDown, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import {
+  Plus, Search, Download, Upload, FileSpreadsheet, Pencil, Trash2,
+  ArrowUpDown, ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import SelectBox from '../../components/ui/SelectBox';
@@ -23,7 +22,6 @@ import { cn } from '../../lib/utils';
 
 export default function DynamicCrudRuntimePage() {
   const { slug } = useParams();
-  const navigate = useNavigate();
 
   const [schema, setSchema] = useState(null);
   const [records, setRecords] = useState([]);

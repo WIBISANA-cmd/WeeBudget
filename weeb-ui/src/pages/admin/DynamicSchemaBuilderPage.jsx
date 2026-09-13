@@ -1,14 +1,12 @@
-import { useEffect, useState, useId } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Plus, Database, Layers, Check, X, Pencil, Trash2, Sliders, 
-  Settings, Key, AlertCircle, Info, ExternalLink, ArrowUpDown, Eye
+import {
+  Plus, Layers, Pencil, Trash2, Sliders, Eye
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import SelectBox from '../../components/ui/SelectBox';
-import StatusBadge from '../../components/feedback/StatusBadge';
 import EmptyState from '../../components/feedback/EmptyState';
 import ErrorState from '../../components/feedback/ErrorState';
 import LoadingSkeleton from '../../components/feedback/LoadingSkeleton';

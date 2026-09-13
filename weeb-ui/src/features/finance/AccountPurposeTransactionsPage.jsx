@@ -119,7 +119,6 @@ function MobileTransactionList({ rows, onAction }) {
 
 export default function AccountPurposeTransactionsPage({
   title,
-  description,
   purpose,
   createLabel,
   emptyTitle,

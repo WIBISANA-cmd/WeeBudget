@@ -79,7 +79,6 @@ export default function AccountsPage() {
     () => allAccounts.reduce((total, account) => total + Number(account.balance || 0), 0),
     [allAccounts]
   );
-  const purposeCount = useMemo(() => new Set(allAccounts.map((account) => account.purpose).filter(Boolean)).size, [allAccounts]);
 
   const defaultAllocationValues = useMemo(() => {
     const salaryAccount = allAccounts.find((account) => account.purpose === 'salary');
