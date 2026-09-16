@@ -6,12 +6,11 @@ import { Shimmer } from '../components/feedback/LoadingSkeleton';
 import ErrorState from '../components/feedback/ErrorState';
 import EmptyState from '../components/feedback/EmptyState';
 import { cachedGet } from '../api/http';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { formatCurrency, formatDate } from '../lib/formatters';
 import { cn } from '../lib/utils';
 
 const CATEGORY_COLORS = ['#3C83F6', '#FBBF24', '#34D399', '#6366f1', '#FDE68A', '#6EE7B7', '#F87171', '#A78BFA'];
-
-const RANGE_DAYS = 30;
 
 // Stable identity so the memos below don't recompute on every render before the first load.
 const EMPTY = [];
@@ -23,13 +22,20 @@ function toInputDate(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-/** Default range: the last RANGE_DAYS days, today included. */
-function defaultRange() {
-  const today = new Date();
-  const start = new Date(today);
-  start.setDate(start.getDate() - (RANGE_DAYS - 1));
+/** Payday in the given month, clamped to its last day (payday 31 → 28 Feb), like the API does. */
+function paydayIn(year, month, paydayDay) {
+  return new Date(year, month, Math.min(paydayDay, new Date(year, month + 1, 0).getDate()));
+}
 
-  return { start: toInputDate(start), end: toInputDate(today) };
+/** Default range: the running payday period, from the latest payday to next month's payday. */
+function defaultRange(paydayDay) {
+  const day = Math.min(Math.max(Number(paydayDay) || 25, 1), 31);
+  const today = new Date();
+  let start = paydayIn(today.getFullYear(), today.getMonth(), day);
+  if (start > today) start = paydayIn(today.getFullYear(), today.getMonth() - 1, day);
+  const end = paydayIn(start.getFullYear(), start.getMonth() + 1, day);
+
+  return { start: toInputDate(start), end: toInputDate(end) };
 }
 
 // Charts live inside the page, so tooltip and axes read the theme tokens instead of fixed colors.
@@ -92,7 +98,8 @@ function compactAmount(value) {
 }
 
 export default function ReportsPage() {
-  const [range, setRange] = useState(defaultRange);
+  const { user } = useCurrentUser();
+  const [range, setRange] = useState(() => defaultRange(user?.profile?.payday_day));
   const [data, setData] = useState(null);
   const [isRefreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
