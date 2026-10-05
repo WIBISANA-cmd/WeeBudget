@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             DefaultUserSeeder::class,
             TransactionCategorySeeder::class,
             DemoFinanceSeeder::class,
+            AdminRealisticFinanceSeeder::class,
         ]);
     }
 }

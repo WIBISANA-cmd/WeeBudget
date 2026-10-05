@@ -6,8 +6,8 @@ const Card = forwardRef(({ className, interactive, children, ...props }, ref) =>
     <div
       ref={ref}
       className={cn(
-        "bg-surface-panel rounded-2xl border border-border-subtle shadow-card overflow-hidden transition-colors duration-200",
-        interactive && "ui-hover-surface ui-hover-panel cursor-pointer duration-300 hover:-translate-y-1",
+        "overflow-hidden rounded-2xl border border-border-subtle bg-surface-panel shadow-card transition-colors duration-200",
+        interactive && "ui-hover-surface ui-hover-panel cursor-pointer",
         className
       )}
       {...props}
@@ -19,35 +19,35 @@ const Card = forwardRef(({ className, interactive, children, ...props }, ref) =>
 Card.displayName = 'Card';
 
 const CardHeader = forwardRef(({ className, children, ...props }, ref) => (
-  <div ref={ref} className={cn("px-6 py-5 border-b border-border-subtle", className)} {...props}>
+  <div ref={ref} className={cn("border-b border-border-subtle px-4 py-3", className)} {...props}>
     {children}
   </div>
 ));
 CardHeader.displayName = 'CardHeader';
 
 const CardTitle = forwardRef(({ className, children, ...props }, ref) => (
-  <h3 ref={ref} className={cn("text-lg font-outfit font-medium text-text-title", className)} {...props}>
+  <h3 ref={ref} className={cn("font-outfit text-base font-semibold text-text-title", className)} {...props}>
     {children}
   </h3>
 ));
 CardTitle.displayName = 'CardTitle';
 
 const CardDescription = forwardRef(({ className, children, ...props }, ref) => (
-  <p ref={ref} className={cn("text-sm text-text-muted mt-1", className)} {...props}>
+  <p ref={ref} className={cn("mt-0.5 text-sm text-text-muted", className)} {...props}>
     {children}
   </p>
 ));
 CardDescription.displayName = 'CardDescription';
 
 const CardContent = forwardRef(({ className, children, ...props }, ref) => (
-  <div ref={ref} className={cn("p-6", className)} {...props}>
+  <div ref={ref} className={cn("p-4", className)} {...props}>
     {children}
   </div>
 ));
 CardContent.displayName = 'CardContent';
 
 const CardFooter = forwardRef(({ className, children, ...props }, ref) => (
-  <div ref={ref} className={cn("px-6 py-4 border-t border-border-subtle bg-surface-panel flex items-center", className)} {...props}>
+  <div ref={ref} className={cn("flex items-center border-t border-border-subtle bg-surface-panel px-4 py-3", className)} {...props}>
     {children}
   </div>
 ));

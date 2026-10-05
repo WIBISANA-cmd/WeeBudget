@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Bar, CartesianGrid, Cell, ComposedChart, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
-import { Shimmer } from '../components/feedback/LoadingSkeleton';
+import { ChartSkeleton, DonutSkeleton, Skeleton } from '../components/feedback/LoadingSkeleton';
 import ErrorState from '../components/feedback/ErrorState';
 import EmptyState from '../components/feedback/EmptyState';
 import { cachedGet } from '../api/http';
@@ -15,7 +15,7 @@ const CATEGORY_COLORS = ['#3C83F6', '#FBBF24', '#34D399', '#6366f1', '#FDE68A', 
 // Stable identity so the memos below don't recompute on every render before the first load.
 const EMPTY = [];
 
-const dateInputClass = 'w-full rounded-xl border border-border-subtle bg-surface-panel px-3 py-2.5 text-sm text-text-title shadow-sm shadow-card-soft focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20';
+const dateInputClass = 'h-10 w-full rounded-xl border border-border-subtle bg-surface-panel px-3 text-sm text-text-title focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-border-strong';
 
 /** Local YYYY-MM-DD — toISOString() would shift the day for timezones behind UTC. */
 function toInputDate(date) {
@@ -187,10 +187,10 @@ export default function ReportsPage() {
   const refreshing = cn('transition-opacity duration-200', isRefreshing && 'opacity-50');
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+    <div className="space-y-3 md:space-y-4">
+      <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-text-title">Laporan</h1>
+          <h1 className="text-xl font-semibold text-text-title md:text-2xl">Laporan</h1>
           
         </div>
         <div className="grid grid-cols-2 gap-2 sm:max-w-md sm:flex-none">
@@ -221,7 +221,7 @@ export default function ReportsPage() {
 
       {error && <ErrorState message={error} />}
 
-      <div className={cn('grid gap-4 sm:grid-cols-2 xl:grid-cols-4', refreshing)}>
+      <div className={cn('grid gap-3 sm:grid-cols-2 xl:grid-cols-4', refreshing)}>
         {[
           ['Pemasukan', totals.total_income, 'text-success-base'],
           ['Pengeluaran', totals.total_expense, 'text-danger-base'],
@@ -232,8 +232,8 @@ export default function ReportsPage() {
             <CardContent>
               <p className="text-sm text-text-muted">{label}</p>
               {isFirstLoad
-                ? <Shimmer className="mt-2 h-8 w-32" />
-                : <p className={`mt-2 text-2xl font-semibold ${tone}`}>{formatCurrency(value || 0)}</p>}
+                ? <Skeleton className="mt-2 h-8 w-36" />
+                : <p className={`mt-2 text-2xl font-semibold tabular-nums ${tone}`}>{formatCurrency(value || 0)}</p>}
             </CardContent>
           </Card>
         ))}
@@ -245,7 +245,7 @@ export default function ReportsPage() {
           
         </CardHeader>
         <CardContent className={refreshing}>
-          {isFirstLoad ? <Shimmer className="h-80" /> : (
+          {isFirstLoad ? <ChartSkeleton className="h-80" /> : (
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={trend} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
@@ -287,11 +287,28 @@ export default function ReportsPage() {
         <CardContent className={cn('space-y-6', refreshing)}>
           {isFirstLoad ? (
             <>
-              <Shimmer className="mx-auto h-56 w-56 rounded-full" />
+              <div className="mx-auto flex h-72 w-full max-w-md items-center justify-center">
+                <DonutSkeleton className="h-[200px] w-[200px]" />
+              </div>
               <div className="space-y-2">
-                <Shimmer className="h-14" />
-                <Shimmer className="h-14" />
-                <Shimmer className="h-14" />
+                {['w-24', 'w-32', 'w-20', 'w-28'].map((width, index) => (
+                  <div key={index} className="flex items-center justify-between gap-3 rounded-xl bg-surface-100 p-3">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-3 w-3 rounded-full bg-surface-300" />
+                      <div>
+                        <Skeleton className={cn('h-3.5 bg-surface-300', width)} />
+                        <Skeleton className="mt-2 h-3 w-16 bg-surface-300" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div>
+                        <Skeleton className="ml-auto h-4 w-24 bg-surface-300" />
+                        <Skeleton className="ml-auto mt-2 h-3 w-8 bg-surface-300" />
+                      </div>
+                      <Skeleton className="h-4 w-4 rounded bg-surface-300" />
+                    </div>
+                  </div>
+                ))}
               </div>
             </>
           ) : breakdown.length === 0 ? (
@@ -339,7 +356,7 @@ export default function ReportsPage() {
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
                           <div className="text-right">
-                            <p className="font-semibold text-text-title">{formatCurrency(item.total)}</p>
+                            <p className="font-semibold tabular-nums text-text-title">{formatCurrency(item.total)}</p>
                             <p className="text-xs text-text-muted">
                               {breakdownTotal > 0 ? Math.round((item.total / breakdownTotal) * 100) : 0}%
                             </p>
@@ -356,18 +373,26 @@ export default function ReportsPage() {
                         <div className="overflow-hidden">
                           <ul role="listbox" aria-label={`Transaksi ${item.category_name}`} className="max-h-72 overflow-y-auto border-t border-border-subtle px-3 py-1">
                             {rows === undefined ? (
-                              <li className="py-2"><Shimmer className="h-10" /></li>
+                              [0, 1].map((index) => (
+                              <li key={index} className="flex items-center justify-between gap-3 py-2">
+                                <div>
+                                  <Skeleton className="h-3.5 w-40 bg-surface-300" />
+                                  <Skeleton className="mt-2 h-3 w-28 bg-surface-300" />
+                                </div>
+                                <Skeleton className="h-3.5 w-20 bg-surface-300" />
+                              </li>
+                            ))
                             ) : rows.length === 0 ? (
                               <li className="py-3 text-sm text-text-muted">Tidak ada transaksi.</li>
                             ) : rows.map((row) => (
-                              <li key={row.id} role="option" aria-selected="false" className="flex items-center justify-between gap-3 border-b border-border-subtle/60 py-2 last:border-0">
+                              <li key={row.id} role="option" aria-selected="false" className="flex items-center justify-between gap-3 border-b border-border-subtle py-2 last:border-0">
                                 <div className="min-w-0">
                                   <p className="truncate text-sm text-text-body">{row.description || 'Tanpa keterangan'}</p>
                                   <p className="text-xs text-text-muted">
                                     {formatDate(row.transaction_date)}{row.account_name ? ` · ${row.account_name}` : ''}
                                   </p>
                                 </div>
-                                <span className="shrink-0 text-sm font-semibold text-text-title">{formatCurrency(row.amount)}</span>
+                                <span className="shrink-0 text-sm font-semibold tabular-nums text-text-title">{formatCurrency(row.amount)}</span>
                               </li>
                             ))}
                             {rows && rows.length < item.transaction_count && (

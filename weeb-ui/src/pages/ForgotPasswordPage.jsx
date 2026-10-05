@@ -108,7 +108,7 @@ export default function ForgotPasswordPage() {
       {step === 'otp' && (
         <>
           {notice && (
-            <div className="rounded-xl border border-primary-500/25 bg-primary-500/10 px-4 py-3 text-sm text-primary-600">
+            <div className="rounded-xl border border-border-strong bg-primary-soft px-4 py-3 text-sm text-primary-600">
               {notice}
             </div>
           )}

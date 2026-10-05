@@ -1,62 +1,41 @@
 import { lazy, Suspense, useState } from 'react';
 import AccountPurposeTransactionsPage from '../features/finance/AccountPurposeTransactionsPage';
-import LoadingSkeleton from '../components/feedback/LoadingSkeleton';
-import { cn } from '../lib/utils';
+import Segmented from '../components/ui/Segmented';
+import { GoldSavingsSkeleton } from '../features/finance/GoldSavingsSkeleton';
 
 const GoldSavingsPanel = lazy(() => import('../features/finance/GoldSavingsPanel'));
 
+const tabs = [
+  { value: 'cash', label: 'Cash' },
+  { value: 'gold', label: 'Emas' },
+];
+
 export default function SavingsPage() {
   const [activeTab, setActiveTab] = useState('cash');
+  const switcher = <Segmented label="Jenis tabungan" size="md" options={tabs} value={activeTab} onChange={setActiveTab} className="border border-border-subtle bg-surface-panel" />;
 
-  const tabs = [
-    { id: 'cash', label: 'CASH', helper: 'Tabungan rekening yang sudah berjalan saat ini.' },
-    { id: 'gold', label: 'EMAS', helper: 'Pantau tabungan emas berdasarkan gramasi dan histori harga.' },
-    { id: 'cash', label: 'CASH' },
-    { id: 'gold', label: 'EMAS' },
-  ];
+  if (activeTab === 'cash') {
+    return (
+      <AccountPurposeTransactionsPage
+        title="Tabungan"
+        purpose="savings"
+        createLabel="Tambah tabungan"
+        emptyTitle="Belum ada transaksi tabungan"
+        emptyDescription="Catat setoran pertama agar riwayat tabungan mulai terbentuk."
+        headerExtra={switcher}
+      />
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-text-title md:text-3xl">Tabungan</h1>
-        </div>
-        <div className="inline-flex rounded-2xl border border-border-subtle bg-surface-100 p-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                'rounded-xl px-4 py-2 text-sm font-semibold transition-colors',
-                activeTab === tab.id
-                  ? 'bg-primary-500 text-white shadow-sm shadow-primary-500/20'
-                  : 'text-text-body hover:text-primary-600'
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+    <div className="space-y-3 md:space-y-4">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold text-text-title md:text-2xl">Tabungan</h1>
+        {switcher}
       </header>
-
-      <div className="rounded-2xl border border-border-subtle bg-surface-100 px-4 py-3 text-sm text-text-muted">
-        {tabs.find((tab) => tab.id === activeTab)?.helper}
-      </div>
-
-      {activeTab === 'cash' ? (
-        <AccountPurposeTransactionsPage
-          title="Tabungan Cash"
-          purpose="savings"
-          createLabel="Tambah tabungan"
-          emptyTitle="Belum ada transaksi tabungan"
-          emptyDescription="Catat setoran pertama agar riwayat tabungan mulai terbentuk."
-        />
-      ) : (
-        <Suspense fallback={<LoadingSkeleton rows={6} />}>
-          <GoldSavingsPanel />
-        </Suspense>
-      )}
+      <Suspense fallback={<GoldSavingsSkeleton />}>
+        <GoldSavingsPanel />
+      </Suspense>
     </div>
   );
 }

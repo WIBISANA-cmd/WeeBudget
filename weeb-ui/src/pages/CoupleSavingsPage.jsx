@@ -1,13 +1,13 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
-import { HeartHandshake, Pencil, Plus, Settings, Trash2, Wallet } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { ChevronRight, HeartHandshake, Plus, Settings, Wallet } from 'lucide-react';
+import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import DataTable from '../components/data/DataTable';
+import DataTable, { DataTableSkeleton } from '../components/data/DataTable';
 import EmptyState from '../components/feedback/EmptyState';
 import ErrorState from '../components/feedback/ErrorState';
-import LoadingSkeleton from '../components/feedback/LoadingSkeleton';
-import Modal, { ConfirmDialog } from '../components/forms/Modal';
+import { FormSkeleton, ListRowsSkeleton } from '../components/feedback/LoadingSkeleton';
+import Modal, { ConfirmDialog, DetailActions } from '../components/forms/Modal';
 import StatusBadge from '../components/feedback/StatusBadge';
 import { apiGet, apiPut } from '../api/http';
 import { useCrudResource } from '../hooks/useCrudResource';
@@ -32,7 +32,6 @@ const settingSchema = z.object({
 });
 
 function MobileSavingsList({ rows, depositorLabel, onAction }) {
-  const [pressTimer, setPressTimer] = useState(null);
   const groupedRows = useMemo(() => {
     return rows.reduce((groups, row) => {
       const key = row.transaction_date || 'Tanpa tanggal';
@@ -46,35 +45,15 @@ function MobileSavingsList({ rows, depositorLabel, onAction }) {
     }, []);
   }, [rows]);
 
-  const cancelPress = () => {
-    if (pressTimer) {
-      clearTimeout(pressTimer);
-      setPressTimer(null);
-    }
-  };
-
-  const startPress = (row) => {
-    cancelPress();
-    const timer = window.setTimeout(() => {
-      onAction(row);
-      setPressTimer(null);
-    }, 550);
-    setPressTimer(timer);
-  };
 
   return (
     <div className="space-y-3 md:hidden">
-      <div className="grid grid-cols-[44px_1fr_auto] gap-3 rounded-xl bg-surface-100 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
-        <span>No</span>
-        <span>Setoran</span>
-        <span className="text-right">Nominal</span>
-      </div>
       {groupedRows.map((group) => (
         <div key={group.key} className="space-y-2">
           <div className="px-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">{group.label}</p>
+            <p className="text-xs font-semibold text-text-muted">{group.label}</p>
           </div>
-          {group.rows.map((row, index) => {
+          {group.rows.map((row) => {
             const senderLabel = depositorLabel(row);
             const typeLabel = row.entry_type === 'account_allocation' ? 'Alokasi Dana' : 'Setoran Manual';
             const accountLabel = row.account?.name ? ` • ${row.account.name}` : '';
@@ -83,27 +62,19 @@ function MobileSavingsList({ rows, depositorLabel, onAction }) {
               <button
                 key={row.id}
                 type="button"
-                onPointerDown={() => startPress(row)}
-                onPointerUp={cancelPress}
-                onPointerCancel={cancelPress}
-                onPointerLeave={cancelPress}
-                onContextMenu={(event) => {
-                  event.preventDefault();
-                  onAction(row);
-                }}
                 onClick={() => onAction(row)}
-                className="grid min-h-[58px] w-full grid-cols-[44px_1fr_auto] items-center gap-3 rounded-xl border border-border-subtle bg-surface-panel px-3 py-3 text-left shadow-sm shadow-card-soft active:border-primary-500 active:bg-primary-500/5"
+                className="row-press flex min-h-[56px] w-full items-center gap-3 rounded-xl border border-border-subtle bg-surface-panel px-3 py-2.5 text-left"
               >
-                <span className="text-sm font-semibold text-text-muted">{index + 1}</span>
-                <span className="min-w-0 text-sm font-medium text-text-title">
+                <span className="min-w-0 flex-1 text-sm font-medium text-text-title">
                   <span className="block truncate">{row.description || 'Setoran Tabungan Berdua'}</span>
                   <span className="mt-0.5 block text-xs font-normal text-text-muted">
                     {senderLabel} • {typeLabel}{accountLabel}
                   </span>
                 </span>
-                <span className="text-right text-sm font-semibold text-success-base">
+                <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-success-base">
                   +{formatCurrency(row.amount)}
                 </span>
+                <ChevronRight size={16} className="shrink-0 text-text-muted" />
               </button>
             );
           })}
@@ -411,12 +382,17 @@ export default function CoupleSavingsPage() {
     setDeleting(row);
   };
 
+  const depositsSkeleton = (
+    <>
+      <div className="md:hidden"><ListRowsSkeleton rows={5} leading={false} className="rounded-2xl border border-border-subtle bg-surface-panel px-3" /></div>
+      <div className="hidden md:block"><DataTableSkeleton columns={columns} rows={5} /></div>
+    </>
+  );
+
   return (
-    <div className="space-y-6 md:space-y-7">
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="max-w-3xl">
-          <h1 className="text-2xl font-bold text-text-title md:text-3xl">Tabungan Berdua</h1>
-        </div>
+    <div className="space-y-3 md:space-y-4">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold text-text-title md:text-2xl">Tabungan Berdua</h1>
         <div className="flex flex-wrap gap-2">
           {isAdmin && (
             <Button variant="secondary" onClick={() => setSettingOpen(true)}>
@@ -431,16 +407,16 @@ export default function CoupleSavingsPage() {
         </div>
       </header>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-3 xl:grid-cols-2">
         {[['Pasangan 1', partnerOne], ['Pasangan 2', partnerTwo]].map(([label, partner]) => (
           <Card
             key={label}
             className={partner
-              ? 'border-primary-500/25 bg-gradient-to-br from-primary-500/8 via-surface-panel to-surface-panel'
-              : 'border-warning-base/35 bg-gradient-to-br from-warning-base/8 via-surface-panel to-surface-panel'}
+              ? ''
+              : 'border-warning-line'}
           >
-            <CardContent className="flex items-center gap-4 p-5 md:p-6">
-              <div className="rounded-2xl bg-surface-panel p-3 text-primary-600 shadow-sm shadow-card-soft"><HeartHandshake size={24} /></div>
+            <CardContent className="flex items-center gap-3">
+              <div className="rounded-xl bg-primary-soft p-2.5 text-primary-600"><HeartHandshake size={24} /></div>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-text-muted">{label}</p>
                 <p className="mt-1 truncate text-lg font-semibold text-text-title">{partner?.name || 'Belum diset'}</p>
@@ -451,13 +427,13 @@ export default function CoupleSavingsPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.15fr_0.92fr_0.92fr]">
-        <Card className="border-primary-500/20 bg-gradient-to-br from-primary-500/10 via-surface-panel to-surface-panel">
-          <CardContent className="flex items-center gap-4 p-5 md:p-6">
-            <div className="rounded-2xl bg-primary-500/12 p-3 text-primary-600"><Wallet size={24} /></div>
+      <div className="grid gap-3">
+        <Card>
+          <CardContent className="flex items-center gap-3">
+            <div className="rounded-xl bg-primary-soft p-2.5 text-primary-600"><Wallet size={24} /></div>
             <div>
               <p className="text-sm font-medium text-text-muted">Total saldo bersama</p>
-              <p className="mt-1 text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(totalBalance)}</p>
+              <p className="mt-1 font-outfit text-3xl font-semibold tabular-nums text-text-title">{formatCurrency(totalBalance)}</p>
             </div>
           </CardContent>
         </Card>
@@ -466,19 +442,17 @@ export default function CoupleSavingsPage() {
 
 
       {accountsLoading ? (
-        <LoadingSkeleton rows={2} />
+        depositsSkeleton
       ) : accounts.length === 0 ? (
         <EmptyState title="Belum ada rekening Tabungan berdua" description="Buat rekening baru di menu Rekening, lalu pilih klasifikasi uang Tabungan berdua agar saldo bisa ditampilkan di halaman ini." />
       ) : (
         <>
-          <div className="md:hidden space-y-4 mt-2">
-            <div className="px-1">
-            </div>
+          <div className="md:hidden">
             <div>
               {resource.isLoading ? (
-                <LoadingSkeleton rows={5} />
+                <ListRowsSkeleton rows={5} leading={false} className="rounded-2xl border border-border-subtle bg-surface-panel px-3" />
               ) : resource.error ? (
-                <ErrorState message={resource.error} onRetry={resource.load} />
+                <ErrorState message={resource.error} onRetry={() => resource.load()} />
               ) : resource.items.length === 0 ? (
                 <EmptyState title="Belum ada setoran" description="Catat setoran pertama dari salah satu pasangan." action={<Button onClick={openCreate}>Tambah setoran</Button>} />
               ) : (
@@ -493,36 +467,33 @@ export default function CoupleSavingsPage() {
           </div>
 
           <div className="hidden md:block">
-            <Card className="overflow-visible">
-              <CardHeader>
-                <CardTitle>Riwayat Setoran</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <section className="space-y-2">
+              <h2 className="text-base font-semibold text-text-title">Riwayat Setoran</h2>
+              <div>
                 {resource.isLoading ? (
-                  <LoadingSkeleton rows={5} />
+                  <DataTableSkeleton columns={columns} rows={5} />
                 ) : resource.error ? (
-                  <ErrorState message={resource.error} onRetry={resource.load} />
+                  <ErrorState message={resource.error} onRetry={() => resource.load()} />
                 ) : resource.items.length === 0 ? (
                   <EmptyState title="Belum ada setoran" description="Catat setoran pertama dari salah satu pasangan." action={<Button onClick={openCreate}>Tambah setoran</Button>} />
                 ) : (
                   <DataTable columns={columns} rows={resource.items} onEdit={openEdit} onDelete={openDelete} />
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </section>
           </div>
 
-          <section className="space-y-3">
-            <div className="flex flex-wrap items-end justify-between gap-2 px-1">
+          <section className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <h2 className="text-xl font-bold text-text-title">Riwayat Pengeluaran</h2>
-                <p className="mt-1 text-sm text-text-muted">Pengeluaran yang memakai rekening Tabungan berdua sebagai sumber dana.</p>
+                <h2 className="text-base font-semibold text-text-title">Riwayat Pengeluaran</h2>
               </div>
-              <p className="text-lg font-semibold text-danger-base">-{formatCurrency(totalExpense)}</p>
+              <p className="text-base font-semibold tabular-nums text-danger-base">-{formatCurrency(totalExpense)}</p>
             </div>
             {expenses.isLoading ? (
-              <LoadingSkeleton rows={4} />
+              <DataTableSkeleton columns={expenseColumns} rows={4} hasActions={false} />
             ) : expenses.error ? (
-              <ErrorState message={expenses.error} onRetry={expenses.load} />
+              <ErrorState message={expenses.error} onRetry={() => expenses.load()} />
             ) : expenses.items.length === 0 ? (
               <EmptyState title="Belum ada pengeluaran" description="Transaksi pengeluaran dengan sumber rekening Tabungan berdua akan tampil di sini." />
             ) : (
@@ -548,7 +519,7 @@ export default function CoupleSavingsPage() {
         description="Setoran dicatat sebagai transaksi pemasukan ke rekening Tabungan berdua."
         fullScreenOnMobile={true}
       >
-        <Suspense fallback={<LoadingSkeleton rows={4} />}>
+        <Suspense fallback={<FormSkeleton fields={fields.length} />}>
           <ResourceForm
             schema={schema}
             fields={fields}
@@ -568,9 +539,9 @@ export default function CoupleSavingsPage() {
         fullScreenOnMobile={true}
       >
         {settingLoading ? (
-          <LoadingSkeleton rows={3} />
+          <FormSkeleton fields={2} />
         ) : (
-          <Suspense fallback={<LoadingSkeleton rows={3} />}>
+          <Suspense fallback={<FormSkeleton fields={2} />}>
             <ResourceForm
               schema={settingSchema}
               fields={[
@@ -590,41 +561,34 @@ export default function CoupleSavingsPage() {
       <Modal
         open={Boolean(actionTarget)}
         onClose={() => setActionTarget(null)}
-        title="Pilih Tindakan"
-        description={actionTarget ? (actionTarget.description || 'Setoran Tabungan Berdua') : undefined}
+        title={actionTarget?.description || 'Setoran Tabungan Berdua'}
+        footer={actionTarget && (
+          <DetailActions
+            note="Setoran pasangan hanya bisa dilihat, tidak bisa diedit atau dihapus."
+            onEdit={canManageSetoran(actionTarget) ? () => { const target = actionTarget; setActionTarget(null); openEdit(target); } : undefined}
+            onDelete={canManageSetoran(actionTarget) ? () => { const target = actionTarget; setActionTarget(null); openDelete(target); } : undefined}
+          />
+        )}
       >
-        <div className="grid gap-3 py-2">
-          {actionTarget && canManageSetoran(actionTarget) ? (
-            <>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  const target = actionTarget;
-                  setActionTarget(null);
-                  openEdit(target);
-                }}
-              >
-                <Pencil size={18} className="mr-2" />
-                Edit Setoran
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => {
-                  const target = actionTarget;
-                  setActionTarget(null);
-                  openDelete(target);
-                }}
-              >
-                <Trash2 size={18} className="mr-2" />
-                Hapus Setoran
-              </Button>
-            </>
-          ) : (
-            <p className="text-center text-sm text-text-muted py-4">
-              Setoran pasangan lain hanya bisa dilihat, tidak bisa diedit atau dihapus.
-            </p>
-          )}
-        </div>
+        {actionTarget && (
+          <dl className="divide-y divide-border-subtle text-sm">
+            {[
+              ['Tanggal', formatDate(actionTarget.transaction_date)],
+              ['Penyetor', depositorLabel(actionTarget)],
+              ['Rekening', actionTarget.account?.name || '-'],
+              ['Sumber', actionTarget.entry_type === 'account_allocation' ? 'Alokasi Dana' : 'Setoran Manual'],
+            ].map(([label, value]) => (
+              <div key={label} className="flex justify-between gap-4 py-2.5">
+                <dt className="text-text-muted">{label}</dt>
+                <dd className="text-right font-medium text-text-title">{value}</dd>
+              </div>
+            ))}
+            <div className="flex justify-between gap-4 py-2.5">
+              <dt className="text-text-muted">Nominal</dt>
+              <dd className="font-semibold tabular-nums text-success-base">+{formatCurrency(actionTarget.amount)}</dd>
+            </div>
+          </dl>
+        )}
       </Modal>
 
       <ConfirmDialog

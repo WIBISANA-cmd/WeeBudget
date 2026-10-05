@@ -1,6 +1,9 @@
-import { ArrowDownUp, CircleDollarSign, Pencil, PiggyBank, ShieldAlert, Sparkles, Tag, Trash2 } from 'lucide-react';
-import Button from '../ui/Button';
+import { Fragment, useState } from 'react';
+import { ArrowDownUp, ChevronRight, CircleDollarSign, Pencil, PiggyBank, ShieldAlert, Sparkles, Tag, Trash2 } from 'lucide-react';
+import { Skeleton } from '../feedback/LoadingSkeleton';
+import Modal, { DetailActions } from '../forms/Modal';
 import { formatCurrency, formatDate } from '../../lib/formatters';
+import { cn } from '../../lib/utils';
 
 const mobilePriorityKeys = [
   'amount',
@@ -15,6 +18,13 @@ const mobilePriorityKeys = [
   'need_type',
   'transaction_type',
 ];
+
+// Shared by the table and its skeleton so the placeholder lines up cell for cell.
+const frameClass = 'overflow-hidden rounded-2xl border border-border-subtle bg-surface-panel';
+const headCellClass = 'whitespace-nowrap px-4 py-2.5 text-left text-xs font-medium text-text-muted';
+const bodyCellClass = 'px-4 py-3 align-middle text-sm text-text-body';
+const mobileRowClass = 'row-press flex min-h-[56px] w-full items-center gap-3 px-3 py-2.5 text-left';
+const iconButtonClass ='flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors duration-150';
 
 function renderColumnValue(column, row) {
   return column.render ? column.render(row) : row[column.key] ?? '-';
@@ -67,234 +77,246 @@ function CategoryIcon({ row }) {
   return <ArrowDownUp {...iconProps} />;
 }
 
+function RowActions({ row, onEdit, onDelete, canEditRow, canDeleteRow }) {
+  const canEdit = onEdit && (!canEditRow || canEditRow(row));
+  const canDelete = onDelete && (!canDeleteRow || canDeleteRow(row));
+
+  if (!canEdit && !canDelete) return null;
+
+  return (
+    <div className="flex shrink-0 justify-end gap-1">
+      {canEdit && (
+        <button type="button" onClick={() => onEdit(row)} aria-label="Edit" title="Edit" className={cn(iconButtonClass, 'hover:bg-primary-soft hover:text-primary-600')}>
+          <Pencil size={16} />
+        </button>
+      )}
+      {canDelete && (
+        <button type="button" onClick={() => onDelete(row)} aria-label="Hapus" title="Hapus" className={cn(iconButtonClass, 'hover:bg-danger-soft hover:text-danger-base')}>
+          <Trash2 size={16} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Allocations only move money between own accounts, so they count as neither income nor expense. */
+function dayTotals(rows) {
+  return rows.reduce((totals, row) => {
+    if (row.entry_type === 'account_allocation') return totals;
+    const amount = Number(row.amount || 0);
+    if (row.transaction_type === 'income') totals.income += amount;
+    if (row.transaction_type === 'expense') totals.expense += amount;
+    return totals;
+  }, { income: 0, expense: 0 });
+}
+
+function groupByDate(rows) {
+  const groups = new Map();
+  rows.forEach((row) => {
+    const date = row.transaction_date || '';
+    if (!groups.has(date)) groups.set(date, []);
+    groups.get(date).push(row);
+  });
+  return [...groups.entries()];
+}
+
 export default function DataTable({ columns, rows, onEdit, onDelete, canEditRow, canDeleteRow, mobileLayout }) {
+  const [detailRow, setDetailRow] = useState(null);
+  const hasActions = Boolean(onEdit || onDelete);
+  const actionProps = { onEdit, onDelete, canEditRow, canDeleteRow };
+  const isTransactions = rows.length > 0 && rows.some((row) => 'transaction_date' in row && 'transaction_type' in row);
+  const mobileColumns = getDefaultMobileColumns(columns);
+  // The two most telling fields ride along on the row: one at the right edge, one under the title.
+  const [mobileTrailing, mobileSubtitle] = mobileColumns.details;
+  const titleColumn = mobileLayout === 'categories' ? columns.find((column) => column.key === 'name') : mobileColumns.title;
+  const canEditDetail = Boolean(detailRow && onEdit && (!canEditRow || canEditRow(detailRow)));
+  const canDeleteDetail = Boolean(detailRow && onDelete && (!canDeleteRow || canDeleteRow(detailRow)));
+
+  const renderRow = (row) => (
+    <tr key={row.id} className="ui-hover-surface">
+      {columns.map((column) => (
+        <td key={column.key} className={bodyCellClass}>
+          {renderColumnValue(column, row)}
+        </td>
+      ))}
+      {hasActions && (
+        <td className="w-px whitespace-nowrap px-4 py-2 align-middle">
+          <RowActions row={row} {...actionProps} />
+        </td>
+      )}
+    </tr>
+  );
+
   return (
     <>
-      {mobileLayout === 'categories' ? (
-        <div className="divide-y divide-border-subtle rounded-3xl border border-border-subtle bg-surface-panel shadow-sm shadow-card-soft md:hidden">
-          {rows.map((row, index) => (
-            <div
-              key={row.id}
-              className="ui-hover-surface flex items-center justify-between gap-3 p-4"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-100 text-xs font-semibold text-text-muted">
-                  {index + 1}
-                </span>
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary-500/10 text-primary-600">
-                  <CategoryIcon row={row} />
-                </span>
-                <span className="min-w-0 truncate text-base font-semibold text-text-title">
-                  {row.name}
-                </span>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                {onEdit && (!canEditRow || canEditRow(row)) && (
-                  <button
-                    type="button"
-                    onClick={() => onEdit(row)}
-                    className="ui-hover-surface ui-hover-panel ui-hover-icon flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-border-subtle bg-surface-panel text-text-body duration-200 active:scale-95"
-                    aria-label="Edit"
-                    title="Edit"
-                  >
-                    <Pencil size={16} />
-                  </button>
-                )}
-                {onDelete && (!canDeleteRow || canDeleteRow(row)) && (
-                  <button
-                    type="button"
-                    onClick={() => onDelete(row)}
-                    className="ui-hover-surface flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-border-subtle bg-surface-panel text-danger-base duration-200 hover:border-danger-base hover:bg-danger-base/10 active:scale-95"
-                    aria-label="Hapus"
-                    title="Hapus"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="divide-y divide-border-subtle rounded-3xl border border-border-subtle bg-surface-panel shadow-sm shadow-card-soft md:hidden">
-          {rows.map((row, index) => {
-            const mobileColumns = getDefaultMobileColumns(columns);
-            return (
-              <div key={row.id} className="ui-hover-surface p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-100 text-xs font-semibold text-text-muted">
-                        {index + 1}
-                      </span>
-                      <div className="min-w-0">
-                        {mobileColumns.title && (
-                          <>
-                            <p className="text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                              {mobileColumns.title.label}
-                            </p>
-                            <div className="mt-1 truncate text-base font-semibold text-text-title">
-                              {renderColumnValue(mobileColumns.title, row)}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
+      {/* Mobile: a row is a summary; tapping it opens every field with edit and delete at the foot. */}
+      <div className={cn(frameClass, 'divide-y divide-border-subtle md:hidden')}>
+        {rows.map((row) => (
+          <button key={row.id} type="button" onClick={() => setDetailRow(row)} className={mobileRowClass}>
+            {mobileLayout === 'categories' && (
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary-600">
+                <CategoryIcon row={row} />
+              </span>
+            )}
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold text-text-title">
+                {mobileLayout === 'categories' ? row.name : mobileColumns.title && renderColumnValue(mobileColumns.title, row)}
+              </span>
+              {mobileLayout !== 'categories' && mobileSubtitle && (
+                <span className="mt-0.5 block truncate text-xs text-text-muted">{renderColumnValue(mobileSubtitle, row)}</span>
+              )}
+            </span>
+            {mobileLayout !== 'categories' && mobileTrailing && (
+              <span className="shrink-0 text-right text-sm text-text-body">{renderColumnValue(mobileTrailing, row)}</span>
+            )}
+            <ChevronRight size={16} className="shrink-0 text-text-muted" />
+          </button>
+        ))}
+      </div>
 
-                    {mobileColumns.details.length > 0 && (
-                      <div className="mt-3 space-y-2">
-                        {mobileColumns.details.map((column) => (
-                          <div key={column.key} className="flex items-start justify-between gap-4">
-                            <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">
-                              {column.label}
-                            </span>
-                            <div className="max-w-[62%] text-right text-sm text-text-body">
-                              {renderColumnValue(column, row)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {((onEdit && (!canEditRow || canEditRow(row))) || (onDelete && (!canDeleteRow || canDeleteRow(row)))) && (
-                  <div className="mt-4 grid grid-cols-2 gap-2">
-                    {onEdit && (!canEditRow || canEditRow(row)) && <Button size="sm" variant="secondary" onClick={() => onEdit(row)} className="w-full">Edit</Button>}
-                    {onDelete && (!canDeleteRow || canDeleteRow(row)) && <Button size="sm" variant="danger" onClick={() => onDelete(row)} className="w-full">Hapus</Button>}
-                  </div>
-                )}
+      <Modal
+        open={Boolean(detailRow)}
+        onClose={() => setDetailRow(null)}
+        title={detailRow && titleColumn ? renderColumnValue(titleColumn, detailRow) : 'Detail'}
+        footer={detailRow && (canEditDetail || canDeleteDetail) ? (
+          <DetailActions
+            onEdit={canEditDetail ? () => { setDetailRow(null); onEdit(detailRow); } : undefined}
+            onDelete={canDeleteDetail ? () => { setDetailRow(null); onDelete(detailRow); } : undefined}
+          />
+        ) : undefined}
+      >
+        {detailRow && (
+          <dl className="divide-y divide-border-subtle text-sm">
+            {columns.filter((column) => column !== titleColumn).map((column) => (
+              <div key={column.key} className="flex items-center justify-between gap-4 py-2.5">
+                <dt className="shrink-0 text-text-muted">{column.label}</dt>
+                <dd className="min-w-0 text-right font-medium text-text-title">{renderColumnValue(column, detailRow)}</dd>
               </div>
-            );
-          })}
-        </div>
-      )}
+            ))}
+          </dl>
+        )}
+      </Modal>
 
-      <div className="hidden overflow-hidden rounded-[30px] border border-border-subtle bg-surface-panel shadow-[0_24px_60px_-42px_rgba(15,23,42,0.45)] md:block">
+      <div className={cn(frameClass, 'hidden md:block')}>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border-subtle">
-            <thead className="bg-surface-100/90 backdrop-blur">
+          <table className="min-w-full">
+            <thead className="bg-surface-100">
               <tr>
                 {columns.map((column) => (
-                  <th key={column.key} className="px-5 py-4 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">
-                    {column.label}
-                  </th>
+                  <th key={column.key} className={headCellClass}>{column.label}</th>
                 ))}
-                {(onEdit || onDelete) && <th className="px-5 py-4 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">Aksi</th>}
+                {hasActions && <th className={cn(headCellClass, 'text-right')}><span className="sr-only">Aksi</span></th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border-subtle bg-surface-panel">
-              {(() => {
-                const isTransactions = rows.length > 0 &&
-                  rows.some(row => 'transaction_date' in row && 'transaction_type' in row);
+            <tbody className="divide-y divide-border-subtle">
+              {!isTransactions ? rows.map(renderRow) : groupByDate(rows).map(([date, groupRows]) => {
+                const totals = dayTotals(groupRows);
 
-                if (!isTransactions) {
-                  return rows.map((row) => (
-                    <tr key={row.id} className="ui-hover-surface duration-200">
-                      {columns.map((column) => (
-                        <td
-                          key={column.key}
-                          className="px-5 py-4 align-top text-sm leading-6 text-text-body"
-                        >
-                          {column.render ? column.render(row) : row[column.key] ?? '-'}
-                        </td>
-                      ))}
-                      {(onEdit || onDelete) && (
-                        <td className="whitespace-nowrap px-5 py-4 text-right align-top">
-                          {((onEdit && (!canEditRow || canEditRow(row))) || (onDelete && (!canDeleteRow || canDeleteRow(row)))) ? (
-                            <div className="flex justify-end gap-2">
-                              {onEdit && (!canEditRow || canEditRow(row)) && <Button size="sm" variant="secondary" onClick={() => onEdit(row)}>Edit</Button>}
-                              {onDelete && (!canDeleteRow || canDeleteRow(row)) && <Button size="sm" variant="danger" onClick={() => onDelete(row)}>Hapus</Button>}
-                            </div>
-                          ) : (
-                            <span className="text-sm text-text-muted">-</span>
-                          )}
-                        </td>
-                      )}
-                    </tr>
-                  ));
-                }
-
-                // Group transactions by date
-                const groupsMap = new Map();
-                rows.forEach((row) => {
-                  const date = row.transaction_date || 'Tanpa Tanggal';
-                  if (!groupsMap.has(date)) {
-                    groupsMap.set(date, []);
-                  }
-                  groupsMap.get(date).push(row);
-                });
-
-                const content = [];
-                for (const [date, groupRows] of groupsMap.entries()) {
-                  // Render transactions for this date
-                  groupRows.forEach((row) => {
-                    content.push(
-                      <tr key={row.id} className="ui-hover-surface duration-200">
-                        {columns.map((column) => (
-                          <td
-                            key={column.key}
-                            className="px-5 py-4 align-top text-sm leading-6 text-text-body"
-                          >
-                            {column.render ? column.render(row) : row[column.key] ?? '-'}
-                          </td>
-                        ))}
-                        {(onEdit || onDelete) && (
-                          <td className="whitespace-nowrap px-5 py-4 text-right align-top">
-                            {((onEdit && (!canEditRow || canEditRow(row))) || (onDelete && (!canDeleteRow || canDeleteRow(row)))) ? (
-                              <div className="flex justify-end gap-2">
-                                {onEdit && (!canEditRow || canEditRow(row)) && <Button size="sm" variant="secondary" onClick={() => onEdit(row)}>Edit</Button>}
-                                {onDelete && (!canDeleteRow || canDeleteRow(row)) && <Button size="sm" variant="danger" onClick={() => onDelete(row)}>Hapus</Button>}
-                              </div>
-                            ) : (
-                              <span className="text-sm text-text-muted">-</span>
-                            )}
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  });
-
-                  // Calculate daily totals
-                  let dailyIncome = 0;
-                  let dailyExpense = 0;
-                  groupRows.forEach((r) => {
-                    // Allocations only move money between own accounts — neither income nor expense.
-                    if (r.entry_type === 'account_allocation') return;
-                    const amt = Number(r.amount || 0);
-                    if (r.transaction_type === 'income') {
-                      dailyIncome += amt;
-                    } else if (r.transaction_type === 'expense') {
-                      dailyExpense += amt;
-                    }
-                  });
-
-                  // Summary row for this date
-                  const totalCols = columns.length + ((onEdit || onDelete) ? 1 : 0);
-                  content.push(
-                    <tr key={`summary-${date}`} className="bg-surface-100/30 font-medium border-b border-border-subtle">
-                      <td colSpan={totalCols} className="px-5 py-3 text-sm text-text-muted">
-                        <div className="flex items-center gap-6 justify-end">
-                          <span className="text-xs uppercase tracking-wide text-text-muted">Ringkasan {formatDate(date)}:</span>
-                          {dailyIncome > 0 && (
-                            <span className="text-success-base font-semibold">
-                              Total Pemasukan: {formatCurrency(dailyIncome)}
-                            </span>
-                          )}
-                          {dailyExpense > 0 && (
-                            <span className="text-danger-base font-semibold">
-                              Total Pengeluaran: {formatCurrency(dailyExpense)}
-                            </span>
-                          )}
-                          {dailyIncome === 0 && dailyExpense === 0 && (
-                            <span>-</span>
-                          )}
+                return (
+                  <Fragment key={date || 'undated'}>
+                    <tr className="bg-surface-100">
+                      <td colSpan={columns.length + (hasActions ? 1 : 0)} className="px-4 py-2">
+                        <div className="flex items-center justify-between gap-4 text-xs">
+                          <span className="font-semibold text-text-title">{date ? formatDate(date) : 'Tanpa tanggal'}</span>
+                          <span className="flex items-center gap-4 font-semibold tabular-nums">
+                            {totals.income > 0 && <span className="text-success-base">+{formatCurrency(totals.income)}</span>}
+                            {totals.expense > 0 && <span className="text-danger-base">-{formatCurrency(totals.expense)}</span>}
+                          </span>
                         </div>
                       </td>
                     </tr>
-                  );
-                }
-                return content;
-              })()}
+                    {groupRows.map(renderRow)}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
+}
+
+const PILL_KEY = /status|type|purpose|role|scope|is_active/;
+const DATE_KEY = /date|_at$|month/;
+const MONEY_KEY = /amount|balance|income|expense|price|nominal/;
+const TEXT_WIDTHS = ['w-44', 'w-32', 'w-52', 'w-36', 'w-40', 'w-28'];
+
+/** A placeholder shaped like what the column holds: a badge, a date, a figure or a line of text. */
+function CellSkeleton({ column, rowIndex, isFirst }) {
+  if (PILL_KEY.test(column.key)) return <Skeleton className="h-5 w-16 rounded-md" />;
+  if (DATE_KEY.test(column.key)) return <Skeleton className="h-3.5 w-20" />;
+  if (MONEY_KEY.test(column.key)) return <Skeleton className="h-3.5 w-24" />;
+  if (column.key === 'range') return <Skeleton className="h-3.5 w-40" />;
+
+  return <Skeleton className={cn('h-3.5 max-w-full', isFirst || column.key === 'description' ? TEXT_WIDTHS[rowIndex % TEXT_WIDTHS.length] : 'w-24')} />;
+}
+
+/** The table before its rows arrive: real column headers, placeholder cells in the real grid. */
+export function DataTableSkeleton({ columns = [], rows = 6, hasActions = true, mobileLayout, grouped = false }) {
+  const mobileColumns = getDefaultMobileColumns(columns);
+  const indexes = Array.from({ length: rows }, (_, index) => index);
+  // Transactions arrive grouped per day: a date bar opens each run of rows.
+  const groupBar = (
+    <tr className="bg-surface-100">
+      <td colSpan={columns.length + (hasActions ? 1 : 0)} className="px-4 py-2">
+        <div className="flex h-4 items-center justify-between gap-4">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-3 w-28" />
+        </div>
+      </td>
+    </tr>
+  );
+
+  return (
+    <>
+      <div className={cn(frameClass, 'divide-y divide-border-subtle md:hidden')}>
+        {indexes.map((index) => (
+          <div key={index} className={mobileRowClass}>
+            {mobileLayout === 'categories' && <Skeleton className="h-9 w-9 shrink-0 rounded-xl" />}
+            <div className="min-w-0 flex-1">
+              <Skeleton className={cn('h-3.5 max-w-full', TEXT_WIDTHS[index % TEXT_WIDTHS.length])} />
+              {mobileLayout !== 'categories' && mobileColumns.details[1] && <Skeleton className="mt-2 h-3 w-24" />}
+            </div>
+            {mobileLayout !== 'categories' && mobileColumns.details[0] && (
+              <CellSkeleton column={mobileColumns.details[0]} rowIndex={index} />
+            )}
+            <Skeleton className="h-4 w-4 shrink-0 rounded" />
+          </div>
+        ))}
+      </div>
+
+      <div className={cn(frameClass, 'hidden md:block')}>
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="bg-surface-100">
+              <tr>
+                {columns.map((column) => (
+                  <th key={column.key} className={headCellClass}>{column.label}</th>
+                ))}
+                {hasActions && <th className={headCellClass} />}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-subtle">
+              {indexes.map((index) => (
+                <Fragment key={index}>
+                  {grouped && index % 3 === 0 && groupBar}
+                  <tr>
+                    {columns.map((column, columnIndex) => (
+                      <td key={column.key} className={bodyCellClass}>
+                        <div className="flex h-5 items-center">
+                          <CellSkeleton column={column} rowIndex={index} isFirst={columnIndex === 0} />
+                        </div>
+                      </td>
+                    ))}
+                    {hasActions && (
+                      <td className="w-px whitespace-nowrap px-4 py-2 align-middle">
+                        <Skeleton className="ml-auto h-8 w-[68px] rounded-lg" />
+                      </td>
+                    )}
+                  </tr>
+                </Fragment>
+              ))}
             </tbody>
           </table>
         </div>

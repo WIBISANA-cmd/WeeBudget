@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import LoadingSkeleton from '../components/feedback/LoadingSkeleton';
+import { AppShellSkeleton } from '../components/feedback/LoadingSkeleton';
 import { apiGet, apiPost } from '../api/http';
 
 export default function GoogleCallbackPage() {
@@ -35,5 +35,5 @@ export default function GoogleCallbackPage() {
     });
   }, [navigate, params]);
 
-  return <LoadingSkeleton rows={4} />;
+  return <AppShellSkeleton />;
 }

@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Concerns\RespondsWithApi;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\MonthlyReportResource;
+use App\Models\FinancialAccount;
 use App\Models\Transaction;
+use App\Services\Finance\FinanceSummaryService;
 use App\Services\Finance\MonthlyReportService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
@@ -111,6 +113,65 @@ class MonthlyReportController extends Controller
         }
 
         return $this->success($data, 'Reports loaded.');
+    }
+
+    /**
+     * Money in and out per day for one pocket of accounts, with the pocket's balance right now.
+     *
+     * `scope=need` is the everyday-spending pocket the dashboard headlines. Unlike the reports
+     * above, allocations count here: a top-up from the salary account is exactly how money
+     * reaches this pocket, so leaving it out would show spending with nothing ever coming in.
+     * `scope=all` covers every active account; there a transfer between own accounts is no
+     * movement at all, so allocations drop out again.
+     */
+    public function pocketFlow(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'start' => ['required', 'date'],
+            'end' => ['required', 'date', 'after_or_equal:start'],
+            'scope' => ['nullable', 'in:need,all'],
+        ]);
+
+        $scope = $validated['scope'] ?? 'need';
+        $start = CarbonImmutable::parse($validated['start'])->startOfDay();
+        // Day buckets only: capped so a careless range cannot ask for years of them.
+        $end = CarbonImmutable::parse($validated['end'])->startOfDay()->min($start->addDays(366));
+
+        $accounts = FinancialAccount::query()
+            ->where('user_id', $request->user()->id)
+            ->where('is_active', true)
+            ->get(['id', 'name', 'purpose', 'current_balance'])
+            ->when($scope === 'need', fn ($accounts) => $accounts->filter(fn (FinancialAccount $account) => FinanceSummaryService::isNeedAccount($account)));
+
+        $days = [];
+        for ($day = $start; $day->lessThanOrEqualTo($end); $day = $day->addDay()) {
+            $days[$day->toDateString()] = ['period' => $day->toDateString(), 'total_income' => 0.0, 'total_expense' => 0.0];
+        }
+
+        $rows = $accounts->isEmpty() ? collect() : Transaction::query()
+            ->where('user_id', $request->user()->id)
+            ->whereIn('account_id', $accounts->pluck('id'))
+            ->whereBetween('transaction_date', [$start->toDateString(), $end->toDateString()])
+            ->when($scope === 'all', fn ($query) => $query->where(fn ($inner) => $inner->whereNull('source')->orWhere('source', '!=', 'account_allocation')))
+            ->get(['transaction_date', 'transaction_type', 'amount']);
+
+        foreach ($rows as $row) {
+            $key = $row->transaction_date->toDateString();
+            if (isset($days[$key])) {
+                $days[$key][$row->transaction_type === 'income' ? 'total_income' : 'total_expense'] += (float) $row->amount;
+            }
+        }
+
+        return $this->success([
+            'scope' => $scope,
+            'account_count' => $accounts->count(),
+            'balance' => round((float) $accounts->sum('current_balance'), 2),
+            'series' => array_map(fn (array $day) => [
+                'period' => $day['period'],
+                'total_income' => round($day['total_income'], 2),
+                'total_expense' => round($day['total_expense'], 2),
+            ], array_values($days)),
+        ], 'Pocket flow loaded.');
     }
 
     public function show(Request $request, MonthlyReportService $service): JsonResponse

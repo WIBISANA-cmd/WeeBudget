@@ -147,14 +147,16 @@ class FinanceSummaryService
             ->all();
     }
 
+    /** The everyday-spending pocket: daily accounts, plus anything the user named "kebutuhan". */
+    public static function isNeedAccount(FinancialAccount $account): bool
+    {
+        return $account->purpose === 'daily_spending'
+            || str_contains(mb_strtolower((string) $account->name), 'kebutuhan');
+    }
+
     private function focusedAccountBalances(Collection $accounts): array
     {
-        $needAccounts = $accounts->filter(function (FinancialAccount $account) {
-            $name = mb_strtolower((string) $account->name);
-
-            return $account->purpose === 'daily_spending'
-                || str_contains($name, 'kebutuhan');
-        });
+        $needAccounts = $accounts->filter(fn (FinancialAccount $account) => self::isNeedAccount($account));
 
         $wantAccounts = $accounts->filter(function (FinancialAccount $account) {
             $name = mb_strtolower((string) $account->name);

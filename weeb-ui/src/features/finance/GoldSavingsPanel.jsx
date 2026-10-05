@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { ArrowDown, ArrowUp, Coins, TrendingUp } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import ErrorState from '../../components/feedback/ErrorState';
-import LoadingSkeleton from '../../components/feedback/LoadingSkeleton';
+import { GoldSavingsSkeleton } from './GoldSavingsSkeleton';
 import { apiGet } from '../../api/http';
 import { compactCurrency, formatCurrency, formatDate } from '../../lib/formatters';
 import { cn } from '../../lib/utils';
@@ -44,7 +44,7 @@ function MetricCard({ icon: Icon, label, value, helper, tone }) {
         </span>
         <div className="min-w-0">
           <p className="text-sm text-text-muted">{label}</p>
-          <p className="mt-2 break-words text-2xl font-semibold text-text-title">{value}</p>
+          <p className="mt-1 break-words text-2xl font-semibold tabular-nums text-text-title">{value}</p>
           <p className="mt-1 text-sm leading-5 text-text-muted">{helper}</p>
         </div>
       </CardContent>
@@ -124,7 +124,7 @@ export default function GoldSavingsPanel() {
   ), [buybackPricePerGram, sellPricePerGram]);
 
   if (isLoading) {
-    return <LoadingSkeleton rows={6} />;
+    return <GoldSavingsSkeleton />;
   }
 
   if (error || !currentPrice) {
@@ -132,25 +132,21 @@ export default function GoldSavingsPanel() {
   }
 
   return (
-    <div className="space-y-6">
-      <header className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <Card className="border-[rgba(251,191,36,0.35)] bg-[linear-gradient(135deg,rgba(251,191,36,0.16),rgba(255,255,255,0.02))]">
-          <CardContent className="grid gap-5 p-6 md:grid-cols-[1fr_auto] md:items-end">
+    <div className="space-y-3 md:space-y-4">
+      <header className="grid gap-3 xl:grid-cols-[1.1fr_0.9fr]">
+        <Card className="border-warning-line bg-warning-soft">
+          <CardContent className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(251,191,36,0.35)] bg-[rgba(251,191,36,0.12)] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+              <div className="inline-flex items-center gap-2 rounded-full border border-warning-line bg-surface-panel px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
                 <Coins size={14} />
                 EMAS {marketSource?.resource || 'pegadaian'}
               </div>
-              <h2 className="mt-4 text-2xl font-bold text-text-title md:text-3xl">Harga tabungan emas hari ini</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">
-                Harga live per {formatWeight(currentPrice.weight)} dari provider {marketSource?.provider || 'emas'} yang diproksikan lewat server aplikasi, tercatat pada {formatDate(currentPrice.recordedDate)}.
-              </p>
-              <p className="mt-5 text-4xl font-semibold text-text-title md:text-5xl">{formatCurrency(sellPricePerGram)}</p>
-              <p className="mt-2 text-sm text-text-muted">Estimasi harga beli per 1 gram.</p>
+              <p className="mt-3 text-sm text-text-muted">Harga beli per gram · {formatDate(currentPrice.recordedDate)}</p>
+              <p className="mt-1 font-outfit text-3xl font-semibold tabular-nums text-text-title md:text-4xl">{formatCurrency(sellPricePerGram)}</p>
             </div>
-            <div className="rounded-2xl border border-border-subtle bg-surface-panel/80 p-4 shadow-sm shadow-card-soft">
+            <div className="rounded-2xl border border-border-subtle bg-surface-panel p-4">
               <p className="text-sm text-text-muted">Perubahan harian</p>
-              <div className={cn('mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold', dayChange >= 0 ? 'bg-success-base/10 text-success-base' : 'bg-danger-base/10 text-danger-base')}>
+              <div className={cn('mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold', dayChange >= 0 ? 'bg-success-soft text-success-base' : 'bg-danger-soft text-danger-base')}>
                 {dayChange >= 0 ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
                 {formatCurrency(Math.abs(dayChange))} ({Math.abs(dayChangePercent).toFixed(2)}%)
               </div>
@@ -165,7 +161,6 @@ export default function GoldSavingsPanel() {
         <Card>
           <CardHeader>
             <CardTitle>Simulasi Tabungan Emas</CardTitle>
-            <CardDescription>Masukkan total gram yang dimiliki untuk melihat estimasi nilainya saat ini.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Input
@@ -193,7 +188,7 @@ export default function GoldSavingsPanel() {
         </Card>
       </header>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-3 md:grid-cols-3">
         <MetricCard
           icon={TrendingUp}
           label="Harga beli per gram"
@@ -217,18 +212,16 @@ export default function GoldSavingsPanel() {
         />
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+      <section className="grid gap-3 xl:grid-cols-[0.95fr_1.05fr]">
         <Card>
           <CardHeader>
             <CardTitle>Referensi Gramasi</CardTitle>
-            <CardDescription>Perkiraan nilai berdasarkan harga Pegadaian tanggal {formatDate(currentPrice.recordedDate)}.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
             {gramValuations.map((item) => (
               <div key={item.weight} className="rounded-2xl border border-border-subtle bg-surface-100 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-lg font-semibold text-text-title">{formatWeight(item.weight)}</p>
-                  <span className="rounded-full bg-primary-500/10 px-2.5 py-1 text-xs font-semibold text-primary-600">Live</span>
                 </div>
                 <div className="mt-4 grid gap-2 text-sm">
                   <div className="flex items-center justify-between gap-3">
@@ -248,22 +241,11 @@ export default function GoldSavingsPanel() {
         <Card>
           <CardHeader>
             <CardTitle>Riwayat Harga 14 Hari</CardTitle>
-            <CardDescription>Harga jual dan buyback per gram, diurutkan dari data historis terbaru provider emas.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="h-[320px]">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="goldSellTrend" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.02} />
-                    </linearGradient>
-                    <linearGradient id="goldBuybackTrend" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#08A0FF" stopOpacity={0.28} />
-                      <stop offset="95%" stopColor="#08A0FF" stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
+                <LineChart data={chartData} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid stroke="var(--color-border-subtle)" vertical={false} />
                   <XAxis dataKey="label" stroke="var(--color-text-muted)" tickLine={false} axisLine={false} />
                   <YAxis stroke="var(--color-text-muted)" tickLine={false} axisLine={false} tickFormatter={compactCurrency} width={52} />
@@ -272,13 +254,13 @@ export default function GoldSavingsPanel() {
                     labelFormatter={(_, payload) => formatDate(payload?.[0]?.payload?.date)}
                     contentStyle={buildChartTooltipStyle()}
                   />
-                  <Area type="monotone" dataKey="sellPerGram" stroke="#F59E0B" fill="url(#goldSellTrend)" strokeWidth={3} name="Harga beli" />
-                  <Area type="monotone" dataKey="buybackPerGram" stroke="#08A0FF" fill="url(#goldBuybackTrend)" strokeWidth={3} name="Buyback" />
-                </AreaChart>
+                  <Line type="monotone" dataKey="sellPerGram" stroke="#F59E0B" strokeWidth={2.25} dot={false} name="Harga beli" />
+                  <Line type="monotone" dataKey="buybackPerGram" stroke="#3C83F6" strokeWidth={2.25} dot={false} name="Buyback" />
+                </LineChart>
               </ResponsiveContainer>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl bg-surface-100 p-4">
                 <p className="text-sm text-text-muted">Data terbaru</p>
                 <p className="mt-2 font-semibold text-text-title">{formatDate(currentPrice.recordedDate)}</p>
@@ -286,10 +268,6 @@ export default function GoldSavingsPanel() {
               <div className="rounded-2xl bg-surface-100 p-4">
                 <p className="text-sm text-text-muted">Sumber</p>
                 <p className="mt-2 font-semibold text-text-title">{currentPrice.displayName || 'Pegadaian'}{currentPrice.materialType ? ` · ${currentPrice.materialType}` : ''}</p>
-              </div>
-              <div className="rounded-2xl bg-surface-100 p-4">
-                <p className="text-sm text-text-muted">Satuan dasar API</p>
-                <p className="mt-2 font-semibold text-text-title">{formatWeight(currentPrice.weight)}</p>
               </div>
             </div>
           </CardContent>

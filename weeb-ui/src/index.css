@@ -3,60 +3,86 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Every color here is opaque. Tints that used to be "primary at 10% opacity" are their own
+ * solid tokens (primary-soft, danger-soft, ...), so a surface looks the same whatever sits
+ * behind it and the light and dark themes are tuned separately instead of by alpha.
+ */
 @theme {
   /* Fonts */
   --font-inter: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-outfit: "Outfit", ui-sans-serif, system-ui, sans-serif;
 
   /* Backgrounds & Surfaces */
-  --color-bg-base: #FFFFFF;
-  --color-bg-muted: #F8FAFC;
+  --color-bg-base: #F4F6FA;
+  --color-bg-muted: #EEF1F6;
   --color-surface-panel: #FFFFFF;
-  --color-surface-100: #F3F4F6;
-  --color-surface-200: #E5E7EB;
-  --color-surface-300: #D1D5DB;
-  --color-hover-soft: rgba(17, 24, 39, 0.05);
-  --color-hover-strong: rgba(60, 131, 246, 0.08);
+  --color-surface-100: #F3F5F9;
+  --color-surface-200: #E6EAF0;
+  --color-surface-300: #D3D9E2;
+  --color-hover-soft: #EEF1F6;
+  --color-hover-strong: #E8F0FE;
 
   /* Borders */
-  --color-border-subtle: rgba(17, 24, 39, 0.08);
-  --color-border-strong: rgba(60, 131, 246, 0.22);
+  --color-border-subtle: #E3E7EE;
+  --color-border-strong: #B9D2FC;
 
   /* Primary - Base: #3C83F6 */
-  --color-primary-400: #60a5fa;
+  --color-primary-400: #60A5FA;
   --color-primary-500: #3C83F6;
-  --color-primary-600: #2563eb;
-  
+  --color-primary-600: #2563EB;
+  --color-primary-700: #1D4ED8;
+  --color-primary-soft: #E8F0FE;
+  /* Pressed/hover fill for primary buttons. Same in both themes: 600 is lightened in dark for text. */
+  --color-primary-hover: #2563EB;
+
+  /* Accent (voice / AI actions) */
+  --color-accent-base: #7C3AED;
+  --color-accent-strong: #6D28D9;
+  --color-accent-soft: #F0EAFE;
+
   /* Text */
   --color-text-title: #111827;
   --color-text-body: #374151;
   --color-text-muted: #6B7280;
 
-  /* Semantic Colors */
+  /* Semantic Colors: base for text and fills, soft for tinted surfaces, line for borders */
   --color-success-base: #059669;
+  --color-success-soft: #E3F6EE;
+  --color-success-line: #A7E3C9;
   --color-danger-base: #DC2626;
+  --color-danger-soft: #FDE8E8;
+  --color-danger-line: #F6B5B5;
   --color-warning-base: #D97706;
+  --color-warning-soft: #FDF1DC;
+  --color-warning-line: #F3D08E;
   --color-info-base: #3C83F6;
+  --color-info-soft: #E8F0FE;
 
   /* Data Visualization */
   --color-chart-primary: #3C83F6;
   --color-chart-gold: #FBBF24;
   --color-chart-green: #34D399;
-  --color-chart-lavender: #6366f1;
+  --color-chart-lavender: #6366F1;
   --color-chart-mint: #6EE7B7;
   --color-chart-amber-soft: #FDE68A;
 
-  /* Shadows */
-  --shadow-glow-primary: 0 10px 30px -14px rgba(60, 131, 246, 0.55);
-  --shadow-card: 0 18px 45px -32px rgba(15, 23, 42, 0.35), 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-card-soft: 0 1px 2px rgba(15, 23, 42, 0.08);
-  --shadow-hover-soft: 0 18px 40px -30px rgba(15, 23, 42, 0.22);
-  --shadow-hover-panel: 0 22px 48px -34px rgba(60, 131, 246, 0.24);
+  /* Shadows: surfaces are separated by color and a hairline border, not by depth. */
+  --shadow-glow-primary: 0 0 #0000;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-card-soft: 0 0 #0000;
+  --shadow-hover-soft: 0 0 #0000;
+  --shadow-hover-panel: 0 0 #0000;
+  /* Only for things that float above the page: menus, popovers, the mobile tab bar. */
+  --shadow-pop: 0 14px 34px -14px rgba(15, 23, 42, 0.22);
 }
 
-@keyframes shimmer {
-  100% {
-    transform: translateX(100%);
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
   }
 }
 
@@ -71,6 +97,88 @@
   }
 }
 
+@keyframes page-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* A page, or a block of one, arriving: a short lift into place. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Mobile sheets slide from the bottom edge; desktop dialogs settle from slightly below and smaller. */
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheet-out {
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dialog-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* The halo around the newest point of a chart line. */
+@keyframes chart-pulse {
+  0% {
+    r: 4px;
+    opacity: 0.55;
+  }
+  100% {
+    r: 14px;
+    opacity: 0;
+  }
+}
+
 @layer base {
   :root {
     color-scheme: light;
@@ -81,22 +189,29 @@
 
     /* Backgrounds & Surfaces */
     --color-bg-base: #0B1120;
-    --color-bg-muted: #111827;
-    --color-surface-panel: #111827;
-    --color-surface-100: #172033;
-    --color-surface-200: #1F2937;
-    --color-surface-300: #334155;
-    --color-hover-soft: rgba(148, 163, 184, 0.08);
-    --color-hover-strong: rgba(60, 131, 246, 0.14);
+    --color-bg-muted: #0F172A;
+    --color-surface-panel: #111A2C;
+    --color-surface-100: #18233A;
+    --color-surface-200: #1F2C45;
+    --color-surface-300: #33415C;
+    --color-hover-soft: #18233A;
+    --color-hover-strong: #17294B;
 
     /* Borders */
-    --color-border-subtle: rgba(148, 163, 184, 0.18);
-    --color-border-strong: rgba(60, 131, 246, 0.32);
+    --color-border-subtle: #1F2A40;
+    --color-border-strong: #2B4A82;
 
     /* Primary */
-    --color-primary-400: #60a5fa;
+    --color-primary-400: #60A5FA;
     --color-primary-500: #3C83F6;
-    --color-primary-600: #2563eb;
+    --color-primary-600: #6CA4F8;
+    --color-primary-700: #93BBFA;
+    --color-primary-soft: #15264A;
+
+    /* Accent */
+    --color-accent-base: #A78BFA;
+    --color-accent-strong: #7C3AED;
+    --color-accent-soft: #251B45;
 
     /* Text */
     --color-text-title: #F8FAFC;
@@ -105,22 +220,26 @@
 
     /* Semantic Colors */
     --color-success-base: #34D399;
+    --color-success-soft: #0F2E26;
+    --color-success-line: #1F5A47;
     --color-danger-base: #F87171;
+    --color-danger-soft: #3A1A1F;
+    --color-danger-line: #6B2B33;
     --color-warning-base: #FBBF24;
-    --color-info-base: #3C83F6;
+    --color-warning-soft: #3A2C12;
+    --color-warning-line: #6B5220;
+    --color-info-base: #6CA4F8;
+    --color-info-soft: #15264A;
 
     /* Shadows */
-    --shadow-glow-primary: 0 16px 42px -18px rgba(60, 131, 246, 0.72);
-    --shadow-card: 0 22px 55px -34px rgba(0, 0, 0, 0.72), 0 1px 0 rgba(255, 255, 255, 0.03);
-    --shadow-card-soft: 0 1px 0 rgba(255, 255, 255, 0.04);
-    --shadow-hover-soft: 0 18px 40px -30px rgba(0, 0, 0, 0.52);
-    --shadow-hover-panel: 0 24px 52px -36px rgba(60, 131, 246, 0.32);
+    --shadow-card: 0 0 #0000;
+    --shadow-pop: 0 18px 40px -16px rgba(0, 0, 0, 0.7);
   }
 
   html {
     font-family: var(--font-inter);
   }
-  
+
   body {
     background-color: var(--color-bg-base);
     color: var(--color-text-body);
@@ -128,7 +247,7 @@
     -moz-osx-font-smoothing: grayscale;
     transition: background-color 200ms ease, color 200ms ease;
   }
-  
+
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-outfit);
     color: var(--color-text-title);
@@ -162,70 +281,160 @@
     animation: select-popover-in 140ms ease-out;
   }
 
-  /* ── Dashboard animations ── */
-  .dashboard-fade-in {
-    animation: dashboard-fade 400ms ease-out both;
+  a,
+  button {
+    -webkit-tap-highlight-color: transparent;
   }
 
-  .dashboard-card-up {
-    animation: dashboard-card-up 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  .page-fade-in {
+    animation: page-fade 220ms ease-out both;
+  }
+
+  /* --- Motion ------------------------------------------------------------------------------
+     One easing and a narrow band of durations everywhere, so moving between pages, opening a
+     sheet and expanding a panel all feel like the same hand. */
+
+  /* A route's content arriving. */
+  .page-enter {
+    animation: rise-in 320ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+
+  /* Blocks that follow each other in: set --i to the block's position for a short stagger. */
+  .rise-in {
+    animation: rise-in 420ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 55ms);
+  }
+
+  .modal-scrim {
+    animation: page-fade 200ms ease-out both;
+  }
+
+  .modal-scrim[data-state="closing"] {
+    animation: fade-out 180ms ease-in both;
+  }
+
+  .modal-panel {
+    animation: sheet-in 300ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+
+  .modal-panel[data-state="closing"] {
+    animation: sheet-out 200ms cubic-bezier(0.4, 0, 1, 1) both;
+  }
+
+  @media (min-width: 768px) {
+    .modal-panel {
+      animation: dialog-in 220ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    }
+
+    .modal-panel[data-state="closing"] {
+      animation: dialog-out 160ms ease-in both;
+    }
+  }
+
+  /* Height that animates to whatever its content needs: the child must be overflow-hidden. */
+  .collapse-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition: grid-template-rows 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease;
+  }
+
+  .collapse-panel[data-open="true"] {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+
+  .collapse-panel > * {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* A bar filling to its width on arrival. */
+  .grow-x {
+    transform-origin: left;
+    animation: grow-x 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .chart-pulse {
+    animation: chart-pulse 1.8s ease-out infinite;
+  }
+
+  /* Tap feedback for list rows that open something. */
+  .row-press {
+    transition: background-color 160ms ease, transform 160ms ease;
+  }
+
+  .row-press:active {
+    background-color: var(--color-hover-soft);
+    transform: scale(0.99);
+  }
+
+  /* One placeholder block. Sized by the caller to match the content it stands in for. */
+  .skeleton {
+    border-radius: 8px;
+    background-color: var(--color-surface-200);
+    animation: skeleton-pulse 1.4s ease-in-out infinite;
   }
 
   .ui-hover-surface {
     transition:
-      background-color 180ms ease,
-      color 180ms ease,
-      border-color 180ms ease,
-      box-shadow 180ms ease,
-      transform 180ms ease;
+      background-color 160ms ease,
+      color 160ms ease,
+      border-color 160ms ease;
   }
 
   .ui-hover-surface:hover {
     background-color: var(--color-hover-soft);
-    border-color: var(--color-border-strong);
-    box-shadow: var(--shadow-hover-soft);
   }
 
   .ui-hover-panel:hover {
     background-color: var(--color-hover-strong);
     border-color: var(--color-border-strong);
-    box-shadow: var(--shadow-hover-panel);
   }
 
   .ui-hover-icon:hover {
     color: var(--color-primary-500);
   }
-}
 
-@keyframes dashboard-fade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton,
+    .page-fade-in,
+    .page-enter,
+    .rise-in,
+    .grow-x,
+    .chart-pulse,
+    .custom-select-popover {
+      animation: none;
+    }
 
-@keyframes dashboard-card-up {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+    /* Not `none`: the modal waits for animationend before it unmounts. */
+    .modal-scrim,
+    .modal-panel {
+      animation-duration: 1ms !important;
+    }
 
-@keyframes neon-pulse-purple {
-  0%, 100% {
-    box-shadow: 0 0 8px 1px rgba(139, 92, 246, 0.4), 0 0 16px 2px rgba(139, 92, 246, 0.15);
-  }
-  50% {
-    box-shadow: 0 0 20px 5px rgba(139, 92, 246, 0.8), 0 0 32px 10px rgba(139, 92, 246, 0.35);
+    .collapse-panel,
+    .row-press {
+      transition: none;
+    }
   }
 }
 
-.animate-neon-pulse-purple {
-  animation: neon-pulse-purple 4s infinite ease-in-out;
+/* Children arrive one after another. Used for columns of cards. */
+@layer base {
+  .stagger > * {
+    animation: rise-in 420ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+
+  .stagger > :nth-child(2) { animation-delay: 60ms; }
+  .stagger > :nth-child(3) { animation-delay: 120ms; }
+  .stagger > :nth-child(4) { animation-delay: 180ms; }
+  .stagger > :nth-child(5) { animation-delay: 240ms; }
+  .stagger > :nth-child(n + 6) { animation-delay: 300ms; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stagger > * {
+      animation: none;
+    }
+  }
 }

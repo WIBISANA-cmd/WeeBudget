@@ -1,29 +1,27 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RotateCcw, Search, SlidersHorizontal, Wallet, X } from 'lucide-react';
 import SelectBox from '../../components/ui/SelectBox';
 import { needTypeOptions } from '../shared/crudConfigs';
-import { buildTransactionParams, countActiveFilters, emptyFilters, periodOptions } from './transactionFilterParams';
+import { buildTransactionParams, countActiveFilters, defaultFilters, isDefaultFilters, periodOptions } from './transactionFilterParams';
 import { formatCurrency } from '../../lib/formatters';
 import { cn } from '../../lib/utils';
 
-const dateInputClass = 'w-full rounded-xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm text-text-title shadow-sm shadow-card-soft focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20';
+const dateInputClass = 'h-11 w-full rounded-xl border border-border-subtle bg-surface-panel px-3.5 text-sm text-text-title focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-border-strong';
 
-export default function TransactionFilters({ resource, categories = [], accounts = [], type, perPage = 30 }) {
-  const { setParams } = resource;
-  const [filters, setFilters] = useState(emptyFilters);
+export default function TransactionFilters({ resource, categories = [], accounts = [], type, perPage = 30, paydayDay }) {
+  const { params, setParams } = resource;
+  const [filters, setFilters] = useState(defaultFilters);
   const [isOpen, setOpen] = useState(false);
-  const isFirstRun = useRef(true);
 
-  // Debounced so typing in search does not fire a request per keystroke.
+  // Debounced so typing in search does not fire a request per keystroke. Skipped when the params
+  // already match (first render, or the profile's payday arriving after the page opened with it).
   useEffect(() => {
-    if (isFirstRun.current) {
-      isFirstRun.current = false;
-      return undefined;
-    }
+    const next = buildTransactionParams(filters, { per_page: perPage }, undefined, paydayDay);
+    if (JSON.stringify(next) === JSON.stringify(params)) return undefined;
 
-    const timer = setTimeout(() => setParams(buildTransactionParams(filters, { per_page: perPage })), 300);
+    const timer = setTimeout(() => setParams(next), 300);
     return () => clearTimeout(timer);
-  }, [filters, perPage, setParams]);
+  }, [filters, perPage, paydayDay, params, setParams]);
 
   const categoryOptions = useMemo(() => [
     { value: '', label: 'Semua kategori' },
@@ -37,7 +35,7 @@ export default function TransactionFilters({ resource, categories = [], accounts
     ...accounts.map((account) => ({ value: account.value, label: account.label.split(' - ')[0] })),
   ], [accounts]);
 
-  const activeCount = countActiveFilters(filters);
+  const activeCount = countActiveFilters(filters, undefined, paydayDay);
   const update = (patch) => setFilters((current) => ({ ...current, ...patch }));
 
   const selectedAccount = useMemo(
@@ -49,7 +47,7 @@ export default function TransactionFilters({ resource, categories = [], accounts
     : accounts.reduce((total, account) => total + Number(account.balance || 0), 0);
 
   return (
-    <div className="rounded-[24px] border border-border-subtle bg-gradient-to-br from-surface-panel via-surface-panel to-surface-100/70 p-3 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.45)] md:rounded-[28px] md:p-4">
+    <div className="rounded-2xl border border-border-subtle bg-surface-panel p-3">
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
         <div className="relative flex-1">
           <Search size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
@@ -79,10 +77,10 @@ export default function TransactionFilters({ resource, categories = [], accounts
             onClick={() => setOpen((current) => !current)}
             aria-expanded={isOpen}
             className={cn(
-              'flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-colors md:flex-none',
+              'flex flex-1 items-center justify-center gap-2 rounded-xl border h-11 px-4 text-sm font-semibold transition-colors md:flex-none',
               isOpen || activeCount > 0
-                ? 'border-primary-500 bg-primary-500/10 text-primary-600'
-                : 'border-border-subtle bg-surface-panel text-text-body hover:border-primary-400 hover:text-primary-600',
+                ? 'border-primary-500 bg-primary-soft text-primary-600'
+                : 'border-border-subtle bg-surface-panel text-text-body hover:border-border-strong hover:text-primary-600',
             )}
           >
             <SlidersHorizontal size={16} />
@@ -93,13 +91,13 @@ export default function TransactionFilters({ resource, categories = [], accounts
               </span>
             )}
           </button>
-          {activeCount > 0 && (
+          {!isDefaultFilters(filters) && (
             <button
               type="button"
-              onClick={() => setFilters(emptyFilters)}
+              onClick={() => setFilters(defaultFilters)}
               aria-label="Reset filter"
               title="Reset filter"
-              className="flex items-center justify-center gap-2 rounded-xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm font-semibold text-text-body transition-colors hover:border-danger-base hover:text-danger-base"
+              className="flex items-center justify-center gap-2 rounded-xl border border-border-subtle bg-surface-panel h-11 px-4 text-sm font-semibold text-text-body transition-colors hover:border-danger-line hover:text-danger-base"
             >
               <RotateCcw size={16} />
               <span className="md:hidden">Reset</span>
@@ -108,19 +106,20 @@ export default function TransactionFilters({ resource, categories = [], accounts
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-100/70 px-3 py-2.5">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-100 px-3 py-2">
         <span className="flex min-w-0 items-center gap-2 text-sm text-text-muted">
           <Wallet size={16} className="shrink-0 text-primary-600" />
           <span className="truncate">
             Sisa saldo {selectedAccount ? selectedAccount.label.split(' - ')[0] : 'semua rekening'}
           </span>
         </span>
-        <span className={cn('text-base font-semibold', remainingBalance < 0 ? 'text-danger-base' : 'text-text-title')}>
+        <span className={cn('text-sm font-semibold tabular-nums', remainingBalance < 0 ? 'text-danger-base' : 'text-text-title')}>
           {formatCurrency(remainingBalance)}
         </span>
       </div>
 
-      {isOpen && (
+      <div className="collapse-panel" data-open={isOpen} inert={!isOpen}>
+        <div>
         <div className="mt-3 grid gap-3 border-t border-border-subtle pt-3 md:grid-cols-2 xl:grid-cols-4">
           <SelectBox
             label="Kategori"
@@ -176,7 +175,8 @@ export default function TransactionFilters({ resource, categories = [], accounts
             </>
           )}
         </div>
-      )}
+        </div>
+      </div>
     </div>
   );
 }

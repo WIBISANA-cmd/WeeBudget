@@ -10,7 +10,7 @@ import Button from '../components/ui/Button';
 import Modal from '../components/forms/Modal';
 import { Card, CardContent } from '../components/ui/Card';
 import { formatCurrency } from '../lib/formatters';
-import LoadingSkeleton from '../components/feedback/LoadingSkeleton';
+import { FormSkeleton, Skeleton } from '../components/feedback/LoadingSkeleton';
 
 const ResourceForm = lazy(() => import('../components/forms/ResourceForm'));
 const calculateAllocationAmount = (baseAmount, percent) => Math.floor((Number(baseAmount || 0) * Number(percent || 0)) / 100);
@@ -63,6 +63,8 @@ const allocationFields = [
     placeholder: 'Contoh: Pindah dana gaji ke tabungan',
   },
 ];
+
+const previewTileClass = 'rounded-xl border border-border-subtle bg-surface-panel p-3';
 
 export default function AccountsPage() {
   const [isAllocationOpen, setAllocationOpen] = useState(false);
@@ -139,22 +141,23 @@ export default function AccountsPage() {
   };
 
   const activePreviewBaseAmount = Number(plannerPreview?.saved_base_amount || 0);
+  const isPreviewLoading = !plannerPreview && !plannerPreviewError;
 
   return (
-    <div className="space-y-6">
+    <>
       <CrudResourcePage
         key={pageVersion}
-        config={{ ...configs.accounts, noCard: true }}
+        config={{ ...configs.accounts, title: 'Rekening', noCard: true }}
         topContent={(
-          <div className="grid gap-4 xl:grid-cols-[1.2fr_0.9fr_0.9fr]">
-            <Card className="border-primary-500/20 bg-gradient-to-br from-primary-500/8 via-surface-panel to-surface-panel">
-              <CardContent className="space-y-3">
-                <p className="text-sm font-medium text-text-muted">Total saldo terpantau</p>
-                <p className="text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(totalTrackedBalance)}</p>
-              </CardContent>
-            </Card>
-            
-          </div>
+          <Card>
+            <CardContent className="flex flex-wrap items-end justify-between gap-x-8 gap-y-2">
+              <div>
+                <p className="text-sm text-text-muted">Total saldo</p>
+                <p className="mt-1 font-outfit text-3xl font-semibold tabular-nums text-text-title">{formatCurrency(totalTrackedBalance)}</p>
+              </div>
+              <p className="text-sm text-text-muted">{allAccounts.length} rekening</p>
+            </CardContent>
+          </Card>
         )}
         headerActions={(
           <Button
@@ -174,47 +177,42 @@ export default function AccountsPage() {
         title="Alokasi Dana"
         fullScreenOnMobile={true}
       >
+        {/* The planner split for the saved base amount, as a guide for how much to move where. */}
+        {isPreviewLoading && (
+          <div className="mb-4 rounded-2xl bg-surface-100 p-3">
+            <Skeleton className="h-4 w-56 max-w-full" />
+            <div className="mt-3 grid gap-2 md:grid-cols-2">
+              {[0, 1, 2, 3].map((index) => (
+                <div key={index} className={previewTileClass}>
+                  <Skeleton className="h-3.5 w-28" />
+                  <Skeleton className="mt-2 h-5 w-28" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {plannerPreview && (
-          <Card className="mb-4 border-primary-500/25 bg-gradient-to-br from-primary-500/8 via-surface-panel to-surface-panel">
-            <CardContent className="space-y-3">
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div>
-                  <p className="text-lg font-semibold text-text-title">
-                    Dana dasar {formatCurrency(activePreviewBaseAmount || 0)}
+          <div className="mb-4 rounded-2xl bg-surface-100 p-3">
+            <p className="text-sm text-text-muted">
+              Panduan planner dari dana dasar{' '}
+              <span className="font-semibold text-text-title">{formatCurrency(activePreviewBaseAmount || 0)}</span>
+            </p>
+            <div className="mt-3 grid gap-2 md:grid-cols-2">
+              {(plannerPreview.allocations || []).map((item) => (
+                <div key={item.key} className={previewTileClass}>
+                  <p className="text-sm text-text-muted">{item.label} · {item.percent}%</p>
+                  <p className="mt-1 text-base font-semibold tabular-nums text-text-title">
+                    {formatCurrency(calculateAllocationAmount(activePreviewBaseAmount, item.percent))}
                   </p>
                 </div>
-                <div className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                  plannerPreview.has_custom_allocations
-                    ? 'bg-success-base/10 text-success-base'
-                    : 'bg-info-base/10 text-info-base'
-                }`}>
-                  {plannerPreview.has_custom_allocations ? 'Menggunakan custom planner tersimpan' : 'Menggunakan planner rekomendasi default'}
-                </div>
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                {(plannerPreview.allocations || []).map((item) => (
-                  <div key={item.key} className="rounded-2xl bg-surface-panel p-4 shadow-sm shadow-card-soft">
-                    <p className="text-sm text-text-muted">{item.label}</p>
-                    <p className="mt-1 text-lg font-semibold text-primary-600">
-                      {formatCurrency(calculateAllocationAmount(activePreviewBaseAmount, item.percent))}
-                    </p>
-                    <p className="mt-1 text-xs text-text-muted">
-                      {plannerPreview.has_custom_allocations ? 'Custom tersimpan' : 'Rekomendasi default'}: {item.percent}% dari dana dasar
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+              ))}
+            </div>
+          </div>
         )}
         {plannerPreviewError && (
-          <Card className="mb-4 border-warning-base bg-warning-base/5">
-            <CardContent>
-              <p className="text-sm font-medium text-warning-base">{plannerPreviewError}</p>
-            </CardContent>
-          </Card>
+          <p className="mb-4 rounded-xl bg-warning-soft px-3 py-2 text-sm font-medium text-warning-base">{plannerPreviewError}</p>
         )}
-        <Suspense fallback={<LoadingSkeleton rows={4} />}>
+        <Suspense fallback={<FormSkeleton fields={allocationFields.length} />}>
           <ResourceForm
             schema={allocationSchema}
             fields={allocationFields}
@@ -225,17 +223,12 @@ export default function AccountsPage() {
             onSubmit={submitAllocation}
           />
         </Suspense>
-        {!plannerPreview && !plannerPreviewError && (
-          <p className="mt-3 text-sm text-text-muted">
-            Memuat konfigurasi budget planner...
-          </p>
-        )}
         {allAccounts.length < 2 && (
           <p className="mt-3 text-sm text-danger-base">
             Tambahkan minimal dua rekening aktif agar alokasi dana bisa dilakukan.
           </p>
         )}
       </Modal>
-    </div>
+    </>
   );
 }

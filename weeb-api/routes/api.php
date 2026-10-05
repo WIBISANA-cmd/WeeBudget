@@ -64,6 +64,7 @@ Route::middleware(UseDefaultUser::class)->group(function () {
     Route::get('/health-score', HealthScoreController::class)->name('health-score');
     Route::get('/insights', [InsightController::class, 'index'])->name('insights.index');
     Route::get('/reports/monthly', [MonthlyReportController::class, 'index'])->name('reports.monthly.index');
+    Route::get('/reports/pocket-flow', [MonthlyReportController::class, 'pocketFlow'])->name('reports.pocket-flow');
     Route::get('/reports/monthly/current', [MonthlyReportController::class, 'show'])->name('reports.monthly.show');
     Route::get('/reports/category-breakdown', [DashboardController::class, 'categoryBreakdown'])->name('reports.category-breakdown');
     Route::get('/reports/category-breakdown/transactions', [DashboardController::class, 'categoryBreakdownTransactions'])->name('reports.category-breakdown.transactions');

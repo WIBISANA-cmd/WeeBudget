@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Mic, Sparkles } from 'lucide-react';
+import { Mic } from 'lucide-react';
 import CrudResourcePage from '../features/shared/CrudResourcePage';
 import TransactionFilters from '../features/finance/TransactionFilters';
 import { configs } from '../features/shared/crudConfigs';
 import { useAccountOptions } from '../hooks/useAccountOptions';
 import { useCategoryOptions } from '../hooks/useCategoryOptions';
-import { Card, CardContent } from '../components/ui/Card';
+import { useCurrentUser } from '../hooks/useCurrentUser';
+import { buildTransactionParams, defaultFilters } from '../features/finance/transactionFilterParams';
 import Button from '../components/ui/Button';
+import { Skeleton } from '../components/feedback/LoadingSkeleton';
 import StatusBadge from '../components/feedback/StatusBadge';
 import VoiceTransactionModal from '../components/VoiceTransactionModal';
 import { formatCurrency, formatDate } from '../lib/formatters';
@@ -40,8 +42,15 @@ const transactionTypeTabs = [
   { label: 'Pengeluaran', to: '/transactions/expense' },
 ];
 
+/** Keyed by type so switching the Pemasukan/Pengeluaran tab starts over from the default payday filter. */
 export default function TransactionsPage({ type }) {
+  return <TransactionsView key={type || 'all'} type={type} />;
+}
+
+function TransactionsView({ type }) {
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
+  const { user } = useCurrentUser();
+  const paydayDay = user?.profile?.payday_day;
   const categoryOptions = useCategoryOptions();
   const accountOptions = useAccountOptions();
   const options = { ...categoryOptions, ...accountOptions };
@@ -50,10 +59,9 @@ export default function TransactionsPage({ type }) {
   const config = {
     ...configs.transactions,
     title: type === 'income' ? 'Pemasukan' : type === 'expense' ? 'Pengeluaran' : 'Transaksi',
-    tableDescription: type ? '' : 'Semua transaksi tampil dalam satu tempat untuk memudahkan peninjauan.',
     endpoint: type === 'income' ? '/incomes' : type === 'expense' ? '/expenses' : '/transactions',
     accountScoped: false,
-    initialParams: { per_page: 30 },
+    initialParams: buildTransactionParams(defaultFilters, { per_page: 30 }, undefined, paydayDay),
     noCard: true,
     defaultValues: { ...configs.transactions.defaultValues, transaction_type: transactionType, need_type: type === 'income' ? '' : 'need', notes: undefined },
     columns: configs.transactions.columns.map((column) => {
@@ -98,9 +106,7 @@ export default function TransactionsPage({ type }) {
     ],
     mobileColumns: {
       title: rowDescription,
-      titleLabel: 'Deskripsi',
-      numberLabel: 'No',
-      amountLabel: 'Nominal',
+      subtitle: (row) => [row.category?.name, row.account?.name].filter(Boolean).join(' · '),
       amount: signedAmount,
       amountClass,
       dateKey: (row) => row.transaction_date,
@@ -148,42 +154,49 @@ export default function TransactionsPage({ type }) {
         config={config}
         options={options}
         headerActions={(
-          <Button
-            type="button"
-            onClick={() => setVoiceModalOpen(true)}
-            className="gap-2 whitespace-nowrap bg-violet-600 px-4 text-sm animate-neon-pulse-purple hover:bg-violet-700"
-          >
-            <Mic size={18} className="text-violet-200" />
-            <span className="md:hidden">Suara AI</span>
-            <span className="hidden md:inline">Catat via Suara AI</span>
-            <Sparkles size={14} className="text-violet-200 animate-pulse" />
+          <Button type="button" variant="accent" onClick={() => setVoiceModalOpen(true)} className="whitespace-nowrap">
+            <Mic size={16} className="mr-2" />
+            Catat via suara
           </Button>
         )}
         topContent={({ resource }) => {
-          const incomeTotal = resource.items
-            .filter((row) => row.transaction_type === 'income' && !isAllocation(row))
+          const totalOf = (transactionType) => resource.items
+            .filter((row) => row.transaction_type === transactionType && !isAllocation(row))
             .reduce((total, row) => total + Number(row.amount || 0), 0);
-          const expenseTotal = resource.items
-            .filter((row) => row.transaction_type === 'expense' && !isAllocation(row))
-            .reduce((total, row) => total + Number(row.amount || 0), 0);
+          // A typed page only ever lists its own type, so the other total would always read zero.
+          const totals = [
+            { type: 'income', label: 'Pemasukan', tone: 'text-success-base' },
+            { type: 'expense', label: 'Pengeluaran', tone: 'text-danger-base' },
+          ].filter((item) => !type || item.type === type);
 
           return (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-2 rounded-[24px] border border-border-subtle bg-gradient-to-br from-surface-panel via-surface-panel to-surface-100/70 p-3 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.45)] md:flex md:flex-wrap md:rounded-[28px] md:p-4">
-                {transactionTypeTabs.map((tab) => (
-                  <NavLink
-                    key={tab.to}
-                    to={tab.to}
-                    className={({ isActive }) => cn(
-                      'flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-semibold transition-colors',
-                      isActive
-                        ? 'bg-primary-500 text-white shadow-sm shadow-primary-500/20'
-                        : 'bg-surface-panel text-text-body hover:border-primary-500 hover:text-primary-600'
-                    )}
-                  >
-                    {tab.label}
-                  </NavLink>
-                ))}
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex rounded-xl border border-border-subtle bg-surface-panel p-1 max-md:w-full">
+                  {transactionTypeTabs.map((tab) => (
+                    <NavLink
+                      key={tab.to}
+                      to={tab.to}
+                      className={({ isActive }) => cn(
+                        'flex-1 rounded-lg px-4 py-2 text-center text-sm font-semibold transition-colors',
+                        isActive ? 'bg-primary-500 text-white' : 'text-text-muted hover:text-text-title',
+                      )}
+                    >
+                      {tab.label}
+                    </NavLink>
+                  ))}
+                </div>
+
+                <dl className="flex gap-6">
+                  {totals.map((item) => (
+                    <div key={item.type} className="md:text-right">
+                      <dt className="text-xs text-text-muted">{item.label}</dt>
+                      {resource.isLoading
+                        ? <Skeleton className="mt-1.5 h-5 w-28" />
+                        : <dd className={cn('text-lg font-semibold tabular-nums', item.tone)}>{formatCurrency(totalOf(item.type))}</dd>}
+                    </div>
+                  ))}
+                </dl>
               </div>
 
               <TransactionFilters
@@ -191,22 +204,8 @@ export default function TransactionsPage({ type }) {
                 categories={options.categories || []}
                 accounts={options.accounts || []}
                 type={type}
+                paydayDay={paydayDay}
               />
-
-              <div className="hidden gap-4 md:grid xl:grid-cols-2">
-                <Card className="border-success-base/20 bg-gradient-to-br from-success-base/8 via-surface-panel to-surface-panel">
-                  <CardContent className="space-y-2">
-                    <p className="text-sm font-medium text-text-muted">Total pemasukan sesuai filter</p>
-                    <p className="text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(incomeTotal)}</p>
-                  </CardContent>
-                </Card>
-                <Card className="border-danger-base/20 bg-gradient-to-br from-danger-base/8 via-surface-panel to-surface-panel">
-                  <CardContent className="space-y-2">
-                    <p className="text-sm font-medium text-text-muted">Total pengeluaran sesuai filter</p>
-                    <p className="text-3xl font-semibold tracking-tight text-text-title">{formatCurrency(expenseTotal)}</p>
-                  </CardContent>
-                </Card>
-              </div>
             </div>
           );
         }}

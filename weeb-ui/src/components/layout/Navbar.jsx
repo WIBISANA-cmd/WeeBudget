@@ -2,15 +2,15 @@ import './Navbar.css';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Bell,
   ChevronDown,
-  Clock,
   LogOut,
   Menu,
   Settings,
   CalendarRange,
   PieChart,
   Users,
+  Database,
+  PanelsTopLeft,
 } from 'lucide-react';
 import { apiPost } from '../../api/http';
 import { cn } from '../../lib/utils';
@@ -19,24 +19,25 @@ import { useTimeOfDay } from '../../hooks/useTimeOfDay';
 import ThemeToggle from '../ui/ThemeToggle';
 import UserAvatar from '../ui/UserAvatar';
 
-/* ------------------------------------------------------------------ */
-/*  Navbar component                                                  */
-/* ------------------------------------------------------------------ */
+const menuItems = [
+  { label: 'Profil', path: '/profile', icon: Settings },
+  { label: 'Periode', path: '/periods', icon: CalendarRange },
+  { label: 'Kategori', path: '/categories', icon: PieChart },
+];
+
+const adminMenuItems = [
+  { label: 'Kelola User', path: '/users', icon: Users },
+  { label: 'Skema Dinamis', path: '/admin/data', icon: Database },
+  { label: 'Pengaturan Menu', path: '/admin/menu', icon: PanelsTopLeft },
+];
+
 export default function Navbar({ toggleSidebar }) {
   const navigate = useNavigate();
   const { user } = useCurrentUser();
-  const { period, greeting } = useTimeOfDay();
+  const { greeting } = useTimeOfDay();
 
   const [isProfileOpen, setProfileOpen] = useState(false);
   const profileMenuRef = useRef(null);
-
-  // Current time display
-  const [clock, setClock] = useState(() => formatTime(new Date()));
-
-  useEffect(() => {
-    const id = setInterval(() => setClock(formatTime(new Date())), 1_000);
-    return () => clearInterval(id);
-  }, []);
 
   /* Profile dropdown outside-click / escape */
   useEffect(() => {
@@ -66,150 +67,67 @@ export default function Navbar({ toggleSidebar }) {
     navigate('/login');
   };
 
+  const goTo = (path) => {
+    setProfileOpen(false);
+    navigate(path);
+  };
+
+  const items = user?.role === 'admin' ? [...menuItems, ...adminMenuItems] : menuItems;
+
   return (
-    <nav
-      id="navbar-dynamic"
-      className="navbar-bar sticky top-0 z-[100]"
-      aria-label="Main navigation"
-    >
-      {/* ---- Content ---- */}
+    <nav id="navbar-dynamic" className="navbar-bar sticky top-0 z-[100]" aria-label="Main navigation">
       <div className="navbar-content">
-        <div className="flex items-center gap-3">
-          {/* Mobile hamburger */}
-          <button
-            onClick={toggleSidebar}
-            className="navbar-icon-btn md:hidden -ml-2"
-            aria-label="Toggle sidebar"
-          >
+        <div className="flex min-w-0 items-center gap-2">
+          <button onClick={toggleSidebar} className="navbar-icon-btn -ml-1 md:hidden" aria-label="Buka menu">
             <Menu size={22} />
           </button>
 
-          {/* Greeting + clock */}
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="navbar-greeting">{greeting}</p>
-            </div>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <Clock size={12} className="navbar-clock-icon" />
-              <span className="navbar-clock">{clock}</span>
-            </div>
+            <p className="navbar-greeting">{greeting}</p>
+            <p className="navbar-name truncate">{user?.name || 'WeeBudget'}</p>
           </div>
         </div>
 
-        {/* Right side */}
-        <div className="flex items-center gap-2.5 md:gap-4">
-          <ThemeToggle className="hidden md:inline-flex" showLabel />
-          <ThemeToggle className="md:hidden" />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
 
-          {/* Period badge */}
-          <span className="navbar-period-badge">
-            {period.charAt(0).toUpperCase() + period.slice(1)}
-          </span>
-
-          {/* Notification bell */}
-          <button className="navbar-icon-btn relative" aria-label="Notifications">
-            <Bell size={20} />
-            <span className="navbar-notif-dot" />
-          </button>
-
-          {/* Profile dropdown */}
-          <div ref={profileMenuRef} className="relative flex items-center navbar-profile-divider pl-2.5 md:pl-4">
+          <div ref={profileMenuRef} className="relative flex items-center">
             <button
               type="button"
               onClick={() => setProfileOpen((open) => !open)}
-              className={cn(
-                'navbar-profile-btn',
-                isProfileOpen && 'navbar-profile-btn--open',
-              )}
+              className={cn('navbar-profile-btn', isProfileOpen && 'navbar-profile-btn--open')}
               aria-haspopup="menu"
               aria-expanded={isProfileOpen}
+              aria-label="Menu akun"
             >
               <UserAvatar
                 src={user?.avatar_url}
                 alt={user?.name || 'User avatar'}
-                size={40}
+                size={36}
                 priority
-                imageClassName="rounded-2xl border border-border-subtle"
+                imageClassName="rounded-xl border border-border-subtle"
                 fallbackClassName="bg-transparent"
-                className="h-10 w-10"
+                className="h-9 w-9"
               />
-              <ChevronDown
-                size={16}
-                className={cn(
-                  'hidden md:block navbar-chevron',
-                  isProfileOpen && 'rotate-180',
-                )}
-              />
+              <ChevronDown size={16} className={cn('navbar-chevron hidden md:block', isProfileOpen && 'rotate-180')} />
             </button>
 
             {isProfileOpen && (
-              <div className="navbar-profile-dropdown">
-                <div className="rounded-[20px] bg-surface-100 px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-600">
-                    {greeting}
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-text-title">
-                    {user?.name || 'Mode pribadi'}
-                  </p>
-                  <p className="mt-1 truncate text-xs text-text-muted">
-                    {user?.email || 'Akun aktif'}
-                  </p>
+              <div className="navbar-profile-dropdown" role="menu">
+                <div className="rounded-xl bg-surface-100 px-3 py-2.5">
+                  <p className="truncate text-sm font-semibold text-text-title">{user?.name || 'Akun'}</p>
+                  {user?.email && <p className="mt-0.5 truncate text-xs text-text-muted">{user.email}</p>}
                 </div>
-                <div className="mt-2 space-y-1">
-                  <button
-                    onClick={() => { setProfileOpen(false); navigate('/profile'); }}
-                    className="ui-hover-surface flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body hover:text-text-title"
-                  >
-                    <Settings size={18} className="text-text-muted" />
-                    Profil
-                  </button>
-                  <button
-                    onClick={() => { setProfileOpen(false); navigate('/periods'); }}
-                    className="ui-hover-surface flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body hover:text-text-title"
-                  >
-                    <CalendarRange size={18} className="text-text-muted" />
-                    Periode
-                  </button>
-                  <button
-                    onClick={() => { setProfileOpen(false); navigate('/categories'); }}
-                    className="ui-hover-surface flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body hover:text-text-title"
-                  >
-                    <PieChart size={18} className="text-text-muted" />
-                    Kategori
-                  </button>
-                  {user?.role === 'admin' && (
-                    <>
-                      <button
-                        onClick={() => { setProfileOpen(false); navigate('/users'); }}
-                        className="ui-hover-surface flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body hover:text-text-title"
-                      >
-                        <Users size={18} className="text-text-muted" />
-                        Kelola User
-                      </button>
-                      <button
-                        onClick={() => { setProfileOpen(false); navigate('/admin/data'); }}
-                        className="ui-hover-surface flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body hover:text-text-title"
-                      >
-                        <Settings size={18} className="text-text-muted" />
-                        Skema Dinamis
-                      </button>
-                      <button
-                        onClick={() => { setProfileOpen(false); navigate('/admin/menu'); }}
-                        className="ui-hover-surface flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-text-body hover:text-text-title"
-                      >
-                        <CalendarRange size={18} className="text-text-muted" />
-                        Pengaturan Menu
-                      </button>
-                    </>
-                  )}
+                <div className="mt-1.5 space-y-0.5">
+                  {items.map((item) => (
+                    <button key={item.path} type="button" role="menuitem" onClick={() => goTo(item.path)} className="navbar-menu-item">
+                      <item.icon size={18} className="text-text-muted" />
+                      {item.label}
+                    </button>
+                  ))}
                 </div>
-                <div className="mt-2 border-t border-border-subtle pt-2">
-                  <button
-                    type="button"
-                    onClick={logout}
-                    className="flex min-h-12 w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left text-sm font-medium text-danger-base transition-colors hover:bg-danger-base/10"
-                    role="menuitem"
-                  >
+                <div className="mt-1.5 border-t border-border-subtle pt-1.5">
+                  <button type="button" role="menuitem" onClick={logout} className="navbar-menu-item navbar-menu-item--danger">
                     <LogOut size={18} />
                     Keluar
                   </button>
@@ -221,16 +139,4 @@ export default function Navbar({ toggleSidebar }) {
       </div>
     </nav>
   );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Helper: format time as HH:MM:SS                                    */
-/* ------------------------------------------------------------------ */
-function formatTime(date) {
-  return date.toLocaleTimeString('id-ID', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  });
 }

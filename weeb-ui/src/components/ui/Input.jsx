@@ -31,8 +31,8 @@ const Input = forwardRef(({
         <input
           ref={ref}
           className={cn(
-            "flex w-full rounded-xl bg-surface-panel border border-border-subtle px-4 py-3 text-sm text-text-title shadow-sm shadow-card-soft transition-colors placeholder:text-text-muted",
-            "focus-visible:outline-none focus-visible:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500/20",
+            "flex h-11 w-full rounded-xl bg-surface-panel border border-border-subtle px-3.5 text-sm text-text-title transition-colors placeholder:text-text-muted",
+            "focus-visible:outline-none focus-visible:border-primary-500 focus-visible:ring-2 focus-visible:ring-border-strong",
             "disabled:cursor-not-allowed disabled:opacity-50",
             Icon && "pl-10",
             (error || isValid) && "pr-10",

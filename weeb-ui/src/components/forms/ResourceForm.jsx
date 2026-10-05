@@ -148,7 +148,7 @@ function TabsField({ field, error, options, value, values, setValue }) {
               }}
               className={cn(
                 'flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition-all',
-                isActive ? 'bg-surface-panel text-primary-600 shadow-sm' : 'text-text-muted hover:text-text-body'
+                isActive ? 'bg-surface-panel text-primary-600' : 'text-text-muted hover:text-text-body'
               )}
             >
               {option.label}
@@ -169,7 +169,7 @@ function CardSelectField({ field, register, error, options, value, values, setVa
       <label className="text-sm font-medium text-text-body">{resolveFieldLabel(field, values, options)}</label>
       <input type="hidden" {...register(field.name)} />
       {cardOptions.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border-subtle bg-surface-100/60 px-4 py-5 text-sm leading-6 text-text-muted">
+        <div className="rounded-2xl border border-dashed border-border-subtle bg-surface-100 px-4 py-5 text-sm leading-6 text-text-muted">
           Belum ada pilihan rekening yang tersedia. Tambahkan rekening dulu dari menu Rekening.
         </div>
       ) : (
@@ -188,9 +188,9 @@ function CardSelectField({ field, register, error, options, value, values, setVa
                   });
                 }}
                 className={cn(
-                  'rounded-2xl border px-3 py-3 text-left shadow-sm transition-all',
+                  'rounded-2xl border px-3 py-3 text-left transition-all',
                   isSelected
-                    ? 'border-primary-500 bg-primary-500/8 shadow-primary-500/10'
+                    ? 'border-primary-500 bg-primary-soft'
                     : 'border-border-subtle bg-surface-panel hover:border-primary-400'
                 )}
               >
@@ -232,7 +232,7 @@ function IconPickerField({ field, register, error, value, values, options, setVa
               className={cn(
                 'flex items-center justify-center rounded-full p-2.5 text-center transition-all md:p-2',
                 isSelected
-                  ? 'bg-primary-500/12 text-primary-700 ring-2 ring-primary-500/30'
+                  ? 'bg-primary-soft text-primary-700 ring-2 ring-border-strong'
                   : 'text-text-muted hover:bg-surface-100 hover:text-primary-600'
               )}
               aria-label={option.label}
@@ -268,8 +268,8 @@ function MoneyInput({ field, register, error, value, setValue }) {
           onChange={handleChange}
           placeholder={field.placeholder}
           className={cn(
-            'flex w-full rounded-xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm text-text-title shadow-sm shadow-card-soft transition-colors placeholder:text-text-muted',
-            'focus-visible:border-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20',
+            'flex w-full rounded-xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm text-text-title transition-colors placeholder:text-text-muted',
+            'focus-visible:border-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong',
             error && 'border-danger-base focus-visible:border-danger-base focus-visible:ring-danger-base',
           )}
         />
@@ -322,11 +322,11 @@ function ListInput({ field, error, value, values, options, setValue }) {
   return (
     <div className="flex w-full flex-col gap-1.5">
       <label className="text-sm font-medium text-text-body">{resolveFieldLabel(field, values, options)}</label>
-      <div className="rounded-xl border border-border-subtle bg-surface-panel p-3 shadow-sm shadow-card-soft">
+      <div className="rounded-xl border border-border-subtle bg-surface-panel p-3">
         {items.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-2">
             {items.map((item, index) => (
-              <span key={`${item}-${index}`} className="inline-flex items-center gap-2 rounded-full bg-primary-500/10 px-3 py-1 text-sm font-medium text-primary-700">
+              <span key={`${item}-${index}`} className="inline-flex items-center gap-2 rounded-full bg-primary-soft px-3 py-1 text-sm font-medium text-primary-700">
                 {item}
                 <button
                   type="button"
@@ -349,8 +349,8 @@ function ListInput({ field, error, value, values, options, setValue }) {
             placeholder={placeholder}
             disabled={!canAddMore}
             className={cn(
-              'flex w-full rounded-xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm text-text-title shadow-sm shadow-card-soft transition-colors placeholder:text-text-muted',
-              'focus-visible:border-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20',
+              'flex w-full rounded-xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm text-text-title transition-colors placeholder:text-text-muted',
+              'focus-visible:border-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong',
               error && 'border-danger-base focus-visible:border-danger-base focus-visible:ring-danger-base',
             )}
           />
@@ -409,7 +409,7 @@ function Field({ field, register, error, options, value, values, setValue }) {
     return (
       <div className="flex w-full flex-col gap-1.5">
         <label className="text-sm font-medium text-text-body">{resolveFieldLabel(field, values, options)}</label>
-        <textarea rows={3} className="rounded-xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm text-text-title shadow-sm shadow-card-soft placeholder:text-text-muted focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20" {...register(field.name)} />
+        <textarea rows={3} className="rounded-xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm text-text-title placeholder:text-text-muted focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-border-strong" {...register(field.name)} />
         {error?.message && <p className="text-xs font-medium text-danger-base">{error.message}</p>}
       </div>
     );
@@ -445,89 +445,89 @@ function getCategoryColor(name, isIncomeType) {
   const lowerName = String(name || '').toLowerCase();
   if (isIncomeType) {
     return {
-      bg: 'bg-emerald-500/10 dark:bg-emerald-500/20',
+      bg: 'bg-success-soft dark:bg-success-soft',
       text: 'text-emerald-600 dark:text-emerald-400',
-      border: 'border-emerald-500/20 dark:border-emerald-500/40',
+      border: 'border-emerald-200 dark:border-emerald-800',
       activeBg: 'bg-emerald-500 text-white',
       activeBorder: 'border-emerald-500',
     };
   }
   if (lowerName.includes('makan') || lowerName.includes('minum') || lowerName.includes('kuliner') || lowerName.includes('jajan')) {
     return {
-      bg: 'bg-amber-500/10 dark:bg-amber-500/20',
+      bg: 'bg-warning-soft dark:bg-warning-soft',
       text: 'text-amber-600 dark:text-amber-400',
-      border: 'border-amber-500/20 dark:border-amber-500/40',
+      border: 'border-amber-200 dark:border-amber-800',
       activeBg: 'bg-amber-500 text-white',
       activeBorder: 'border-amber-500',
     };
   }
   if (lowerName.includes('belanja') || lowerName.includes('shopping') || lowerName.includes('bulanan')) {
     return {
-      bg: 'bg-purple-500/10 dark:bg-purple-500/20',
+      bg: 'bg-purple-100 dark:bg-purple-950',
       text: 'text-purple-600 dark:text-purple-400',
-      border: 'border-purple-500/20 dark:border-purple-500/40',
+      border: 'border-purple-200 dark:border-purple-800',
       activeBg: 'bg-purple-500 text-white',
       activeBorder: 'border-purple-500',
     };
   }
   if (lowerName.includes('transport') || lowerName.includes('bensin') || lowerName.includes('mobil') || lowerName.includes('motor')) {
     return {
-      bg: 'bg-blue-500/10 dark:bg-blue-500/20',
+      bg: 'bg-blue-100 dark:bg-blue-950',
       text: 'text-blue-600 dark:text-blue-400',
-      border: 'border-blue-500/20 dark:border-blue-500/40',
+      border: 'border-blue-200 dark:border-blue-800',
       activeBg: 'bg-blue-500 text-white',
       activeBorder: 'border-blue-500',
     };
   }
   if (lowerName.includes('tagihan') || lowerName.includes('listrik') || lowerName.includes('wifi') || lowerName.includes('internet') || lowerName.includes('pulsa')) {
     return {
-      bg: 'bg-rose-500/10 dark:bg-rose-500/20',
+      bg: 'bg-rose-100 dark:bg-rose-950',
       text: 'text-rose-600 dark:text-rose-400',
-      border: 'border-rose-500/20 dark:border-rose-500/40',
+      border: 'border-rose-200 dark:border-rose-800',
       activeBg: 'bg-rose-500 text-white',
       activeBorder: 'border-rose-500',
     };
   }
   if (lowerName.includes('hibur') || lowerName.includes('game') || lowerName.includes('nonton') || lowerName.includes('netflix')) {
     return {
-      bg: 'bg-violet-500/10 dark:bg-violet-500/20',
+      bg: 'bg-violet-100 dark:bg-violet-950',
       text: 'text-violet-600 dark:text-violet-400',
-      border: 'border-violet-500/20 dark:border-violet-500/40',
+      border: 'border-violet-200 dark:border-violet-800',
       activeBg: 'bg-violet-500 text-white',
       activeBorder: 'border-violet-500',
     };
   }
   if (lowerName.includes('sehat') || lowerName.includes('obat') || lowerName.includes('dokter')) {
     return {
-      bg: 'bg-teal-500/10 dark:bg-teal-500/20',
+      bg: 'bg-teal-100 dark:bg-teal-950',
       text: 'text-teal-600 dark:text-teal-400',
-      border: 'border-teal-500/20 dark:border-teal-500/40',
+      border: 'border-teal-200 dark:border-teal-800',
       activeBg: 'bg-teal-500 text-white',
       activeBorder: 'border-teal-500',
     };
   }
   if (lowerName.includes('sedekah') || lowerName.includes('zakat') || lowerName.includes('amal')) {
     return {
-      bg: 'bg-orange-500/10 dark:bg-orange-500/20',
+      bg: 'bg-orange-100 dark:bg-orange-950',
       text: 'text-orange-600 dark:text-orange-400',
-      border: 'border-orange-500/20 dark:border-orange-500/40',
+      border: 'border-orange-200 dark:border-orange-800',
       activeBg: 'bg-orange-500 text-white',
       activeBorder: 'border-orange-500',
     };
   }
   if (lowerName.includes('cicilan') || lowerName.includes('hutang') || lowerName.includes('kredit')) {
     return {
-      bg: 'bg-red-500/10 dark:bg-red-500/20',
+      bg: 'bg-red-100 dark:bg-red-950',
       text: 'text-red-600 dark:text-red-400',
-      border: 'border-red-500/20 dark:border-red-500/40',
+      border: 'border-red-200 dark:border-red-800',
       activeBg: 'bg-red-500 text-white',
       activeBorder: 'border-red-500',
     };
   }
   return {
-    bg: 'bg-slate-500/10 dark:bg-slate-500/20',
+    bg: 'bg-slate-100 dark:bg-slate-950',
     text: 'text-slate-600 dark:text-slate-400',
-    border: 'border-slate-500/20 dark:border-slate-500/40',
+    border: 'border-slate-200 dark:border-slate-800',
     activeBg: 'bg-slate-600 dark:bg-slate-500 text-white',
     activeBorder: 'border-slate-500',
   };
@@ -587,8 +587,8 @@ export default function ResourceForm({
           ))}
         </div>
 
-        <div className="fixed bottom-0 left-0 right-0 border-t border-border-subtle bg-gradient-to-t from-surface-panel via-surface-panel/98 to-surface-panel/90 px-5 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur-xl">
-          <Button type="submit" isLoading={isSaving} className="h-12 w-full rounded-2xl text-sm font-semibold shadow-lg shadow-primary-500/15">
+        <div className="fixed bottom-0 left-0 right-0 border-t border-border-subtle bg-surface-panel px-5 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3">
+          <Button type="submit" isLoading={isSaving} className="h-12 w-full rounded-2xl text-sm font-semibold">
             {submitLabel}
           </Button>
         </div>
@@ -633,7 +633,7 @@ export default function ResourceForm({
                   className={cn(
                     "flex-1 py-3 text-center text-sm font-semibold rounded-xl transition-all",
                     watchedValues.transaction_type === 'expense'
-                      ? "bg-surface-panel text-danger-base shadow-sm font-bold"
+                      ? "bg-surface-panel text-danger-base font-bold"
                       : "text-text-muted hover:text-text-body"
                   )}
                 >
@@ -645,7 +645,7 @@ export default function ResourceForm({
                   className={cn(
                     "flex-1 py-3 text-center text-sm font-semibold rounded-xl transition-all",
                     watchedValues.transaction_type === 'income'
-                      ? "bg-surface-panel text-success-base shadow-sm font-bold"
+                      ? "bg-surface-panel text-success-base font-bold"
                       : "text-text-muted hover:text-text-body"
                   )}
                 >
@@ -679,7 +679,7 @@ export default function ResourceForm({
                 {resolveFieldLabel(categoryField, watchedValues, options)}
               </label>
               {resolvedCategoryOptions.length === 0 ? (
-                <div className="text-sm text-text-muted text-center py-6 bg-surface-50 dark:bg-surface-900/20 rounded-2xl border border-dashed border-border-subtle">
+                <div className="text-sm text-text-muted text-center py-6 bg-surface-100 rounded-2xl border border-dashed border-border-subtle">
                   Belum ada kategori untuk tipe ini.
                 </div>
               ) : (
@@ -702,7 +702,7 @@ export default function ResourceForm({
                         }}
                         className={cn(
                           "flex flex-col items-center justify-center py-3 px-1 transition-all gap-2 duration-200 active:scale-95 rounded-2xl",
-                          isSelected ? color.bg : "bg-transparent hover:bg-surface-100/30"
+                          isSelected ? color.bg : "bg-transparent hover:bg-surface-100"
                         )}
                       >
                         <IconComponent
@@ -746,8 +746,8 @@ export default function ResourceForm({
         </div>
 
         {/* Action Button */}
-        <div className="fixed bottom-0 left-0 right-0 border-t border-border-subtle bg-gradient-to-t from-surface-panel via-surface-panel/98 to-surface-panel/90 px-5 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur-xl">
-          <Button type="submit" isLoading={isSaving} className="h-12 w-full rounded-2xl text-sm font-semibold shadow-lg shadow-primary-500/15">
+        <div className="fixed bottom-0 left-0 right-0 border-t border-border-subtle bg-surface-panel px-5 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3">
+          <Button type="submit" isLoading={isSaving} className="h-12 w-full rounded-2xl text-sm font-semibold">
             {submitLabel}
           </Button>
         </div>
@@ -765,11 +765,11 @@ export default function ResourceForm({
     const remainingFields = visibleFields.filter((field) => !handledFields.has(field.name));
 
     return (
-      <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+      <form className="space-y-3 md:space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
-          <section className="space-y-5 rounded-[28px] border border-border-subtle bg-surface-panel/90 p-5 shadow-sm shadow-card-soft md:p-6">
+          <section className="space-y-5 rounded-2xl border border-border-subtle bg-surface-panel p-5 md:p-6">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-muted">Identitas Kategori</p>
+              <p className="text-xs font-semibold text-text-muted">Identitas Kategori</p>
               <p className="mt-2 text-sm leading-6 text-text-muted">
                 Tentukan tipe kategori dan pilih ikon yang paling mudah dikenali saat dipakai di halaman transaksi.
               </p>
@@ -786,7 +786,7 @@ export default function ResourceForm({
               />
             )}
             {iconField && (
-              <div className="rounded-[24px] border border-border-subtle bg-surface-100/55 p-4 md:p-5">
+              <div className="rounded-2xl border border-border-subtle bg-surface-100 p-4 md:p-5">
                 <Field
                   field={iconField}
                   register={register}
@@ -800,9 +800,9 @@ export default function ResourceForm({
             )}
           </section>
 
-          <section className="space-y-5 rounded-[28px] border border-border-subtle bg-gradient-to-br from-surface-panel via-surface-panel to-surface-100/55 p-5 shadow-sm shadow-card-soft md:p-6">
+          <section className="space-y-5 rounded-2xl border border-border-subtle bg-surface-panel p-5 md:p-6">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-muted">Konteks Penggunaan</p>
+              <p className="text-xs font-semibold text-text-muted">Konteks Penggunaan</p>
               <p className="mt-2 text-sm leading-6 text-text-muted">
                 Hubungkan kategori dengan rekening dan jenis pengeluarannya agar pilihan di transaksi lebih relevan.
               </p>
@@ -866,13 +866,13 @@ export default function ResourceForm({
   }
 
   return (
-    <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>
+    <form className="grid gap-3 md:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>
       {visibleFields.map((field) => (
         <div key={field.name} className={field.full ? 'md:col-span-2' : ''}>
           <Field field={field} register={register} error={errors[field.name]} options={options} value={watchedValues?.[field.name]} values={watchedValues} setValue={setValue} />
         </div>
       ))}
-      <div className="md:col-span-2 -mx-4 mt-2 border-t border-border-subtle bg-surface-panel/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] pt-4 backdrop-blur md:mx-0 md:flex md:justify-end md:border-0 md:bg-transparent md:px-0 md:pb-0 md:pt-2 md:backdrop-blur-0">
+      <div className="md:col-span-2 -mx-4 mt-2 border-t border-border-subtle bg-surface-panel px-4 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] pt-4 md:mx-0 md:flex md:justify-end md:border-0 md:bg-transparent md:px-0 md:pb-0 md:pt-2">
         <Button type="submit" isLoading={isSaving} className="w-full md:min-w-[180px] md:w-auto">{submitLabel}</Button>
       </div>
     </form>

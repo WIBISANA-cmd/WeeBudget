@@ -1,18 +1,29 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
+import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import DataTable from '../components/data/DataTable';
+import PageHeader from '../components/layout/PageHeader';
+import DataTable, { DataTableSkeleton } from '../components/data/DataTable';
 import EmptyState from '../components/feedback/EmptyState';
 import ErrorState from '../components/feedback/ErrorState';
-import LoadingSkeleton from '../components/feedback/LoadingSkeleton';
+import { FormSkeleton, Skeleton } from '../components/feedback/LoadingSkeleton';
 import Modal, { ConfirmDialog } from '../components/forms/Modal';
 import StatusBadge from '../components/feedback/StatusBadge';
 import { configs } from '../features/shared/crudConfigs';
 import { useCrudResource } from '../hooks/useCrudResource';
 import { formatDate } from '../lib/formatters';
+import { cn } from '../lib/utils';
 
 const ResourceForm = lazy(() => import('../components/forms/ResourceForm'));
+
+const STATUS_LABELS = { planned: 'Direncanakan', active: 'Aktif', closed: 'Ditutup' };
+
+const columns = [
+  { key: 'name', label: 'Periode', mobileTitle: true },
+  { key: 'range', label: 'Rentang', render: (row) => `${formatDate(row.start_date)} - ${formatDate(row.end_date)}` },
+  { key: 'payday_date', label: 'Gajian', render: (row) => formatDate(row.payday_date) },
+  { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status}>{STATUS_LABELS[row.status] || row.status}</StatusBadge> },
+];
 
 function yearRange(activeYear) {
   return [activeYear - 2, activeYear - 1, activeYear, activeYear + 1, activeYear + 2];
@@ -85,87 +96,78 @@ export default function PeriodsPage() {
     setDeleting(null);
   };
 
-  const columns = [
-    { key: 'name', label: 'Periode', mobileTitle: true },
-    { key: 'range', label: 'Rentang', render: (row) => `${formatDate(row.start_date)} - ${formatDate(row.end_date)}` },
-    { key: 'payday_date', label: 'Gajian', render: (row) => formatDate(row.payday_date) },
-    { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status} /> },
+  const stats = [
+    { label: 'Aktif', value: yearlySummary.activeCount, tone: 'text-success-base' },
+    { label: 'Direncanakan', value: yearlySummary.plannedCount, tone: 'text-primary-600' },
+    { label: 'Ditutup', value: yearlySummary.closedCount, tone: 'text-text-title' },
   ];
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-text-title">Manajemen Periode</h1>
-          <p className="mt-2 max-w-2xl text-text-muted">
-            Kelola periode bulanan berdasarkan tahun agar laporan dan budget punya batas bulan yang jelas.
-          </p>
-        </div>
+    <div className="space-y-3 md:space-y-4">
+      <PageHeader title="Periode">
         <Button onClick={openCreate}>
           <Plus size={18} className="mr-2" />
-          Tambah periode {year}
+          Tambah periode
         </Button>
-      </header>
+      </PageHeader>
 
       <Card>
-        <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={() => switchYear(year - 1)}>
-              <ChevronLeft size={16} />
-            </Button>
-            <div className="rounded-2xl border border-primary-500/20 bg-primary-500/10 px-5 py-3 text-2xl font-semibold text-primary-600">
-              {year}
+        <CardContent className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+          <div className="flex items-center gap-1">
+            <button type="button" onClick={() => switchYear(year - 1)} aria-label="Tahun sebelumnya" className="flex h-9 w-9 items-center justify-center rounded-xl text-text-muted transition-colors hover:bg-hover-soft hover:text-text-title">
+              <ChevronLeft size={18} />
+            </button>
+            <div className="flex gap-1">
+              {yearRange(year).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => switchYear(item)}
+                  className={cn(
+                    'rounded-lg px-3 py-1.5 text-sm font-semibold tabular-nums transition-colors',
+                    item === year ? 'bg-primary-500 text-white' : 'text-text-muted hover:bg-hover-soft hover:text-text-title',
+                    Math.abs(item - year) === 2 && 'max-sm:hidden',
+                  )}
+                >
+                  {item}
+                </button>
+              ))}
             </div>
-            <Button variant="secondary" size="sm" onClick={() => switchYear(year + 1)}>
-              <ChevronRight size={16} />
-            </Button>
+            <button type="button" onClick={() => switchYear(year + 1)} aria-label="Tahun berikutnya" className="flex h-9 w-9 items-center justify-center rounded-xl text-text-muted transition-colors hover:bg-hover-soft hover:text-text-title">
+              <ChevronRight size={18} />
+            </button>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {yearRange(year).map((item) => (
-              <button
-                key={item}
-                onClick={() => switchYear(item)}
-                className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${item === year ? 'bg-primary-500 text-white shadow-glow-primary' : 'bg-surface-100 text-text-muted hover:bg-primary-500/10 hover:text-primary-600'}`}
-              >
-                {item}
-              </button>
+
+          <dl className="flex gap-6">
+            {stats.map((stat) => (
+              <div key={stat.label}>
+                <dt className="text-xs text-text-muted">{stat.label}</dt>
+                {resource.isLoading
+                  ? <Skeleton className="mt-1.5 h-5 w-6" />
+                  : <dd className={cn('text-lg font-semibold tabular-nums', stat.tone)}>{stat.value}</dd>}
+              </div>
             ))}
-          </div>
+          </dl>
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card><CardContent><p className="text-sm text-text-muted">Jumlah periode</p><p className="mt-2 text-2xl font-semibold text-text-title">{resource.items.length}</p></CardContent></Card>
-        <Card><CardContent><p className="text-sm text-text-muted">Direncanakan</p><p className="mt-2 text-2xl font-semibold text-primary-600">{yearlySummary.plannedCount}</p></CardContent></Card>
-        <Card><CardContent><p className="text-sm text-text-muted">Periode aktif</p><p className="mt-2 text-2xl font-semibold text-success-base">{yearlySummary.activeCount}</p></CardContent></Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Periode tahun {year}</CardTitle>
-          <CardDescription>Tambah, edit, atau hapus periode untuk tahun yang sedang dipilih.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {resource.isLoading ? (
-            <LoadingSkeleton rows={5} />
-          ) : resource.error ? (
-            <ErrorState message={resource.error} onRetry={() => resource.load({ year, per_page: 50 })} />
-          ) : resource.items.length === 0 ? (
-            <EmptyState title={`Belum ada periode di ${year}`} description="Buat periode bulanan untuk mengatur batas laporan dan budget." action={<Button onClick={openCreate}>Tambah periode</Button>} />
-          ) : (
-            <DataTable columns={columns} rows={resource.items} onEdit={openEdit} onDelete={setDeleting} />
-          )}
-        </CardContent>
-      </Card>
+      {resource.isLoading ? (
+        <DataTableSkeleton columns={columns} rows={6} />
+      ) : resource.error ? (
+        <ErrorState message={resource.error} onRetry={() => resource.load({ year, per_page: 50 })} />
+      ) : resource.items.length === 0 ? (
+        <EmptyState title={`Belum ada periode di ${year}`} description="Buat periode untuk mengatur batas laporan dan budget." action={<Button onClick={openCreate}>Tambah periode</Button>} />
+      ) : (
+        <DataTable columns={columns} rows={resource.items} onEdit={openEdit} onDelete={setDeleting} />
+      )}
 
       <Modal
         open={isFormOpen}
         onClose={() => setFormOpen(false)}
         title={editing ? 'Edit periode' : `Tambah periode ${year}`}
-        description="Atur nama, rentang bulan, tanggal gajian, dan status periode."
         fullScreenOnMobile={true}
       >
-        <Suspense fallback={<LoadingSkeleton rows={4} />}>
+        <Suspense fallback={<FormSkeleton fields={config.fields.length} />}>
           <ResourceForm
             schema={config.schema}
             fields={config.fields}

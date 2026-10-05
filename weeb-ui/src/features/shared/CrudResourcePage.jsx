@@ -1,13 +1,13 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
+import { ChevronRight, Plus } from 'lucide-react';
 import Button from '../../components/ui/Button';
-import DataTable from '../../components/data/DataTable';
+import PageHeader from '../../components/layout/PageHeader';
+import DataTable, { DataTableSkeleton } from '../../components/data/DataTable';
 import EmptyState from '../../components/feedback/EmptyState';
 import ErrorState from '../../components/feedback/ErrorState';
-import LoadingSkeleton from '../../components/feedback/LoadingSkeleton';
-import Modal, { ConfirmDialog } from '../../components/forms/Modal';
+import { FormSkeleton, Skeleton } from '../../components/feedback/LoadingSkeleton';
+import Modal, { ConfirmDialog, DetailActions } from '../../components/forms/Modal';
 import { useCrudResource } from '../../hooks/useCrudResource';
 import { formatCurrency, formatDate } from '../../lib/formatters';
 import { cn } from '../../lib/utils';
@@ -15,8 +15,11 @@ import { lazyWithRetry } from '../../lib/lazyWithRetry';
 
 const ResourceForm = lazy(lazyWithRetry(() => import('../../components/forms/ResourceForm'), 'ResourceForm'));
 
+const mobileListClass = 'overflow-hidden rounded-2xl border border-border-subtle bg-surface-panel md:hidden';
+const mobileGroupClass = 'flex items-center justify-between gap-3 bg-surface-100 px-3 py-2 text-xs';
+const mobileRowClass = 'row-press flex min-h-[56px] w-full items-center gap-3 px-3 py-2.5 text-left';
+
 function MobileResourceList({ rows, columns, onAction }) {
-  const [pressTimer, setPressTimer] = useState(null);
   const groupedRows = useMemo(() => {
     return rows.reduce((groups, row) => {
       const key = columns.dateKey ? columns.dateKey(row) : row.transaction_date || row.date || 'Tanpa tanggal';
@@ -31,63 +34,33 @@ function MobileResourceList({ rows, columns, onAction }) {
     }, []);
   }, [columns, rows]);
 
-  const cancelPress = () => {
-    if (pressTimer) {
-      clearTimeout(pressTimer);
-      setPressTimer(null);
-    }
-  };
-
-  const startPress = (row) => {
-    cancelPress();
-    const timer = window.setTimeout(() => {
-      onAction(row);
-      setPressTimer(null);
-    }, 550);
-    setPressTimer(timer);
-  };
-
   return (
-    <div className="space-y-3 md:hidden">
-      <div className="grid grid-cols-[44px_1fr_auto] gap-3 rounded-xl bg-surface-100 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
-        <span>{columns.numberLabel || 'No'}</span>
-        <span>{columns.titleLabel || 'Kebutuhan'}</span>
-        <span className="text-right">{columns.amountLabel || 'Nominal'}</span>
-      </div>
+    <div className={mobileListClass}>
       {groupedRows.map((group) => (
-        <div key={group.key} className="space-y-2">
-          <div className={cn('space-y-1 px-1', !group.label && !columns.groupSummary && 'hidden')}>
-            {group.label && <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">{group.label}</p>}
-            {columns.groupSummary && (
-              <div className="flex flex-wrap gap-2 text-xs text-text-muted">
-                {columns.groupSummary(group.rows).map((item) => (
-                  <span key={item.label} className="rounded-full bg-surface-100 px-2.5 py-1">
-                    <span className="font-semibold text-text-body">{item.label}:</span> {item.value}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-          {group.rows.map((row, index) => (
-            <button
-              key={row.id}
-              type="button"
-              onPointerDown={() => startPress(row)}
-              onPointerUp={cancelPress}
-              onPointerCancel={cancelPress}
-              onPointerLeave={cancelPress}
-              onContextMenu={(event) => {
-                event.preventDefault();
-                onAction(row);
-              }}
-              className="grid min-h-[58px] w-full grid-cols-[44px_1fr_auto] items-center gap-3 rounded-xl border border-border-subtle bg-surface-panel px-3 py-3 text-left shadow-sm shadow-card-soft active:border-primary-500 active:bg-primary-500/5"
-            >
-              <span className="text-sm font-semibold text-text-muted">{index + 1}</span>
-              <span className="min-w-0 text-sm font-medium text-text-title">
-                <span className="block truncate">{columns.title(row)}</span>
-                {columns.subtitle && <span className="mt-0.5 block text-xs font-normal text-text-muted">{columns.subtitle(row)}</span>}
+        <div key={group.key} className="divide-y divide-border-subtle border-b border-border-subtle last:border-b-0">
+          {(group.label || columns.groupSummary) && (
+            <div className={mobileGroupClass}>
+              <span className="font-semibold text-text-title">{group.label}</span>
+              {columns.groupSummary && (
+                <span className="flex flex-wrap justify-end gap-x-3 text-text-muted">
+                  {columns.groupSummary(group.rows).map((item) => (
+                    <span key={item.label}>{item.label} <span className="font-semibold text-text-body">{item.value}</span></span>
+                  ))}
+                </span>
+              )}
+            </div>
+          )}
+          {group.rows.map((row) => (
+            // A tap opens the detail, where edit and delete live.
+            <button key={row.id} type="button" onClick={() => onAction(row)} className={mobileRowClass}>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium text-text-title">{columns.title(row)}</span>
+                {columns.subtitle && <span className="mt-0.5 block truncate text-xs text-text-muted">{columns.subtitle(row)}</span>}
               </span>
-              <span className={`text-right text-sm font-semibold ${columns.amountClass ? columns.amountClass(row) : 'text-primary-600'}`}>{columns.amount(row)}</span>
+              <span className={cn('shrink-0 text-right text-sm font-semibold tabular-nums', columns.amountClass ? columns.amountClass(row) : 'text-text-title')}>
+                {columns.amount(row)}
+              </span>
+              <ChevronRight size={16} className="shrink-0 text-text-muted" />
             </button>
           ))}
         </div>
@@ -96,12 +69,42 @@ function MobileResourceList({ rows, columns, onAction }) {
   );
 }
 
-export default function CrudResourcePage({ config, options = {}, topContent = null, headerActions = null }) {
+/** Same frame, group header and row anatomy as MobileResourceList. */
+function MobileResourceListSkeleton({ columns }) {
+  const grouped = !columns.dateKey || Boolean(columns.groupSummary);
+  const groups = grouped ? [['w-40', 'w-28', 'w-36'], ['w-32', 'w-44']] : [['w-28', 'w-36', 'w-24', 'w-32', 'w-40']];
+
+  return (
+    <div className={mobileListClass}>
+      {groups.map((widths, groupIndex) => (
+        <div key={groupIndex} className="divide-y divide-border-subtle border-b border-border-subtle last:border-b-0">
+          {grouped && (
+            <div className={mobileGroupClass}>
+              <Skeleton className="h-3.5 w-24" />
+              {columns.groupSummary && <Skeleton className="h-3.5 w-40" />}
+            </div>
+          )}
+          {widths.map((width, index) => (
+            <div key={index} className={mobileRowClass}>
+              <div className="min-w-0 flex-1">
+                <Skeleton className={cn('h-3.5 max-w-full', width)} />
+                {columns.subtitle && <Skeleton className="mt-2 h-3 w-24" />}
+              </div>
+              <Skeleton className="h-3.5 w-24 shrink-0" />
+              <Skeleton className="h-4 w-4 shrink-0 rounded" />
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function CrudResourcePage({ config, options = {}, topContent = null, bottomContent = null, headerActions = null }) {
   const [editing, setEditing] = useState(null);
   const [isFormOpen, setFormOpen] = useState(false);
   const [deleting, setDeleting] = useState(null);
   const [detailTarget, setDetailTarget] = useState(null);
-  const [actionTarget, setActionTarget] = useState(null);
   const [selectedAccountId, setSelectedAccountId] = useState('');
   const resource = useCrudResource(config.endpoint, config.initialParams || {});
   const accountOptions = useMemo(() => options.accounts || [], [options.accounts]);
@@ -182,13 +185,30 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isTransactionRoute, visibleDatesCount, uniqueDates.length, resource]);
 
+  const loadingMore = resource.isIncrementing && (
+    <div className="mt-3 flex justify-center py-2">
+      <span className="h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></span>
+    </div>
+  );
+
   const renderTableContent = () => {
     if (resource.isLoading) {
-      return <LoadingSkeleton rows={5} />;
+      if (!config.mobileColumns) {
+        return <DataTableSkeleton columns={config.columns} mobileLayout={config.mobileLayout} />;
+      }
+
+      return (
+        <>
+          <MobileResourceListSkeleton columns={config.mobileColumns} />
+          <div className="hidden md:block">
+            <DataTableSkeleton columns={config.columns} grouped={isTransactionRoute} />
+          </div>
+        </>
+      );
     }
 
     if (resource.error) {
-      return <ErrorState message={resource.error} onRetry={resource.load} />;
+      return <ErrorState message={resource.error} onRetry={() => resource.load()} />;
     }
 
     if (visibleItems.length === 0) {
@@ -198,15 +218,11 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
     if (config.mobileColumns) {
       return (
         <>
-          <MobileResourceList columns={config.mobileColumns} rows={renderedItems} onAction={setActionTarget} />
+          <MobileResourceList columns={config.mobileColumns} rows={renderedItems} onAction={setDetailTarget} />
           <div className="hidden md:block">
             <DataTable columns={config.columns} rows={renderedItems} onEdit={openEdit} onDelete={openDelete} canEditRow={config.canEdit} canDeleteRow={config.canDelete} />
           </div>
-          {resource.isIncrementing && (
-            <div className="mt-4 flex justify-center py-2">
-              <span className="h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></span>
-            </div>
-          )}
+          {loadingMore}
         </>
       );
     }
@@ -222,11 +238,7 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
           canDeleteRow={config.canDelete}
           mobileLayout={config.mobileLayout}
         />
-        {resource.isIncrementing && (
-          <div className="mt-4 flex justify-center py-2">
-            <span className="h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></span>
-          </div>
-        )}
+        {loadingMore}
       </>
     );
   };
@@ -260,13 +272,8 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
 
     setEditing(row);
     if (config.accountScoped && row.account_id) setSelectedAccountId(row.account_id);
-    setActionTarget(null);
+    setDetailTarget(null);
     setFormOpen(true);
-  };
-
-  const openDetail = (row) => {
-    setDetailTarget(row);
-    setActionTarget(null);
   };
 
   const openDelete = (row) => {
@@ -275,7 +282,7 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
     }
 
     setDeleting(row);
-    setActionTarget(null);
+    setDetailTarget(null);
   };
 
   const submit = async (values) => {
@@ -301,109 +308,60 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
     alert(result?.message || 'Data belum bisa dihapus.');
   };
 
+  // Configs without hand-picked detail rows fall back to their table columns.
+  const detailRows = config.detailRows || config.columns.map((column) => ({
+    label: column.label,
+    render: (row) => (column.render ? column.render(row) : row[column.key] ?? '-'),
+  }));
+
   return (
-    <div className="space-y-5 pb-10 md:space-y-6">
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="max-w-3xl">
-          <h1 className="text-2xl font-bold text-text-title md:text-3xl">{config.title}</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">{config.description}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 *:flex-1 md:*:flex-none md:justify-end">
-          {headerActions}
-          <Button onClick={openCreate}>
-            <Plus size={18} className="mr-2" />
-            {config.createLabel || 'Tambah'}
-          </Button>
-        </div>
-      </header>
+    <div className="space-y-3 md:space-y-4">
+      <PageHeader title={config.title}>
+        {headerActions}
+        <Button onClick={openCreate}>
+          <Plus size={18} className="mr-2" />
+          {config.createLabel || 'Tambah'}
+        </Button>
+      </PageHeader>
 
       {typeof topContent === 'function' ? topContent({ resource, visibleItems }) : topContent}
 
-      {config.summary && <div className="grid gap-4 md:grid-cols-3">{config.summary(resource.items)}</div>}
+      {config.summary && <div className="grid gap-3 md:grid-cols-3">{config.summary(resource.items)}</div>}
 
       {config.accountScoped && selectedAccount && (
-        <div className="rounded-[28px] border border-border-subtle bg-gradient-to-br from-surface-panel via-surface-panel to-surface-100/70 p-4 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.45)] md:p-6">
-          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-sm font-medium text-text-muted">Ringkasan rekening aktif</p>
-              <p className="mt-2 text-3xl font-semibold tracking-tight text-text-title">
-                {formatCurrency(selectedAccount.balance)}
-              </p>
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-text-muted">
-                <span className="rounded-full bg-surface-panel px-3 py-1 shadow-sm shadow-card-soft">
-                  {selectedAccount.label.split(' - ')[0]}
-                </span>
-                <span>Tampilkan data berdasarkan rekening yang dipilih.</span>
-              </div>
-            </div>
-            <div className="rounded-2xl border border-border-subtle bg-surface-panel/90 px-4 py-3 shadow-sm shadow-card-soft md:min-w-[220px]">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-text-muted">Saldo Tersedia</p>
-              <p className="mt-2 text-xl font-semibold text-text-title">{formatCurrency(selectedAccount.balance)}</p>
-            </div>
-          </div>
-          <div className="mt-5 flex gap-2 overflow-x-auto pb-1 md:mt-6">
-            {accountOptions.map((account) => (
-              <button
-                key={account.value}
-                type="button"
-                onClick={() => setSelectedAccountId(account.value)}
-                className={`shrink-0 rounded-xl border px-4 py-2 text-left text-sm transition-colors ${
-                  String(selectedAccount.value) === String(account.value)
-                    ? 'border-primary-500 bg-primary-500 text-white shadow-sm shadow-primary-500/20'
-                    : 'border-border-subtle bg-surface-panel text-text-body hover:border-primary-500 hover:text-primary-600'
-                }`}
-              >
-                <span className="block font-semibold">{account.label.split(' - ')[0]}</span>
-                <span className="block text-xs opacity-80">{formatCurrency(account.balance)}</span>
-              </button>
-            ))}
-          </div>
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {accountOptions.map((account) => (
+            <button
+              key={account.value}
+              type="button"
+              onClick={() => setSelectedAccountId(account.value)}
+              className={cn(
+                'shrink-0 rounded-xl border px-4 py-2 text-left text-sm transition-colors',
+                String(selectedAccount.value) === String(account.value)
+                  ? 'border-primary-500 bg-primary-500 text-white'
+                  : 'border-border-subtle bg-surface-panel text-text-body hover:border-border-strong hover:text-primary-600',
+              )}
+            >
+              <span className="block font-semibold">{account.label.split(' - ')[0]}</span>
+              <span className="block text-xs tabular-nums">{formatCurrency(account.balance)}</span>
+            </button>
+          ))}
         </div>
       )}
 
-      {config.noCard ? (
-        <div className="space-y-4">
-          {config.tableTitle && (
-            <div className="px-1">
-              <h2 className="text-xl font-bold text-text-title">{config.tableTitle}</h2>
-              {config.tableDescription && <p className="mt-1 text-sm text-text-muted">{config.tableDescription}</p>}
-            </div>
-          )}
-          <div>{renderTableContent()}</div>
-        </div>
-      ) : config.unwrappedOnMobile ? (
-        <>
-          <div className="hidden md:block">
-            <Card>
-              <CardHeader>
-                <CardTitle>{config.tableTitle || config.title}</CardTitle>
-                <CardDescription>{config.tableDescription || 'Kelola data secara langsung dari halaman ini.'}</CardDescription>
-              </CardHeader>
-              <CardContent>{renderTableContent()}</CardContent>
-            </Card>
-          </div>
-          <div className="md:hidden">
-            {renderTableContent()}
-          </div>
-        </>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>{config.tableTitle || config.title}</CardTitle>
-            <CardDescription>{config.tableDescription || 'Kelola data secara langsung dari halaman ini.'}</CardDescription>
-          </CardHeader>
-          <CardContent>{renderTableContent()}</CardContent>
-        </Card>
-      )}
+      {/* The table draws its own frame, so it sits directly on the page: no card around a card. */}
+      <div key={resource.isLoading ? 'loading' : 'ready'} className="page-fade-in">{renderTableContent()}</div>
+
+      {bottomContent}
 
       <Modal
         open={isFormOpen}
         onClose={() => setFormOpen(false)}
         title={editing ? `Edit ${config.singular}` : config.createLabel}
         description={config.formDescription}
-        fullScreenOnMobile={config.fullScreenOnMobile || config.endpoint === '/transactions' || config.endpoint === '/incomes' || config.endpoint === '/expenses'}
+        fullScreenOnMobile={config.fullScreenOnMobile || isTransactionRoute}
       >
-        <Suspense fallback={<LoadingSkeleton rows={4} />}>
+        <Suspense fallback={<FormSkeleton fields={config.fields?.length || 6} />}>
           <ResourceForm
             schema={config.schema}
             fields={config.fields}
@@ -412,7 +370,7 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
             isSaving={resource.isSaving}
             submitLabel={editing ? 'Simpan perubahan' : 'Simpan'}
             onSubmit={submit}
-            isTransactionForm={config.endpoint === '/transactions' || config.endpoint === '/incomes' || config.endpoint === '/expenses'}
+            isTransactionForm={isTransactionRoute}
             formLayout={config.formLayout}
           />
         </Suspense>
@@ -423,34 +381,23 @@ export default function CrudResourcePage({ config, options = {}, topContent = nu
         onClose={() => setDetailTarget(null)}
         title={`Detail ${config.singular}`}
         description={detailTarget && config.mobileColumns ? config.mobileColumns.title(detailTarget) : undefined}
+        footer={detailTarget && (
+          <DetailActions
+            onEdit={!config.canEdit || config.canEdit(detailTarget) ? () => openEdit(detailTarget) : undefined}
+            onDelete={!config.canDelete || config.canDelete(detailTarget) ? () => openDelete(detailTarget) : undefined}
+          />
+        )}
       >
         {detailTarget && (
-          <div className="space-y-3 text-sm">
-            {config.detailRows?.map((row) => (
-              <div key={row.label} className="flex justify-between gap-4">
-                <span className="text-text-muted">{row.label}</span>
-                <span className="text-right font-semibold text-text-title">{row.render(detailTarget)}</span>
+          <dl className="divide-y divide-border-subtle text-sm">
+            {detailRows.map((row) => (
+              <div key={row.label} className="flex justify-between gap-4 py-2.5">
+                <dt className="text-text-muted">{row.label}</dt>
+                <dd className="text-right font-semibold text-text-title">{row.render(detailTarget)}</dd>
               </div>
             ))}
-          </div>
+          </dl>
         )}
-      </Modal>
-
-      <Modal
-        open={Boolean(actionTarget)}
-        onClose={() => setActionTarget(null)}
-        title={`Aksi ${config.singular}`}
-        description={actionTarget && config.mobileColumns ? config.mobileColumns.title(actionTarget) : undefined}
-      >
-        <div className="grid gap-3">
-          <Button variant="secondary" onClick={() => openDetail(actionTarget)}><Eye size={18} className="mr-2" />Detail</Button>
-          {(!config.canEdit || config.canEdit(actionTarget)) && (
-            <Button variant="secondary" onClick={() => openEdit(actionTarget)}><Pencil size={18} className="mr-2" />Edit</Button>
-          )}
-          {(!config.canDelete || config.canDelete(actionTarget)) && (
-            <Button variant="danger" onClick={() => openDelete(actionTarget)}><Trash2 size={18} className="mr-2" />Hapus</Button>
-          )}
-        </div>
       </Modal>
 
       <ConfirmDialog

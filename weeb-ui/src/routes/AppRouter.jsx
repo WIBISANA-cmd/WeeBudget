@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Outlet, Routes, Route, useLocation } from 'react-router-dom';
-import { PageLoader } from '../components/feedback/LoadingSkeleton';
+import { AppShellSkeleton, AuthSkeleton } from '../components/feedback/LoadingSkeleton';
 import PageTitle from '../components/system/PageTitle';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { lazyWithRetry } from '../lib/lazyWithRetry';
@@ -49,7 +49,7 @@ function RequireOnboarding() {
   const location = useLocation();
 
   if (isLoading) {
-    return <div className="min-h-screen bg-bg-base p-4 md:p-8"><PageLoader /></div>;
+    return <AppShellSkeleton />;
   }
 
   if (user && !user.profile?.onboarding_completed_at && location.pathname !== '/onboarding') {
@@ -63,7 +63,7 @@ function RequireCoupleMode() {
   const { user, isLoading } = useCurrentUser();
 
   if (isLoading) {
-    return <div className="min-h-screen bg-bg-base p-4 md:p-8"><PageLoader /></div>;
+    return <AppShellSkeleton />;
   }
 
   if ((user?.profile?.account_mode || 'couple') === 'personal') {
@@ -71,6 +71,11 @@ function RequireCoupleMode() {
   }
 
   return <Outlet />;
+}
+
+/** A signed-in visitor is headed for the app frame; anyone else for the sign-in card. */
+function RouteFallback() {
+  return localStorage.getItem('weeb_auth_token') ? <AppShellSkeleton /> : <AuthSkeleton />;
 }
 
 function HomeRedirect() {
@@ -81,7 +86,7 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <PageTitle />
-      <Suspense fallback={<div className="min-h-screen bg-bg-base p-4 md:p-8"><PageLoader /></div>}>
+      <Suspense fallback={<RouteFallback />}>
         <Routes>
           <Route path="/" element={<HomeRedirect />} />
           <Route path="/login" element={<LoginPage />} />

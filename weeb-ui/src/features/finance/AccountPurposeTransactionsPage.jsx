@@ -1,19 +1,20 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
-import { Eye, Pencil, Plus, Trash2, Wallet } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { ChevronRight, Plus } from 'lucide-react';
+import { Card, CardContent } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import DataTable from '../../components/data/DataTable';
+import DataTable, { DataTableSkeleton } from '../../components/data/DataTable';
 import EmptyState from '../../components/feedback/EmptyState';
 import ErrorState from '../../components/feedback/ErrorState';
-import LoadingSkeleton from '../../components/feedback/LoadingSkeleton';
-import Modal, { ConfirmDialog } from '../../components/forms/Modal';
+import { ChipRowSkeleton, FormSkeleton, Skeleton } from '../../components/feedback/LoadingSkeleton';
+import Modal, { ConfirmDialog, DetailActions } from '../../components/forms/Modal';
 import StatusBadge from '../../components/feedback/StatusBadge';
 import { apiGet } from '../../api/http';
 import { formatCurrency, formatDate } from '../../lib/formatters';
 import { useCrudResource } from '../../hooks/useCrudResource';
 import { useCategoryOptions } from '../../hooks/useCategoryOptions';
 import { lazyWithRetry } from '../../lib/lazyWithRetry';
+import { cn } from '../../lib/utils';
 
 const ResourceForm = lazy(lazyWithRetry(() => import('../../components/forms/ResourceForm'), 'ResourceForm'));
 
@@ -33,12 +34,35 @@ const needsByCategory = {
   Lainnya: ['Kebutuhan lain', 'Alokasi khusus'],
 };
 
+const fields = [
+  { name: 'account_id', type: 'hidden' },
+  { name: 'category_id', label: 'Kategori', type: 'select', optionsKey: 'categories', clearFieldsOnChange: ['description'] },
+  {
+    name: 'description',
+    label: 'Kebutuhan',
+    type: 'select',
+    optionsKey: 'needs',
+    getOptions: ({ options, values }) => options.filter((option) => String(option.categoryId) === String(values?.category_id || '')),
+  },
+  { name: 'amount', label: 'Nominal', type: 'number', valueAsNumber: true },
+  { name: 'transaction_date', label: 'Tanggal transaksi', type: 'date' },
+];
+
+const mobileListClass = 'overflow-hidden rounded-2xl border border-border-subtle bg-surface-panel md:hidden';
+const mobileGroupClass = 'bg-surface-100 px-3 py-2 text-xs font-semibold text-text-title';
+const mobileRowClass = 'row-press flex min-h-[56px] w-full items-center gap-3 px-3 py-2.5 text-left';
+const chipClass = 'shrink-0 rounded-xl border px-4 py-2 text-left text-sm transition-colors';
+
 function getNeedLabel(row) {
   return row.description || row.category?.name || '-';
 }
 
 function isIncome(row) {
   return row.transaction_type !== 'expense';
+}
+
+function isAllocation(row) {
+  return row.entry_type === 'account_allocation';
 }
 
 function signedAmount(row) {
@@ -49,8 +73,22 @@ function amountClass(row) {
   return isIncome(row) ? 'text-success-base' : 'text-danger-base';
 }
 
+const columns = [
+  { key: 'transaction_date', label: 'Tanggal', render: (row) => formatDate(row.transaction_date) },
+  { key: 'description', label: 'Kebutuhan', mobileTitle: true, render: (row) => getNeedLabel(row) },
+  {
+    key: 'entry_type',
+    label: 'Sumber',
+    render: (row) => (
+      <StatusBadge value={isAllocation(row) ? 'account_allocation' : 'income'}>
+        {isAllocation(row) ? 'Alokasi Dana' : 'Setoran Manual'}
+      </StatusBadge>
+    ),
+  },
+  { key: 'amount', label: 'Nominal', render: (row) => <span className={cn('font-semibold tabular-nums', amountClass(row))}>{signedAmount(row)}</span> },
+];
+
 function MobileTransactionList({ rows, onAction }) {
-  const [pressTimer, setPressTimer] = useState(null);
   const groupedRows = useMemo(() => {
     return rows.reduce((groups, row) => {
       const key = row.transaction_date || 'Tanpa tanggal';
@@ -64,56 +102,53 @@ function MobileTransactionList({ rows, onAction }) {
     }, []);
   }, [rows]);
 
-  const cancelPress = () => {
-    if (pressTimer) {
-      clearTimeout(pressTimer);
-      setPressTimer(null);
-    }
-  };
-
-  const startPress = (row) => {
-    cancelPress();
-    const timer = window.setTimeout(() => {
-      onAction(row);
-      setPressTimer(null);
-    }, 550);
-    setPressTimer(timer);
-  };
-
   return (
-    <div className="space-y-3 md:hidden">
-      <div className="grid grid-cols-[44px_1fr_auto] gap-3 rounded-xl bg-surface-100 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
-        <span>No</span>
-        <span>Kebutuhan</span>
-        <span className="text-right">Nominal</span>
-      </div>
+    <div className={mobileListClass}>
       {groupedRows.map((group) => (
-        <div key={group.key} className="space-y-2">
-          <p className="px-1 text-xs font-semibold uppercase tracking-wide text-text-muted">{group.label}</p>
-          {group.rows.map((row, index) => (
-            <button
-              key={row.id}
-              type="button"
-              onPointerDown={() => startPress(row)}
-              onPointerUp={cancelPress}
-              onPointerCancel={cancelPress}
-              onPointerLeave={cancelPress}
-              onContextMenu={(event) => {
-                event.preventDefault();
-                onAction(row);
-              }}
-              className="grid min-h-[58px] w-full grid-cols-[44px_1fr_auto] items-center gap-3 rounded-xl border border-border-subtle bg-surface-panel px-3 py-3 text-left shadow-sm shadow-card-soft active:border-primary-500 active:bg-primary-500/5"
-            >
-              <span className="text-sm font-semibold text-text-muted">{index + 1}</span>
-              <span className="min-w-0 text-sm font-medium text-text-title">
-                <span className="block truncate">{getNeedLabel(row)}</span>
+        <div key={group.key} className="divide-y divide-border-subtle border-b border-border-subtle last:border-b-0">
+          <p className={mobileGroupClass}>{group.label}</p>
+          {group.rows.map((row) => (
+            // A tap opens the detail, where edit and delete live.
+            <button key={row.id} type="button" onClick={() => onAction(row)} className={mobileRowClass}>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium text-text-title">{getNeedLabel(row)}</span>
+                <span className="mt-0.5 block truncate text-xs text-text-muted">{isAllocation(row) ? 'Alokasi Dana' : 'Setoran Manual'}</span>
               </span>
-              <span className={`text-right text-sm font-semibold ${amountClass(row)}`}>{signedAmount(row)}</span>
+              <span className={cn('shrink-0 text-sm font-semibold tabular-nums', amountClass(row))}>{signedAmount(row)}</span>
+              <ChevronRight size={16} className="shrink-0 text-text-muted" />
             </button>
           ))}
         </div>
       ))}
     </div>
+  );
+}
+
+/** The transaction list while it loads: grouped mobile rows, and the real table grid on desktop. */
+function TransactionsSkeleton() {
+  return (
+    <>
+      <div className={mobileListClass}>
+        {[['w-32', 'w-40', 'w-28'], ['w-36', 'w-24']].map((widths, groupIndex) => (
+          <div key={groupIndex} className="divide-y divide-border-subtle border-b border-border-subtle last:border-b-0">
+            <div className={mobileGroupClass}><Skeleton className="h-3.5 w-24" /></div>
+            {widths.map((width, index) => (
+              <div key={index} className={mobileRowClass}>
+                <div className="min-w-0 flex-1">
+                  <Skeleton className={cn('h-3.5', width)} />
+                  <Skeleton className="mt-2 h-3 w-24" />
+                </div>
+                <Skeleton className="h-3.5 w-24 shrink-0" />
+                <Skeleton className="h-4 w-4 shrink-0 rounded" />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="hidden md:block">
+        <DataTableSkeleton columns={columns} rows={5} grouped />
+      </div>
+    </>
   );
 }
 
@@ -124,7 +159,7 @@ export default function AccountPurposeTransactionsPage({
   emptyTitle,
   emptyDescription,
   needType = 'saving',
-  typeLabel = 'Tabungan',
+  headerExtra = null,
 }) {
   const [accounts, setAccounts] = useState([]);
   const [accountsLoading, setAccountsLoading] = useState(true);
@@ -132,7 +167,6 @@ export default function AccountPurposeTransactionsPage({
   const [isFormOpen, setFormOpen] = useState(false);
   const [deleting, setDeleting] = useState(null);
   const [selectedAccountId, setSelectedAccountId] = useState('');
-  const [actionTarget, setActionTarget] = useState(null);
   const [detailTarget, setDetailTarget] = useState(null);
   const categoryOptions = useCategoryOptions();
 
@@ -180,9 +214,10 @@ export default function AccountPurposeTransactionsPage({
     setSelectedAccountId(latestTransactionAccountId || accounts[0]?.id || '');
   }, [accounts, resource.items, selectedAccountId]);
 
-  const totalBalance = useMemo(() => {
-    return Number(selectedAccount?.current_balance || 0);
-  }, [selectedAccount]);
+  const totalBalance = useMemo(
+    () => accounts.reduce((total, account) => total + Number(account.current_balance || 0), 0),
+    [accounts],
+  );
 
   const filteredRows = useMemo(() => {
     if (!selectedAccount) return [];
@@ -232,18 +267,13 @@ export default function AccountPurposeTransactionsPage({
   const openEdit = (row) => {
     setEditing(row);
     setSelectedAccountId(row.account_id);
-    setActionTarget(null);
+    setDetailTarget(null);
     setFormOpen(true);
-  };
-
-  const openDetail = (row) => {
-    setDetailTarget(row);
-    setActionTarget(null);
   };
 
   const openDelete = (row) => {
     setDeleting(row);
-    setActionTarget(null);
+    setDetailTarget(null);
   };
 
   const submit = async (values) => {
@@ -259,6 +289,7 @@ export default function AccountPurposeTransactionsPage({
     if (result.ok) {
       setFormOpen(false);
       setEditing(null);
+      await loadAccounts();
     } else {
       alert(result.message);
     }
@@ -271,113 +302,77 @@ export default function AccountPurposeTransactionsPage({
     await loadAccounts();
   };
 
-  const fields = [
-    { name: 'account_id', type: 'hidden' },
-    { name: 'category_id', label: 'Kategori', type: 'select', optionsKey: 'categories', clearFieldsOnChange: ['description'] },
-    {
-      name: 'description',
-      label: 'Kebutuhan',
-      type: 'select',
-      optionsKey: 'needs',
-      getOptions: ({ options, values }) => options.filter((option) => String(option.categoryId) === String(values?.category_id || '')),
-    },
-    { name: 'amount', label: 'Nominal', type: 'number', valueAsNumber: true },
-    { name: 'transaction_date', label: 'Tanggal transaksi', type: 'date' },
-  ];
-
-  const columns = [
-    { key: 'transaction_date', label: 'Tanggal', render: (row) => formatDate(row.transaction_date) },
-    { key: 'description', label: 'Kebutuhan', mobileTitle: true, render: (row) => getNeedLabel(row) },
-    { key: 'account', label: 'Rekening', render: (row) => row.account?.name || '-' },
-    { key: 'amount', label: 'Nominal', render: (row) => <span className={amountClass(row)}>{signedAmount(row)}</span> },
-    {
-      key: 'entry_type',
-      label: 'Tipe',
-      render: (row) => (
-        <StatusBadge value={row.entry_type === 'account_allocation' ? 'account_allocation' : 'income'}>
-          {row.entry_type === 'account_allocation' ? 'Alokasi Dana' : 'Setoran Manual'}
-        </StatusBadge>
-      ),
-    },
-    { key: 'need_type', label: 'Jenis', render: () => <StatusBadge value={needType}>{typeLabel}</StatusBadge> },
-  ];
+  const isFirstLoad = accountsLoading && accounts.length === 0;
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-text-title md:text-3xl">{title}</h1>
+    <div className="space-y-3 md:space-y-4">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold text-text-title md:text-2xl">{title}</h1>
+        <div className="flex flex-wrap items-center gap-2 max-md:w-full max-md:*:flex-1">
+          {headerExtra}
+          <Button onClick={openCreate} disabled={accounts.length === 0}>
+            <Plus size={18} className="mr-2" />
+            {createLabel}
+          </Button>
         </div>
-        <Button onClick={openCreate} disabled={accounts.length === 0}>
-          <Plus size={18} className="mr-2" />
-          {createLabel}
-        </Button>
       </header>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardContent className="flex items-center gap-4">
-            <div className="rounded-xl bg-primary-500/10 p-3 text-primary-600">
-              <Wallet size={24} />
-            </div>
-            <div>
-              <p className="text-sm text-text-muted">Total saldo {selectedAccount?.name || title}</p>
-              <p className="mt-1 text-2xl font-semibold text-text-title">{formatCurrency(totalBalance)}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <p className="text-sm text-text-muted">Rekening aktif</p>
-            <p className="mt-2 text-2xl font-semibold text-primary-600">{accounts.length}</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardContent className="space-y-4">
+          <div>
+            <p className="text-sm text-text-muted">Total saldo</p>
+            {isFirstLoad
+              ? <Skeleton className="mt-2 h-8 w-48" />
+              : <p className="mt-1 font-outfit text-3xl font-semibold tabular-nums text-text-title">{formatCurrency(totalBalance)}</p>}
+          </div>
 
-      {accountsLoading ? (
-        <LoadingSkeleton rows={2} />
-      ) : accounts.length === 0 ? (
-        <EmptyState title="Belum ada rekening tujuan" description={`Buat rekening dengan klasifikasi uang ${title} sebelum mencatat transaksi.`} />
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Transaksi {title}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
-              {accounts.map((account) => (
-                <button
-                  key={account.id}
-                  type="button"
-                  onClick={() => setSelectedAccountId(account.id)}
-                  className={`shrink-0 rounded-xl border px-4 py-2 text-left text-sm transition-colors ${
-                    String(selectedAccount?.id) === String(account.id)
-                      ? 'border-primary-500 bg-primary-500 text-white shadow-sm shadow-primary-500/20'
-                      : 'border-border-subtle bg-surface-panel text-text-body hover:border-primary-500 hover:text-primary-600'
-                  }`}
-                >
-                  <span className="block font-semibold">{account.name}</span>
-                  <span className="block text-xs opacity-80">{formatCurrency(account.current_balance)}</span>
-                </button>
-              ))}
+          {/* One chip per account: picking one scopes the list below to it. */}
+          {isFirstLoad ? <ChipRowSkeleton count={2} /> : accounts.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto">
+              {accounts.map((account) => {
+                const isSelected = String(selectedAccount?.id) === String(account.id);
+
+                return (
+                  <button
+                    key={account.id}
+                    type="button"
+                    onClick={() => setSelectedAccountId(account.id)}
+                    aria-pressed={isSelected}
+                    className={cn(
+                      chipClass,
+                      isSelected
+                        ? 'border-primary-500 bg-primary-500 text-white'
+                        : 'border-border-subtle bg-surface-panel text-text-body hover:border-border-strong hover:text-primary-600',
+                    )}
+                  >
+                    <span className="block font-semibold">{account.name}</span>
+                    <span className="block text-xs tabular-nums">{formatCurrency(account.current_balance)}</span>
+                  </button>
+                );
+              })}
             </div>
-            {resource.isLoading ? (
-              <LoadingSkeleton rows={5} />
-            ) : resource.error ? (
-              <ErrorState message={resource.error} onRetry={resource.load} />
-            ) : filteredRows.length === 0 ? (
-              <EmptyState title={emptyTitle} description={emptyDescription} action={<Button onClick={openCreate}>{createLabel}</Button>} />
-            ) : (
-              <>
-                <MobileTransactionList rows={filteredRows} onAction={setActionTarget} />
-                <div className="hidden md:block">
-                  <DataTable columns={columns} rows={filteredRows} onEdit={openEdit} onDelete={setDeleting} />
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+          )}
+        </CardContent>
+      </Card>
+
+      <div key={isFirstLoad || resource.isLoading ? 'loading' : 'ready'} className="page-fade-in">
+      {isFirstLoad || resource.isLoading ? (
+        <TransactionsSkeleton />
+      ) : accounts.length === 0 ? (
+        <EmptyState title="Belum ada rekening tujuan" description={`Buat rekening dengan klasifikasi ${title} di menu Rekening sebelum mencatat transaksi.`} />
+      ) : resource.error ? (
+        <ErrorState message={resource.error} onRetry={() => resource.load()} />
+      ) : filteredRows.length === 0 ? (
+        <EmptyState title={emptyTitle} description={emptyDescription} action={<Button onClick={openCreate}>{createLabel}</Button>} />
+      ) : (
+        <>
+          <MobileTransactionList rows={filteredRows} onAction={setDetailTarget} />
+          <div className="hidden md:block">
+            <DataTable columns={columns} rows={filteredRows} onEdit={openEdit} onDelete={openDelete} />
+          </div>
+        </>
       )}
+      </div>
 
       <Modal
         open={isFormOpen}
@@ -385,7 +380,7 @@ export default function AccountPurposeTransactionsPage({
         title={editing ? `Edit transaksi ${title}` : createLabel}
         fullScreenOnMobile={true}
       >
-        <Suspense fallback={<LoadingSkeleton rows={4} />}>
+        <Suspense fallback={<FormSkeleton fields={4} />}>
           <ResourceForm
             schema={transactionSchema}
             fields={fields}
@@ -401,28 +396,29 @@ export default function AccountPurposeTransactionsPage({
       <Modal
         open={Boolean(detailTarget)}
         onClose={() => setDetailTarget(null)}
-        title="Detail transaksi"
+        title={detailTarget ? getNeedLabel(detailTarget) : 'Detail transaksi'}
+        footer={detailTarget && (
+          <DetailActions onEdit={() => openEdit(detailTarget)} onDelete={() => openDelete(detailTarget)} />
+        )}
       >
         {detailTarget && (
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between gap-4"><span className="text-text-muted">Rekening</span><span className="font-semibold text-text-title">{detailTarget.account?.name || '-'}</span></div>
-            <div className="flex justify-between gap-4"><span className="text-text-muted">Kategori</span><span className="font-semibold text-text-title">{detailTarget.category?.name || '-'}</span></div>
-            <div className="flex justify-between gap-4"><span className="text-text-muted">Nominal</span><span className={`font-semibold ${amountClass(detailTarget)}`}>{signedAmount(detailTarget)}</span></div>
-            <div className="flex justify-between gap-4"><span className="text-text-muted">Tanggal</span><span className="font-semibold text-text-title">{formatDate(detailTarget.transaction_date)}</span></div>
-          </div>
+          <dl className="divide-y divide-border-subtle text-sm">
+            {[
+              ['Rekening', detailTarget.account?.name || '-'],
+              ['Kategori', detailTarget.category?.name || '-'],
+              ['Tanggal', formatDate(detailTarget.transaction_date)],
+            ].map(([label, value]) => (
+              <div key={label} className="flex justify-between gap-4 py-2.5">
+                <dt className="text-text-muted">{label}</dt>
+                <dd className="font-semibold text-text-title">{value}</dd>
+              </div>
+            ))}
+            <div className="flex justify-between gap-4 py-2.5">
+              <dt className="text-text-muted">Nominal</dt>
+              <dd className={cn('font-semibold tabular-nums', amountClass(detailTarget))}>{signedAmount(detailTarget)}</dd>
+            </div>
+          </dl>
         )}
-      </Modal>
-
-      <Modal
-        open={Boolean(actionTarget)}
-        onClose={() => setActionTarget(null)}
-        title="Aksi transaksi"
-      >
-        <div className="grid gap-3">
-          <Button variant="secondary" onClick={() => openDetail(actionTarget)}><Eye size={18} className="mr-2" />Detail</Button>
-          <Button variant="secondary" onClick={() => openEdit(actionTarget)}><Pencil size={18} className="mr-2" />Edit</Button>
-          <Button variant="danger" onClick={() => openDelete(actionTarget)}><Trash2 size={18} className="mr-2" />Hapus</Button>
-        </div>
       </Modal>
 
       <ConfirmDialog

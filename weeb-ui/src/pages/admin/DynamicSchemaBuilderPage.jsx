@@ -9,7 +9,7 @@ import Input from '../../components/ui/Input';
 import SelectBox from '../../components/ui/SelectBox';
 import EmptyState from '../../components/feedback/EmptyState';
 import ErrorState from '../../components/feedback/ErrorState';
-import LoadingSkeleton from '../../components/feedback/LoadingSkeleton';
+import { ColumnListSkeleton, EntityListSkeleton } from './AdminSkeletons';
 import Modal, { ConfirmDialog } from '../../components/forms/Modal';
 import DynamicIcon from '../../components/dynamic/DynamicIcon';
 import { 
@@ -427,14 +427,11 @@ export default function DynamicSchemaBuilderPage() {
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-3 md:space-y-4">
       {/* Header */}
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-text-title md:text-3xl">Skema Dinamis (CRUD Builder)</h1>
-          <p className="mt-2 text-sm leading-6 text-text-muted">
-            Bangun modul data dan form CRUD kustom secara instan tanpa menyentuh kode.
-          </p>
+          <h1 className="text-xl font-semibold text-text-title md:text-2xl">Skema Dinamis</h1>
         </div>
         <div className="flex items-center gap-3">
           <Button onClick={() => navigate('/admin/menu')} variant="secondary">
@@ -450,9 +447,9 @@ export default function DynamicSchemaBuilderPage() {
 
       {/* Main Entities List */}
       {isLoading ? (
-        <LoadingSkeleton rows={4} />
+        <EntityListSkeleton />
       ) : error ? (
-        <ErrorState message={error} onRetry={loadEntities} />
+        <ErrorState message={error} onRetry={() => loadEntities()} />
       ) : entities.length === 0 ? (
         <EmptyState
           title="Belum ada entitas dinamis"
@@ -460,7 +457,7 @@ export default function DynamicSchemaBuilderPage() {
           action={<Button onClick={openCreateModal}><Plus size={18} className="mr-2" />Buat Entitas Baru</Button>}
         />
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="grid gap-3 md:gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           {/* Left Column: Entities Table */}
           <Card className="h-fit">
             <CardHeader>
@@ -478,12 +475,12 @@ export default function DynamicSchemaBuilderPage() {
                       key={entity.id}
                       onClick={() => setSelectedEntityForFields(entity)}
                       className={cn(
-                        'flex cursor-pointer items-center justify-between gap-4 p-4 transition-all hover:bg-surface-100/60',
-                        isSelected && 'border-l-4 border-l-primary-500 bg-primary-500/5'
+                        'flex cursor-pointer items-center justify-between gap-4 p-4 transition-all hover:bg-surface-100',
+                        isSelected && 'border-l-4 border-l-primary-500 bg-primary-soft'
                       )}
                     >
                       <div className="flex min-w-0 items-center gap-3.5">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary-500/10 text-primary-600">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary-soft text-primary-600">
                           <DynamicIcon name={entity.icon} size={22} />
                         </div>
                         <div className="min-w-0">
@@ -492,7 +489,7 @@ export default function DynamicSchemaBuilderPage() {
                             <span className="text-xs font-mono text-text-muted">/{entity.slug}</span>
                           </div>
                           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-text-muted">
-                            <span className={cn('rounded-full px-2 py-0.5 font-medium', isBound ? 'bg-amber-500/10 text-amber-600' : 'bg-emerald-500/10 text-emerald-600')}>
+                            <span className={cn('rounded-full px-2 py-0.5 font-medium', isBound ? 'bg-warning-soft text-amber-600' : 'bg-success-soft text-emerald-600')}>
                               {isBound ? `Tabel: ${entity.source_schema || 'public'}.${entity.source_table}` : 'Dokumen JSON'}
                             </span>
                             <span>•</span>
@@ -509,7 +506,7 @@ export default function DynamicSchemaBuilderPage() {
                           className={cn(
                             'rounded-full px-2.5 py-1 text-xs font-semibold transition-all',
                             entity.is_active
-                              ? 'bg-success-base/15 text-success-base hover:bg-success-base/25'
+                              ? 'bg-success-soft text-success-base hover:bg-success-soft'
                               : 'bg-surface-200 text-text-muted hover:bg-surface-300'
                           )}
                           title="Klik untuk mengubah status aktif"
@@ -560,7 +557,7 @@ export default function DynamicSchemaBuilderPage() {
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-border-subtle text-left text-sm">
-                        <thead className="bg-surface-100/70 text-xs font-semibold uppercase tracking-wider text-text-muted">
+                        <thead className="bg-surface-100 text-xs font-semibold text-text-muted">
                           <tr>
                             <th className="px-4 py-3">Label / Kunci</th>
                             <th className="px-4 py-3">Tipe</th>
@@ -582,8 +579,8 @@ export default function DynamicSchemaBuilderPage() {
                               </td>
                               <td className="px-4 py-3 text-xs">
                                 <div className="flex flex-wrap gap-1">
-                                  {f.is_required && <span className="rounded bg-danger-base/10 px-1.5 py-0.5 text-danger-base">Wajib</span>}
-                                  {f.is_unique && <span className="rounded bg-primary-500/10 px-1.5 py-0.5 text-primary-600">Unik</span>}
+                                  {f.is_required && <span className="rounded bg-danger-soft px-1.5 py-0.5 text-danger-base">Wajib</span>}
+                                  {f.is_unique && <span className="rounded bg-primary-soft px-1.5 py-0.5 text-primary-600">Unik</span>}
                                   {!f.list_visible && <span className="rounded bg-surface-200 px-1.5 py-0.5 text-text-muted">Sembunyi di Tabel</span>}
                                 </div>
                               </td>
@@ -598,7 +595,7 @@ export default function DynamicSchemaBuilderPage() {
                                   </button>
                                   <button
                                     onClick={() => setDeletingField(f)}
-                                    className="rounded-lg p-1.5 text-danger-base hover:bg-danger-base/10"
+                                    className="rounded-lg p-1.5 text-danger-base hover:bg-danger-soft"
                                     aria-label="Hapus field"
                                   >
                                     <Trash2 size={15} />
@@ -615,7 +612,7 @@ export default function DynamicSchemaBuilderPage() {
               </Card>
             ) : (
               <Card className="flex min-h-[300px] flex-col items-center justify-center p-6 text-center text-text-muted">
-                <Layers size={36} className="mb-3 text-text-muted/60" />
+                <Layers size={36} className="mb-3 text-text-muted" />
                 <p className="font-semibold text-text-title">Pilih entitas dari daftar</p>
                 <p className="mt-1 text-sm">Klik salah satu entitas di sebelah kiri untuk melihat dan mengedit fieldnya.</p>
               </Card>
@@ -639,7 +636,7 @@ export default function DynamicSchemaBuilderPage() {
                 onClick={() => setEntityMode('document')}
                 className={cn(
                   'flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all',
-                  entityMode === 'document' ? 'bg-surface-panel text-primary-600 shadow-sm' : 'text-text-muted hover:text-text-body'
+                  entityMode === 'document' ? 'bg-surface-panel text-primary-600' : 'text-text-muted hover:text-text-body'
                 )}
               >
                 Mode Dokumen (Baru)
@@ -649,7 +646,7 @@ export default function DynamicSchemaBuilderPage() {
                 onClick={() => setEntityMode('bound')}
                 className={cn(
                   'flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all',
-                  entityMode === 'bound' ? 'bg-surface-panel text-primary-600 shadow-sm' : 'text-text-muted hover:text-text-body'
+                  entityMode === 'bound' ? 'bg-surface-panel text-primary-600' : 'text-text-muted hover:text-text-body'
                 )}
               >
                 Mode Terikat Tabel DB
@@ -658,8 +655,8 @@ export default function DynamicSchemaBuilderPage() {
           )}
 
           {entityMode === 'bound' && !editingEntity && (
-            <div className="space-y-4 rounded-2xl border border-border-subtle bg-surface-100/50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">Pilih Tabel Sumber Database</p>
+            <div className="space-y-4 rounded-2xl border border-border-subtle bg-surface-100 p-4">
+              <p className="text-xs font-semibold text-text-muted">Pilih Tabel Sumber Database</p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <SelectBox
                   label="Schema Database"
@@ -680,7 +677,7 @@ export default function DynamicSchemaBuilderPage() {
                 <div className="mt-3">
                   <p className="mb-2 text-xs font-medium text-text-body">Pilih Kolom yang Dilibatkan:</p>
                   {isIntrospecting ? (
-                    <LoadingSkeleton rows={3} />
+                    <ColumnListSkeleton />
                   ) : (
                     <div className="max-h-48 overflow-y-auto rounded-xl border border-border-subtle bg-surface-panel p-2">
                       {tableColumns.map((col) => {
@@ -701,7 +698,7 @@ export default function DynamicSchemaBuilderPage() {
                                 className="rounded text-primary-600"
                               />
                               <span className="font-mono text-sm font-medium text-text-title">{col.name}</span>
-                              {isPk && <span className="rounded bg-primary-500/10 px-1.5 py-0.2 text-[11px] font-semibold text-primary-600">PK (Terkunci)</span>}
+                              {isPk && <span className="rounded bg-primary-soft px-1.5 py-0.2 text-[11px] font-semibold text-primary-600">PK (Terkunci)</span>}
                             </div>
                             <span className="text-xs text-text-muted">{col.type} → {col.inferred_type}</span>
                           </label>
@@ -714,7 +711,7 @@ export default function DynamicSchemaBuilderPage() {
             </div>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Input
               label="Nama Entitas (Bentuk Tunggal)"
               placeholder="Contoh: Kategori Produk"
@@ -765,7 +762,7 @@ export default function DynamicSchemaBuilderPage() {
                     className={cn(
                       'flex items-center justify-center rounded-xl p-2.5 transition-all',
                       isSelected
-                        ? 'bg-primary-500 text-white shadow-md shadow-primary-500/20'
+                        ? 'bg-primary-500 text-white'
                         : 'bg-surface-100 text-text-muted hover:bg-surface-200 hover:text-text-title'
                     )}
                     title={icName}
@@ -785,7 +782,7 @@ export default function DynamicSchemaBuilderPage() {
               {FEATURE_LIST.map((feat) => {
                 const isChecked = features.includes(feat.key);
                 return (
-                  <label key={feat.key} className="flex cursor-pointer items-center gap-2 rounded-xl border border-border-subtle bg-surface-100/60 p-2.5 text-xs font-medium hover:border-primary-400">
+                  <label key={feat.key} className="flex cursor-pointer items-center gap-2 rounded-xl border border-border-subtle bg-surface-100 p-2.5 text-xs font-medium hover:border-primary-400">
                     <input
                       type="checkbox"
                       checked={isChecked}
@@ -819,12 +816,12 @@ export default function DynamicSchemaBuilderPage() {
       >
         <form onSubmit={saveField} className="space-y-4">
           {editingField && (
-            <div className="rounded-xl border border-warning-base/30 bg-warning-base/10 p-3 text-xs text-text-body">
+            <div className="rounded-xl border border-warning-line bg-warning-soft p-3 text-xs text-text-body">
               <strong>Catatan:</strong> Kunci field (<code className="font-mono font-bold">{editingField.key}</code>) dan Tipe data (<code className="font-mono font-bold">{editingField.type}</code>) tidak dapat diubah setelah dibuat untuk menjaga integritas data yang sudah tersimpan.
             </div>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Input
               label="Label Field"
               placeholder="Contoh: Nomor Telepon"

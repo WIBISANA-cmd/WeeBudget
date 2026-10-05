@@ -24,12 +24,12 @@ function AuthField({ label, icon: Icon, className, ...props }) {
 function FeatureItem({ icon: Icon, title, desc }) {
   return (
     <div className="flex items-start gap-4 transition-transform duration-300 hover:translate-x-2">
-      <div className="rounded-xl bg-white/10 p-3 text-white backdrop-blur-sm">
+      <div className="rounded-xl bg-blue-500 p-3 text-white">
         <Icon className="h-6 w-6" />
       </div>
       <div>
         <h3 className="text-lg font-semibold text-white">{title}</h3>
-        <p className="mt-1 text-sm text-blue-100/70">{desc}</p>
+        <p className="mt-1 text-sm text-blue-100">{desc}</p>
       </div>
     </div>
   );
@@ -52,21 +52,19 @@ export default function AuthShell({
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-bg-base px-4 py-6 font-sans text-text-body md:px-6 md:py-8">
-      <div className="pointer-events-none absolute left-[-10%] top-[-10%] h-[40rem] w-[40rem] rounded-full bg-primary-500/10 blur-[120px]" />
-      <div className="pointer-events-none absolute bottom-[-10%] right-[-10%] h-[40rem] w-[40rem] rounded-full bg-primary-600/10 blur-[120px]" />
 
       <div className="fixed right-4 top-4 z-20">
-        <ThemeToggle showLabel />
+        <ThemeToggle />
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-[calc(100vh-3rem)] max-w-6xl items-center justify-center">
-        <section className="grid w-full overflow-hidden rounded-[28px] border border-border-subtle bg-surface-panel shadow-card backdrop-blur-xl md:grid-cols-[1fr_0.95fr]">
+        <section className="grid w-full overflow-hidden rounded-2xl border border-border-subtle bg-surface-panel shadow-card md:grid-cols-[1fr_0.95fr]">
           <div className="flex flex-col justify-center p-8 sm:p-10 lg:p-14">
             <div className="mb-10 flex items-center gap-3">
-              <div className="rounded-xl border border-border-strong bg-primary-500/10 p-3 shadow-glow-primary">
+              <div className="rounded-xl border border-border-strong bg-primary-soft p-3">
                 <Wallet className="h-8 w-8 text-primary-500" />
               </div>
-              <span className="text-2xl font-bold tracking-wide text-text-title">WeeB</span>
+              <span className="text-2xl font-bold text-text-title">WeeB</span>
             </div>
 
             <div>
@@ -77,7 +75,7 @@ export default function AuthShell({
                 {children}
 
                 {error && (
-                  <div className="rounded-xl border border-danger-base/20 bg-danger-base/10 px-4 py-3 text-sm text-danger-base">
+                  <div className="rounded-xl border border-danger-line bg-danger-soft px-4 py-3 text-sm text-danger-base">
                     {error}
                   </div>
                 )}
@@ -85,7 +83,7 @@ export default function AuthShell({
                 <button
                   type="submit"
                   disabled={submitLoading}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-500 px-4 py-3.5 font-medium text-white shadow-glow-primary transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-500 px-4 py-3.5 font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {submitLoading ? 'Memproses...' : submitLabel}
                   {!submitLoading && <ArrowRight className="h-4 w-4" />}
@@ -117,18 +115,17 @@ export default function AuthShell({
           </div>
 
           {/* Brand panel: stays blue in both themes, so its own text keeps fixed colors. */}
-          <div className="relative hidden overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-800 p-8 sm:p-10 lg:flex lg:flex-col lg:justify-between lg:p-14">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.22),_transparent_48%)] opacity-30" />
-            <div className="absolute -bottom-10 -right-10 h-64 w-64 rounded-full border border-white/20" />
-            <div className="absolute -bottom-20 -right-20 h-96 w-96 rounded-full border border-white/10" />
+          <div className="relative hidden overflow-hidden bg-blue-600 p-8 sm:p-10 lg:flex lg:flex-col lg:justify-between lg:p-14">
+            <div className="absolute -bottom-10 -right-10 h-64 w-64 rounded-full border border-blue-500" />
+            <div className="absolute -bottom-20 -right-20 h-96 w-96 rounded-full border border-blue-500" />
 
             <div className="relative z-10">
-              <span className="mb-4 block text-sm font-semibold uppercase tracking-wider text-blue-200">
+              <span className="mb-4 block text-sm font-semibold text-blue-200">
                 WeeB Finance Platform
               </span>
               <h2 className="text-3xl font-bold leading-snug text-white">
                 Dashboard, planner, tabungan, dan dana darurat dalam{' '}
-                <span className="bg-gradient-to-r from-blue-200 to-white bg-clip-text text-transparent">
+                <span className="text-blue-200">
                   satu ekosistem.
                 </span>
               </h2>
@@ -152,8 +149,8 @@ export default function AuthShell({
               </div>
             </div>
 
-            <div className="relative z-10 mt-12 border-t border-white/20 pt-6">
-              <p className="text-xs leading-relaxed text-blue-100/70">
+            <div className="relative z-10 mt-12 border-t border-blue-500 pt-6">
+              <p className="text-xs leading-relaxed text-blue-100">
                 {isLogin
                   ? 'Login Google memakai OAuth resmi. Token API disimpan aman di browser dan bisa dihapus kapan saja lewat tombol keluar.'
                   : 'Daftar dengan email atau Google untuk mulai memakai seluruh fitur keuangan WeeB dalam satu akun yang aman.'}

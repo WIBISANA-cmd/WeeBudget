@@ -133,9 +133,9 @@ export default function SelectBox({
         onClick={() => (isOpen ? closeDropdown() : openDropdown())}
         onKeyDown={handleKeyDown}
         className={cn(
-          'flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border bg-surface-panel px-4 py-3 text-left text-sm shadow-sm shadow-card-soft transition-all duration-200',
-          'hover:border-primary-400 hover:shadow-md hover:shadow-primary-500/10 focus-visible:border-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20',
-          error ? 'border-danger-base focus-visible:border-danger-base focus-visible:ring-danger-base/20' : 'border-border-subtle',
+          'flex h-11 w-full items-center justify-between gap-3 rounded-xl border bg-surface-panel px-3.5 text-left text-sm transition-colors duration-150',
+          'hover:border-border-strong focus-visible:border-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong',
+          error ? 'border-danger-base focus-visible:border-danger-base focus-visible:ring-danger-line' : 'border-border-subtle',
         )}
       >
         <span className={cn('truncate', selectedOption ? 'font-medium text-text-title' : 'text-text-muted')}>
@@ -148,7 +148,7 @@ export default function SelectBox({
           id={listboxId}
           role="listbox"
           style={panelStyle}
-          className="custom-select-popover fixed z-[9999] overflow-y-auto rounded-xl border border-border-strong bg-surface-panel p-1.5 shadow-2xl shadow-slate-950/25 outline-none"
+          className="custom-select-popover fixed z-[9999] overflow-y-auto rounded-xl border border-border-subtle bg-surface-panel p-1.5 shadow-pop outline-none"
         >
           {options.length === 0 ? (
             <div className="px-3 py-2 text-sm text-text-muted">Tidak ada opsi</div>
@@ -167,9 +167,9 @@ export default function SelectBox({
                   onClick={() => chooseOption(option)}
                   className={cn(
                     'flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors duration-150',
-                    isSelected && 'bg-[rgb(15,60,113)] text-white',
-                    !isSelected && isActive && 'bg-primary-500/10 text-primary-600',
-                    !isSelected && !isActive && 'text-text-body hover:bg-primary-500/10 hover:text-primary-600',
+                    isSelected && 'bg-primary-500 text-white',
+                    !isSelected && isActive && 'bg-primary-soft text-primary-600',
+                    !isSelected && !isActive && 'text-text-body hover:bg-primary-soft hover:text-primary-600',
                   )}
                 >
                   <span className="min-w-0 truncate font-medium">{option.label}</span>

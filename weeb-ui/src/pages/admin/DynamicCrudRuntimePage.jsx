@@ -10,7 +10,7 @@ import SelectBox from '../../components/ui/SelectBox';
 import StatusBadge from '../../components/feedback/StatusBadge';
 import EmptyState from '../../components/feedback/EmptyState';
 import ErrorState from '../../components/feedback/ErrorState';
-import LoadingSkeleton from '../../components/feedback/LoadingSkeleton';
+import { DynamicCrudSkeleton, RecordsTableSkeleton } from './AdminSkeletons';
 import Modal, { ConfirmDialog } from '../../components/forms/Modal';
 import DynamicIcon from '../../components/dynamic/DynamicIcon';
 import { 
@@ -266,11 +266,7 @@ export default function DynamicCrudRuntimePage() {
   };
 
   if (isLoadingSchema) {
-    return (
-      <div className="space-y-4">
-        <LoadingSkeleton rows={5} />
-      </div>
-    );
+    return <DynamicCrudSkeleton />;
   }
 
   if (error && !schema) {
@@ -278,7 +274,7 @@ export default function DynamicCrudRuntimePage() {
       <ErrorState
         title="Gagal Memuat Entitas"
         message={error}
-        onRetry={loadSchema}
+        onRetry={() => loadSchema()}
       />
     );
   }
@@ -288,18 +284,18 @@ export default function DynamicCrudRuntimePage() {
   const filterableFields = (schema?.fields || []).filter((f) => ['select', 'boolean'].includes(f.type));
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-3 md:space-y-4">
       {/* Header */}
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-primary-600">
             <DynamicIcon name={schema?.icon} size={24} />
-            <h1 className="text-2xl font-bold text-text-title md:text-3xl">
+            <h1 className="text-xl font-semibold text-text-title md:text-2xl">
               {schema?.label_plural || schema?.label}
             </h1>
           </div>
           {schema?.description && (
-            <p className="mt-2 text-sm leading-6 text-text-muted">{schema.description}</p>
+            <p className="mt-1 text-sm text-text-muted">{schema.description}</p>
           )}
         </div>
 
@@ -358,7 +354,7 @@ export default function DynamicCrudRuntimePage() {
       </header>
 
       {/* Search & Filters Bar */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-border-subtle bg-surface-panel p-4 shadow-sm shadow-card-soft md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-3 rounded-2xl border border-border-subtle bg-surface-panel p-4 md:flex-row md:items-center md:justify-between">
         {schema?.features?.includes('search') ? (
           <form onSubmit={handleSearchSubmit} className="flex min-w-[280px] flex-1 items-center gap-2">
             <div className="relative flex-1">
@@ -368,7 +364,7 @@ export default function DynamicCrudRuntimePage() {
                 placeholder={`Cari di ${schema?.label_plural}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-xl border border-border-subtle bg-surface-panel py-2 pl-9 pr-3 text-sm text-text-title shadow-sm placeholder:text-text-muted focus:border-primary-500 focus:outline-none"
+                className="w-full rounded-xl border border-border-subtle bg-surface-panel py-2 pl-9 pr-3 text-sm text-text-title placeholder:text-text-muted focus:border-primary-500 focus:outline-none"
               />
             </div>
             <Button type="submit" size="sm" variant="secondary">Cari</Button>
@@ -404,7 +400,7 @@ export default function DynamicCrudRuntimePage() {
 
       {/* Main Records Table */}
       {isLoadingData ? (
-        <LoadingSkeleton rows={6} />
+        <RecordsTableSkeleton fields={listFields} hasActions={Boolean(schema?.features?.includes('edit') || schema?.features?.includes('delete'))} />
       ) : records.length === 0 ? (
         <EmptyState
           title={`Belum ada data ${schema?.label_plural}`}
@@ -412,10 +408,10 @@ export default function DynamicCrudRuntimePage() {
           action={schema?.features?.includes('create') && <Button onClick={openCreateModal}><Plus size={18} className="mr-2" />Tambah {schema?.label}</Button>}
         />
       ) : (
-        <div className="overflow-hidden rounded-[28px] border border-border-subtle bg-surface-panel shadow-[0_24px_60px_-42px_rgba(15,23,42,0.45)]">
+        <div className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-panel">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-border-subtle text-left text-sm">
-              <thead className="bg-surface-100/90 text-xs font-semibold uppercase tracking-wider text-text-muted">
+              <thead className="bg-surface-100 text-xs font-semibold text-text-muted">
                 <tr>
                   <th className="px-5 py-3.5 w-16">#</th>
                   {listFields.map((col) => (
@@ -468,7 +464,7 @@ export default function DynamicCrudRuntimePage() {
                             {schema?.features?.includes('delete') && (
                               <button
                                 onClick={() => setDeletingRecord(row)}
-                                className="rounded-xl border border-border-subtle p-2 text-danger-base hover:border-danger-base hover:bg-danger-base/10"
+                                className="rounded-xl border border-border-subtle p-2 text-danger-base hover:border-danger-base hover:bg-danger-soft"
                                 aria-label="Hapus baris"
                                 title="Hapus"
                               >
@@ -565,7 +561,7 @@ export default function DynamicCrudRuntimePage() {
               type="file"
               accept=".csv,text/csv"
               onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-              className="w-full rounded-xl border border-border-subtle bg-surface-panel p-2.5 text-sm text-text-title file:mr-4 file:rounded-lg file:border-0 file:bg-primary-500/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary-600"
+              className="w-full rounded-xl border border-border-subtle bg-surface-panel p-2.5 text-sm text-text-title file:mr-4 file:rounded-lg file:border-0 file:bg-primary-soft file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary-600"
             />
           </div>
 
@@ -581,7 +577,7 @@ export default function DynamicCrudRuntimePage() {
           </div>
 
           {importResult && (
-            <div className={cn('rounded-xl p-4 text-xs', importResult.failed > 0 ? 'bg-warning-base/10 border border-warning-base/30' : 'bg-success-base/10 border border-success-base/30')}>
+            <div className={cn('rounded-xl p-4 text-xs', importResult.failed > 0 ? 'bg-warning-soft border border-warning-line' : 'bg-success-soft border border-success-line')}>
               <p className="font-semibold text-text-title">
                 Hasil Impor: {importResult.imported} berhasil, {importResult.failed} gagal.
               </p>
@@ -650,7 +646,7 @@ function renderCellContent(field, value, relationOptions) {
         {value.map((id) => {
           const matched = targetOpts.find((o) => String(o.value) === String(id));
           return (
-            <span key={id} className="rounded-full bg-primary-500/10 px-2 py-0.5 text-xs text-primary-700">
+            <span key={id} className="rounded-full bg-primary-soft px-2 py-0.5 text-xs text-primary-700">
               {matched?.label || id}
             </span>
           );
@@ -716,7 +712,7 @@ function renderFormField(field, value, onChange, error, relationOptions) {
           onChange={(e) => onChange(field.key, e.target.value)}
           placeholder={field.placeholder || ''}
           className={cn(
-            'w-full rounded-xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm text-text-title shadow-sm focus:border-primary-500 focus:outline-none',
+            'w-full rounded-xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm text-text-title focus:border-primary-500 focus:outline-none',
             error && 'border-danger-base'
           )}
         />
@@ -736,7 +732,7 @@ function renderFormField(field, value, onChange, error, relationOptions) {
           onChange={(e) => onChange(field.key, e.target.value)}
           placeholder={field.placeholder || 'HTML / Teks terformat...'}
           className={cn(
-            'w-full font-mono rounded-xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm text-text-title shadow-sm focus:border-primary-500 focus:outline-none',
+            'w-full font-mono rounded-xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm text-text-title focus:border-primary-500 focus:outline-none',
             error && 'border-danger-base'
           )}
         />
@@ -749,7 +745,7 @@ function renderFormField(field, value, onChange, error, relationOptions) {
   if (field.type === 'boolean') {
     return (
       <div className="flex flex-col gap-1.5">
-        <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border-subtle bg-surface-100/60 p-3">
+        <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border-subtle bg-surface-100 p-3">
           <input
             type="checkbox"
             checked={Boolean(value)}
@@ -810,7 +806,7 @@ function renderFormField(field, value, onChange, error, relationOptions) {
                 className={cn(
                   'rounded-full px-3 py-1 text-xs font-medium transition-all',
                   isSelected
-                    ? 'bg-primary-500 text-white shadow-sm'
+                    ? 'bg-primary-500 text-white'
                     : 'bg-surface-100 text-text-muted hover:bg-surface-200 hover:text-text-title'
                 )}
               >
@@ -866,7 +862,7 @@ function renderFormField(field, value, onChange, error, relationOptions) {
                 className={cn(
                   'rounded-full px-3 py-1 text-xs font-medium transition-all',
                   isSelected
-                    ? 'bg-primary-500 text-white shadow-sm'
+                    ? 'bg-primary-500 text-white'
                     : 'bg-surface-100 text-text-muted hover:bg-surface-200 hover:text-text-title'
                 )}
               >

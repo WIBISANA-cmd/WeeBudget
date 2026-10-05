@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
+import { Card, CardContent } from '../components/ui/Card';
+import PageHeader from '../components/layout/PageHeader';
 import ResourceForm from '../components/forms/ResourceForm';
-import { Shimmer } from '../components/feedback/LoadingSkeleton';
+import { FormSkeleton } from '../components/feedback/LoadingSkeleton';
 import ErrorState from '../components/feedback/ErrorState';
 import { apiGet, apiPut } from '../api/http';
 import { forgetCurrentUser } from '../hooks/useCurrentUser';
@@ -17,6 +18,29 @@ const schema = z.object({
   transaction_reminder_enabled: z.enum(['1', '0']).optional(),
   transaction_reminder_time: z.string().optional(),
 });
+
+const fields = [
+  { name: 'name', label: 'Nama panggilan' },
+  { name: 'monthly_income_estimate', label: 'Penghasilan bulanan', type: 'number', valueAsNumber: true },
+  { name: 'payday_day', label: 'Tanggal gajian', type: 'number', valueAsNumber: true },
+  { name: 'daily_safe_amount_target', label: 'Target aman harian', type: 'number', valueAsNumber: true },
+  { name: 'account_mode', label: 'Tipe penggunaan aplikasi', type: 'select', options: [{ label: 'Berdua', value: 'couple' }, { label: 'Pribadi', value: 'personal' }] },
+  {
+    name: 'transaction_reminder_enabled',
+    label: 'Pengingat pencatatan transaksi',
+    type: 'select',
+    options: [
+      { label: 'Aktif', value: '1' },
+      { label: 'Nonaktif', value: '0' },
+    ],
+  },
+  {
+    name: 'transaction_reminder_time',
+    label: 'Jam pengingat',
+    type: 'time',
+    showWhen: { transaction_reminder_enabled: '1' },
+  },
+];
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
@@ -67,63 +91,28 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <header>
-        <h1 className="text-3xl font-bold text-text-title">Profil & Pengaturan</h1>
-        <p className="mt-2 text-text-muted">Atur data dasar yang dipakai WeeB untuk menghitung kondisi finansial.</p>
-      </header>
+    <div className="max-w-3xl space-y-3 md:space-y-4">
+      <PageHeader title="Profil" />
       {error && <ErrorState message={error} />}
       <Card>
-        <CardHeader>
-          <CardTitle>Financial profile</CardTitle>
-          <CardDescription>Ubah gaji, tanggal gajian, dan target aman harian.</CardDescription>
-        </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="space-y-3">
-              <Shimmer className="h-12" />
-              <Shimmer className="h-12" />
-              <Shimmer className="h-12" />
-              <Shimmer className="h-12" />
-            </div>
-          ) : (
-          <ResourceForm
-            schema={schema}
-            isSaving={isSaving}
-            submitLabel="Simpan pengaturan"
-            defaultValues={{
-              name: profile?.name || '',
-              monthly_income_estimate: profile?.profile?.monthly_income_estimate || '',
-              payday_day: profile?.profile?.payday_day || '',
-              daily_safe_amount_target: profile?.profile?.daily_safe_amount_target || '',
-              account_mode: profile?.profile?.account_mode || 'couple',
-              transaction_reminder_enabled: profile?.profile?.transaction_reminder_enabled ? '1' : '0',
-              transaction_reminder_time: profile?.profile?.transaction_reminder_time || '20:00',
-            }}
-            fields={[
-              { name: 'name', label: 'Nama panggilan' },
-              { name: 'monthly_income_estimate', label: 'Penghasilan bulanan', type: 'number', valueAsNumber: true },
-              { name: 'payday_day', label: 'Tanggal gajian', type: 'number', valueAsNumber: true },
-              { name: 'daily_safe_amount_target', label: 'Target aman harian', type: 'number', valueAsNumber: true },
-              { name: 'account_mode', label: 'Tipe penggunaan aplikasi', type: 'select', options: [{ label: 'Berdua', value: 'couple' }, { label: 'Pribadi', value: 'personal' }] },
-              {
-                name: 'transaction_reminder_enabled',
-                label: 'Pengingat pencatatan transaksi',
-                type: 'select',
-                options: [
-                  { label: 'Aktif', value: '1' },
-                  { label: 'Nonaktif', value: '0' },
-                ],
-              },
-              {
-                name: 'transaction_reminder_time',
-                label: 'Jam pengingat',
-                type: 'time',
-                showWhen: { transaction_reminder_enabled: '1' },
-              },
-            ]}
-            onSubmit={submit}
-          />
+          {isLoading ? <FormSkeleton fields={fields.length} /> : (
+            <ResourceForm
+              schema={schema}
+              isSaving={isSaving}
+              submitLabel="Simpan pengaturan"
+              defaultValues={{
+                name: profile?.name || '',
+                monthly_income_estimate: profile?.profile?.monthly_income_estimate || '',
+                payday_day: profile?.profile?.payday_day || '',
+                daily_safe_amount_target: profile?.profile?.daily_safe_amount_target || '',
+                account_mode: profile?.profile?.account_mode || 'couple',
+                transaction_reminder_enabled: profile?.profile?.transaction_reminder_enabled ? '1' : '0',
+                transaction_reminder_time: profile?.profile?.transaction_reminder_time || '20:00',
+              }}
+              fields={fields}
+              onSubmit={submit}
+            />
           )}
         </CardContent>
       </Card>

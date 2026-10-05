@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { RefreshCw, Wallet } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { RefreshCw } from 'lucide-react';
+import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import PageHeader from '../components/layout/PageHeader';
 import ErrorState from '../components/feedback/ErrorState';
-import LoadingSkeleton from '../components/feedback/LoadingSkeleton';
+import { Skeleton } from '../components/feedback/LoadingSkeleton';
 import { apiGet, apiPut } from '../api/http';
 import { formatCurrency, formatDate } from '../lib/formatters';
 import { cn } from '../lib/utils';
@@ -34,6 +35,53 @@ const formatAmountInput = (value, { allowZero = false } = {}) => {
 };
 const formatBudgetCurrency = (value) => formatCurrency(value).replace(/^Rp/, 'Rp ');
 
+// One grid for the allocation rows and their skeleton: name, bar, amount, percent input.
+const ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_88px] items-center gap-x-4 gap-y-1 py-3 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)_minmax(0,1fr)_96px]';
+const STAT_CELLS = ['border-b md:border-b-0 md:border-r', 'border-r', ''];
+
+function PlannerSkeleton() {
+  return (
+    <>
+      <Card>
+        <div className="grid grid-cols-2 md:grid-cols-3">
+          {STAT_CELLS.map((border, index) => (
+            <div key={index} className={cn('border-border-subtle p-4', border, index === 0 && 'col-span-2 md:col-span-1')}>
+              <Skeleton className="h-3.5 w-24" />
+              <Skeleton className="mt-2 h-7 w-32" />
+              <Skeleton className="mt-2 h-3 w-36" />
+            </div>
+          ))}
+        </div>
+      </Card>
+      <Card>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-5 w-20" />
+            <Skeleton className="h-5 w-24 rounded-md" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-20 rounded-xl" />
+            <Skeleton className="h-9 w-24 rounded-xl" />
+          </div>
+        </div>
+        <div className="divide-y divide-border-subtle px-4">
+          {['w-32', 'w-20', 'w-28', 'w-24'].map((width, index) => (
+            <div key={index} className={ROW_GRID}>
+              <div>
+                <Skeleton className={cn('h-3.5', width)} />
+                <Skeleton className="mt-2 h-3 w-28" />
+              </div>
+              <Skeleton className="hidden h-1.5 w-full rounded-full md:block" />
+              <Skeleton className="col-start-1 row-start-2 h-4 w-28 md:col-start-auto md:row-start-auto md:ml-auto" />
+              <Skeleton className="row-span-2 h-10 w-full rounded-xl md:row-span-1" />
+            </div>
+          ))}
+        </div>
+      </Card>
+    </>
+  );
+}
+
 export default function BudgetPlannerPage() {
   const [baseAmount, setBaseAmount] = useState('');
   const [planner, setPlanner] = useState(null);
@@ -43,15 +91,6 @@ export default function BudgetPlannerPage() {
   const [saveMessage, setSaveMessage] = useState(null);
   const [error, setError] = useState(null);
   const [plannerInputError, setPlannerInputError] = useState(null);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia('(max-width: 767px)');
-    setIsMobile(media.matches);
-    const listener = (e) => setIsMobile(e.matches);
-    media.addEventListener('change', listener);
-    return () => media.removeEventListener('change', listener);
-  }, []);
 
   const loadPlanner = async (amount = '') => {
     const normalizedAmount = parseAmount(amount);
@@ -59,7 +98,7 @@ export default function BudgetPlannerPage() {
 
     if (!hasManualAmount) {
       setPlanner(null);
-      setPlannerInputError('Masukkan nominal dasar terlebih dahulu agar planner dihitung sesuai angka yang kamu input.');
+      setPlannerInputError('Masukkan nominal dasar dulu agar planner bisa dihitung.');
       setLoading(false);
       setError(null);
       return;
@@ -117,9 +156,6 @@ export default function BudgetPlannerPage() {
     };
   }, []);
 
-  if (isLoading && !planner) return <LoadingSkeleton rows={6} />;
-  if (error) return <ErrorState message={error} onRetry={() => loadPlanner()} />;
-
   const activePeriod = planner?.period;
   const usesActivePeriod = planner?.period_source === 'active_period';
   const customAllocationItems = (planner?.allocations || []).map((item) => {
@@ -138,12 +174,14 @@ export default function BudgetPlannerPage() {
       hasCustomPercent,
     };
   });
-  const totalCustomPercentage = customAllocationItems.reduce((sum, item) => sum + item.appliedPercent, 0);
-  const totalCustomAllocation = customAllocationItems.reduce((sum, item) => sum + item.appliedAmount, 0);
+  const totalCustomPercentage = Math.round(customAllocationItems.reduce((sum, item) => sum + item.appliedPercent, 0) * 100) / 100;
   const percentageDifference = Math.round((100 - totalCustomPercentage) * 100) / 100;
   const isPercentageBalanced = Math.abs(percentageDifference) < 0.001;
   const customNeedsAmount = customAllocationItems.find((item) => item.key === 'needs')?.appliedAmount || 0;
   const customDailySafe = Math.floor(customNeedsAmount / Math.max(planner?.days_until_payday || 1, 1));
+  const balanceLabel = isPercentageBalanced
+    ? 'Pas 100%'
+    : percentageDifference > 0 ? `Kurang ${percentageDifference}%` : `Lebih ${Math.abs(percentageDifference)}%`;
 
   const handleResetPercentage = () => {
     const resetAllocations = {};
@@ -155,7 +193,7 @@ export default function BudgetPlannerPage() {
 
   const saveCustomAllocations = async () => {
     if (!isPercentageBalanced) {
-      setSaveMessage({ type: 'error', text: 'Custom alokasi belum bisa disimpan karena total persentase harus tepat 100%.' });
+      setSaveMessage({ type: 'error', text: 'Total persentase harus tepat 100% sebelum disimpan.' });
       return;
     }
 
@@ -173,35 +211,34 @@ export default function BudgetPlannerPage() {
       const refreshedPlanner = await apiGet('/budget-planner', { base_amount: parseAmount(baseAmount) });
       setPlanner(refreshedPlanner.data);
       setCustomAllocations({});
-      setSaveMessage({ type: 'success', text: 'Custom alokasi berhasil disimpan dan sekarang menjadi rekomendasi aktif.' });
+      setSaveMessage({ type: 'success', text: 'Alokasi tersimpan dan sekarang menjadi rekomendasi aktif.' });
     } catch (err) {
       setSaveMessage({
         type: 'error',
-        text: err.response?.data?.message || 'Custom alokasi belum bisa disimpan.',
+        text: err.response?.data?.message || 'Alokasi belum bisa disimpan.',
       });
     } finally {
       setSavingCustomAllocations(false);
     }
   };
 
+  const stats = planner ? [
+    { label: 'Dana dasar', value: formatBudgetCurrency(planner.base_amount), hint: usesActivePeriod ? activePeriod?.name : 'Mengikuti tanggal gajian profil' },
+    { label: 'Hari ke gajian', value: `${Math.round(planner.days_until_payday)} hari`, hint: usesActivePeriod ? `sampai ${formatDate(activePeriod?.end_date)}` : 'terhitung dari hari ini' },
+    { label: 'Aman harian', value: formatBudgetCurrency(customDailySafe), hint: `rekomendasi ${formatBudgetCurrency(planner.daily_safe_from_plan)}` },
+  ] : [];
+
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-text-title">Budget Planner</h1>
-        </div>
-        <div className={cn(
-          "flex gap-3",
-          isMobile
-            ? "sticky top-0 z-40 bg-bg-base/95 backdrop-blur py-3 border-b border-border-subtle -mx-4 px-4 items-center"
-            : "items-end"
-        )}>
-          <div className="flex-1">
+    <div className="space-y-3 md:space-y-4">
+      <PageHeader title="Budget Planner" />
+
+      <Card>
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="min-w-0 flex-1 md:max-w-sm">
             <Input
-              className="min-w-0 w-full"
               inputMode="numeric"
-              label={isMobile ? undefined : "Saldo/gaji dasar"}
-              placeholder={isMobile ? "Saldo/gaji dasar" : "masukkan nominal"}
+              label="Saldo atau gaji dasar"
+              placeholder="Contoh: 7.500.000"
               value={baseAmount}
               onChange={(event) => setBaseAmount(formatAmountInput(event.target.value, { allowZero: true }))}
               onKeyDown={(event) => {
@@ -212,216 +249,107 @@ export default function BudgetPlannerPage() {
               }}
             />
           </div>
-          <Button className="h-10 md:h-12 shrink-0" onClick={() => loadPlanner(baseAmount)} isLoading={isLoading}>
-            <RefreshCw size={16} className={isMobile ? "mr-1" : "mr-2"} />
+          <Button className="h-11 shrink-0" onClick={() => loadPlanner(baseAmount)} isLoading={isLoading && Boolean(planner)}>
+            {!(isLoading && planner) && <RefreshCw size={16} className="mr-2" />}
             Hitung
           </Button>
-        </div>
-      </header>
+          {planner && !usesActivePeriod && (
+            <p className="w-full text-sm text-warning-base">
+              Belum ada periode aktif. Aktifkan satu periode di menu Periode agar hitungan mengikuti siklus gajian.
+            </p>
+          )}
+          {plannerInputError && !planner && <p className="w-full text-sm text-text-muted">{plannerInputError}</p>}
+        </CardContent>
+      </Card>
 
-      {plannerInputError && !planner && (
-        <Card className="border-primary-500/25 bg-primary-500/5">
-          <CardContent className="py-5">
-            <p className="text-sm font-medium text-primary-600">{plannerInputError}</p>
-          </CardContent>
-        </Card>
-      )}
+      {error && <ErrorState message={error} onRetry={() => loadPlanner(baseAmount)} />}
 
-      {!planner ? null : (
+      {isLoading && !planner && !error && <PlannerSkeleton />}
+
+      {planner && (
         <>
+          <Card>
+            <dl className="grid grid-cols-2 md:grid-cols-3">
+              {stats.map((stat, index) => (
+                <div key={stat.label} className={cn('min-w-0 border-border-subtle p-4', STAT_CELLS[index], index === 0 && 'col-span-2 md:col-span-1')}>
+                  <dt className="text-sm text-text-muted">{stat.label}</dt>
+                  <dd className="mt-1 truncate text-2xl font-semibold tabular-nums text-text-title">{stat.value}</dd>
+                  <p className="mt-0.5 truncate text-xs text-text-muted">{stat.hint}</p>
+                </div>
+              ))}
+            </dl>
+          </Card>
 
-      <Card className={usesActivePeriod ? 'border-primary-500' : 'border-warning-base'}>
-        <CardContent className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-text-title">
-              {usesActivePeriod ? `Periode aktif: ${activePeriod?.name}` : 'Belum ada periode aktif'}
-            </p>
-            <p className="mt-1 text-sm text-text-muted">
-              {usesActivePeriod
-                ? `${formatDate(activePeriod?.start_date)} - ${formatDate(activePeriod?.end_date)}`
-                : 'Budget Planner memakai fallback tanggal gajian profil. Aktifkan satu periode di menu Manajemen Periode agar hitungan mengikuti periode bulanan.'}
-            </p>
-            {usesActivePeriod && (
-              <p className="mt-1 text-sm text-text-muted">
-                {`${formatDate(activePeriod?.start_date)} - ${formatDate(activePeriod?.end_date)}`}
+          <Card>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-3">
+              <div className="flex items-center gap-2">
+                <h2 className="font-outfit text-base font-semibold text-text-title">Alokasi</h2>
+                <span className={cn(
+                  'rounded-md px-2 py-0.5 text-xs font-semibold',
+                  isPercentageBalanced ? 'bg-success-soft text-success-base' : 'bg-danger-soft text-danger-base',
+                )}>
+                  {balanceLabel}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="secondary" onClick={handleResetPercentage}>Reset</Button>
+                <Button size="sm" onClick={saveCustomAllocations} isLoading={isSavingCustomAllocations} disabled={!isPercentageBalanced}>
+                  Simpan
+                </Button>
+              </div>
+            </div>
+
+            {saveMessage && (
+              <p className={cn(
+                'border-b border-border-subtle px-4 py-2.5 text-sm font-medium',
+                saveMessage.type === 'success' ? 'bg-success-soft text-success-base' : 'bg-danger-soft text-danger-base',
+              )}>
+                {saveMessage.text}
               </p>
             )}
-          </div>
-          <div className="rounded-xl bg-surface-100 px-4 py-3 text-sm font-semibold text-primary-600 shadow-sm shadow-card-soft">
-            {usesActivePeriod ? 'Mengikuti Manajemen Periode' : 'Fallback profil'}
-          </div>
-        </CardContent>
-      </Card>
 
-      <Card className="border-primary-500">
-        <CardContent className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
-            <Wallet className="text-primary-600" />
-            <p className="mt-3 text-sm text-text-muted">Dana dasar</p>
-            <p className="text-2xl font-semibold text-text-title">{formatBudgetCurrency(planner?.base_amount)}</p>
-          </div>
-          <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
-            <p className="text-sm text-text-muted">Hari tersisa hingga gajian (terhitung mulai dari hari ini)</p>
-            <p className="mt-3 text-3xl font-semibold text-primary-600">{planner?.days_until_payday}</p>
-          </div>
-          <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
-            <p className="text-sm text-text-muted">Aman harian dari alokasi kebutuhan</p>
-            <p className="mt-3 text-2xl font-semibold text-primary-600">{formatBudgetCurrency(customDailySafe)}</p>
-            <p className="mt-2 text-xs text-text-muted">Rekomendasi awal: {formatBudgetCurrency(planner?.daily_safe_from_plan)}</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {isMobile ? (
-        <div className="sticky top-[65px] z-35 bg-bg-base/95 backdrop-blur py-3 border-b border-border-subtle -mx-4 px-4 flex items-center justify-between gap-3">
-          <div className="text-sm font-semibold">
-            <span className={isPercentageBalanced ? 'text-success-base' : 'text-danger-base'}>
-              {isPercentageBalanced ? 'Sudah pas 100%' : percentageDifference > 0 ? `Kurang ${percentageDifference}%` : `Lebih ${Math.abs(percentageDifference)}%`}
-            </span>
-            <span className="text-xs text-text-muted ml-1.5">({totalCustomPercentage}%)</span>
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="secondary" onClick={handleResetPercentage}>
-              Reset persentase
-            </Button>
-            <Button size="sm" onClick={saveCustomAllocations} isLoading={isSavingCustomAllocations} disabled={!isPercentageBalanced}>
-              Simpan
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <Card className={isPercentageBalanced ? 'border-success-base' : 'border-danger-base'}>
-          <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <CardTitle>Custom alokasi dana</CardTitle>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" onClick={handleResetPercentage}>
-                Reset persentase
-              </Button>
-              <Button onClick={saveCustomAllocations} isLoading={isSavingCustomAllocations} disabled={!isPercentageBalanced}>
-                Simpan custom alokasi
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
-              <p className="text-sm text-text-muted">Total persentase custom</p>
-              <p className={`mt-3 text-2xl font-semibold ${isPercentageBalanced ? 'text-text-title' : 'text-danger-base'}`}>{totalCustomPercentage}%</p>
-            </div>
-            <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
-              <p className="text-sm text-text-muted">Total nominal hasil custom</p>
-              <p className="mt-3 text-2xl font-semibold text-text-title">
-                {formatBudgetCurrency(totalCustomAllocation)}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-surface-100 p-4 shadow-sm shadow-card-soft">
-              <p className="text-sm text-text-muted">Status persentase</p>
-              <p className={`mt-3 text-lg font-semibold ${isPercentageBalanced ? 'text-primary-600' : 'text-danger-base'}`}>
-                {isPercentageBalanced ? 'Sudah pas 100%' : percentageDifference > 0 ? `Kurang ${percentageDifference}%` : `Lebih ${Math.abs(percentageDifference)}%`}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {saveMessage && (
-        <div className={cn(
-          "rounded-2xl px-4 py-3 text-sm font-medium",
-          isMobile ? "" : "pt-0",
-          saveMessage.type === 'success' ? 'bg-success-base/10 text-success-base' : 'bg-danger-base/10 text-danger-base'
-        )}>
-          {saveMessage.text}
-        </div>
-      )}
-
-      {isMobile ? (
-        <div className="space-y-3">
-          {customAllocationItems.map((item, index) => (
-            <div key={item.key} className="flex items-center gap-3 bg-surface-panel p-3.5 rounded-2xl border border-border-subtle shadow-sm shadow-card-soft">
-              <span className="text-sm font-bold text-text-muted min-w-[20px]">{index + 1}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-text-title truncate">{item.label}</p>
-                <p className="text-xs text-text-muted mt-0.5">
-                  Rekomendasi: <span className="font-medium text-text-body">{item.percent}%</span>
-                </p>
-                <p className="text-sm font-bold text-primary-600 mt-1">
-                  {formatBudgetCurrency(item.appliedAmount)}
-                </p>
-              </div>
-              <div className="w-24 shrink-0">
-                <div className="relative">
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    value={item.percentInput}
-                    placeholder={String(item.percent)}
-                    onChange={(event) =>
-                      setCustomAllocations((current) => ({
-                        ...current,
-                        [item.key]: event.target.value,
-                      }))
-                    }
-                    className="w-full text-right pr-7 pl-3 h-10 text-sm font-medium rounded-xl border border-border-subtle bg-surface-panel focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-text-muted">%</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          {customAllocationItems.map((item) => (
-            <Card key={item.key} className="h-full">
-              <CardHeader>
-                <CardTitle className="text-base">{item.label}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-2xl font-semibold text-text-title">{formatBudgetCurrency(item.appliedAmount)}</p>
-                  <p className="mt-2 text-sm font-medium text-primary-600">
-                    {item.hasCustomPercent ? `Custom saat ini ${item.customPercent}%` : `Masih memakai rekomendasi ${item.percent}%`}
+            <ul className="divide-y divide-border-subtle px-4">
+              {customAllocationItems.map((item) => (
+                <li key={item.key} className={ROW_GRID}>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-text-title">{item.label}</p>
+                    <p className="text-xs text-text-muted">Rekomendasi {item.recommended_percent ?? item.percent}%</p>
+                  </div>
+                  <div className="hidden h-1.5 overflow-hidden rounded-full bg-surface-200 md:block">
+                    <div className="h-full rounded-full bg-primary-500" style={{ width: `${Math.min(item.appliedPercent, 100)}%` }} />
+                  </div>
+                  <p className="col-start-1 row-start-2 text-sm font-semibold tabular-nums text-primary-600 md:col-start-auto md:row-start-auto md:text-right md:text-text-title">
+                    {formatBudgetCurrency(item.appliedAmount)}
                   </p>
-                </div>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  label="Persentase custom"
-                  value={item.percentInput}
-                  placeholder={String(item.percent)}
-                  onChange={(event) =>
-                    setCustomAllocations((current) => ({
-                      ...current,
-                      [item.key]: event.target.value,
-                    }))
-                  }
-                />
-                <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-300">
-                  <div className="h-full rounded-full bg-primary-500" style={{ width: `${Math.min(item.appliedPercent, 100)}%` }} />
-                </div>
-                <p className="text-sm leading-6 text-text-muted">{item.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-        </>
-      )}
+                  <div className="relative row-span-2 md:row-span-1">
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      aria-label={`Persentase ${item.label}`}
+                      value={item.percentInput}
+                      placeholder={String(item.percent)}
+                      onChange={(event) =>
+                        setCustomAllocations((current) => ({
+                          ...current,
+                          [item.key]: event.target.value,
+                        }))
+                      }
+                      className="h-10 w-full rounded-xl border border-border-subtle bg-surface-panel pl-3 pr-7 text-right text-sm font-medium tabular-nums text-text-title focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-border-strong"
+                    />
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-text-muted">%</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </Card>
 
-      {!planner ? null : (
-        <Card className="border-info-base">
-          <CardContent>
-            <p className="text-sm font-semibold text-info-base">Rekomendasi WeeB</p>
-            <p className="mt-2 text-text-body">{planner?.recommendation}</p>
-          </CardContent>
-        </Card>
+          {planner.recommendation && (
+            <p className="rounded-2xl bg-primary-soft px-4 py-3 text-sm leading-6 text-text-body">{planner.recommendation}</p>
+          )}
+        </>
       )}
     </div>
   );

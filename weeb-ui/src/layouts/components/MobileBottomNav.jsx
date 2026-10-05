@@ -5,9 +5,9 @@ import { cn } from '../../lib/utils';
 import VoiceTransactionModal from '../../components/VoiceTransactionModal';
 
 const navItemClass = ({ isActive }) => cn(
-  'flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-2xl px-1.5 py-2 text-[10px] font-semibold transition-all duration-200',
+  'flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-2 text-[10px] font-semibold transition-all duration-200',
   isActive
-    ? 'bg-primary-500/10 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400'
+    ? 'bg-primary-soft text-primary-600 dark:bg-primary-soft dark:text-primary-400'
     : 'text-text-muted hover:text-primary-600',
 );
 
@@ -33,7 +33,7 @@ export default function MobileBottomNav() {
       label: 'Catat via Suara AI',
       icon: Mic,
       offset: 'translate(-1.9rem, -4.6rem)',
-      className: 'bg-violet-600 text-white',
+      className: 'bg-accent-strong text-white',
       onClick: () => setVoiceModalOpen(true),
     },
     {
@@ -55,13 +55,13 @@ export default function MobileBottomNav() {
         aria-hidden={!isFabOpen}
         onClick={() => setFabOpen(false)}
         className={cn(
-          'fixed inset-0 z-30 bg-black/25 backdrop-blur-[2px] transition-opacity duration-300 md:hidden',
+          'fixed inset-0 z-30 bg-black/25 transition-opacity duration-300 md:hidden',
           isFabOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
       />
 
       <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.8rem)] pt-2 md:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-5 items-center gap-1 rounded-[28px] border border-border-subtle bg-surface-panel/96 p-2 shadow-[0_18px_48px_-24px_rgba(15,23,42,0.35)] backdrop-blur-xl">
+        <div className="mx-auto grid max-w-md grid-cols-5 items-center gap-1 rounded-2xl border border-border-subtle bg-surface-panel p-1.5 shadow-pop">
           <NavLink to="/dashboard" className={navItemClass}>
             <LayoutDashboard size={20} />
             <span>Home</span>
@@ -91,7 +91,7 @@ export default function MobileBottomNav() {
                   transitionDelay: `${(isFabOpen ? index : actions.length - 1 - index) * 60}ms`,
                 }}
                 className={cn(
-                  'absolute flex h-11 w-11 items-center justify-center rounded-full shadow-lg transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-90',
+                  'absolute flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-90',
                   action.className,
                   isFabOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
                 )}
@@ -105,7 +105,7 @@ export default function MobileBottomNav() {
               onClick={() => setFabOpen((open) => !open)}
               aria-expanded={isFabOpen}
               aria-label={isFabOpen ? 'Tutup menu tambah' : 'Buka menu tambah'}
-              className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary-500 text-white shadow-lg shadow-primary-500/40 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-90"
+              className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary-500 text-white transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-90"
             >
               <Plus
                 size={24}

@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../..
 import Button from '../../components/ui/Button';
 import EmptyState from '../../components/feedback/EmptyState';
 import ErrorState from '../../components/feedback/ErrorState';
-import LoadingSkeleton from '../../components/feedback/LoadingSkeleton';
+import { MenuListSkeleton } from './AdminSkeletons';
 import DynamicIcon from '../../components/dynamic/DynamicIcon';
 import { fetchAllMenus, saveMenuSettings } from '../../api/dynamicSchema';
 import { cn } from '../../lib/utils';
@@ -97,14 +97,11 @@ export default function MenuSettingsPage() {
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-3 md:space-y-4">
       {/* Header */}
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-text-title md:text-3xl">Pengaturan Menu Navigasi</h1>
-          <p className="mt-2 text-sm leading-6 text-text-muted">
-            Atur urutan, aktifkan atau nonaktifkan menu aplikasi dan entitas dinamis dalam satu tempat.
-          </p>
+          <h1 className="text-xl font-semibold text-text-title md:text-2xl">Pengaturan Menu</h1>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="secondary" onClick={() => navigate('/admin/data')}>
@@ -119,20 +116,20 @@ export default function MenuSettingsPage() {
       </header>
 
       {successMessage && (
-        <div className="flex items-center gap-2.5 rounded-2xl border border-success-base/30 bg-success-base/10 px-4 py-3 text-sm font-medium text-success-base">
+        <div className="flex items-center gap-2.5 rounded-2xl border border-success-line bg-success-soft px-4 py-3 text-sm font-medium text-success-base">
           <Check size={18} />
           <span>{successMessage}</span>
         </div>
       )}
 
       {error && (
-        <div className="flex items-center gap-2.5 rounded-2xl border border-danger-base/30 bg-danger-base/10 px-4 py-3 text-sm font-medium text-danger-base">
+        <div className="flex items-center gap-2.5 rounded-2xl border border-danger-line bg-danger-soft px-4 py-3 text-sm font-medium text-danger-base">
           <ErrorState message={error} />
         </div>
       )}
 
       {isLoading ? (
-        <LoadingSkeleton rows={6} />
+        <MenuListSkeleton />
       ) : menus.length === 0 ? (
         <EmptyState title="Tidak ada menu yang terdaftar." />
       ) : (
@@ -154,7 +151,7 @@ export default function MenuSettingsPage() {
                     key={menu.menu_key}
                     className={cn(
                       'flex items-center justify-between gap-4 p-4 transition-colors',
-                      !menu.is_active && 'opacity-60 bg-surface-100/30'
+                      !menu.is_active && 'opacity-60 bg-surface-100'
                     )}
                   >
                     <div className="flex min-w-0 items-center gap-3.5">
@@ -165,7 +162,7 @@ export default function MenuSettingsPage() {
                         <div className="flex items-center gap-2">
                           <span className="truncate font-semibold text-text-title">{menu.label}</span>
                           {isLocked && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-primary-500/10 px-2 py-0.5 text-[11px] font-semibold text-primary-600">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-semibold text-primary-600">
                               <Lock size={10} /> Inti Terkunci
                             </span>
                           )}
@@ -224,7 +221,7 @@ export default function MenuSettingsPage() {
                         className={cn(
                           'flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold transition-all',
                           isLocked && 'cursor-not-allowed opacity-50 bg-surface-100 text-text-muted',
-                          !isLocked && menu.is_active && 'bg-success-base/15 text-success-base hover:bg-success-base/25',
+                          !isLocked && menu.is_active && 'bg-success-soft text-success-base hover:bg-success-soft',
                           !isLocked && !menu.is_active && 'bg-surface-200 text-text-muted hover:bg-surface-300'
                         )}
                         title={isLocked ? 'Menu inti tidak dapat dinonaktifkan' : 'Klik untuk mengubah status tampil di navigasi'}
